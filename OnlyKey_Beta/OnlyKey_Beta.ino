@@ -67,7 +67,7 @@
 /*************************************/
 #define US_VERSION
 //Define for US Version Firmare
-//#define DEBUG
+#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -131,7 +131,7 @@ extern uint8_t nonce[32];
 Task taskKey(TIME_POLL, checkKey);
 Task taskKB(100, sendKey); // Default send kb codes every 100 ms
 Task taskInitialized(1000, sendInitialized);
-char keybuffer[EElen_username+2+EElen_password+2+64]; //Buffer to hold all keystrokes
+char keybuffer[EElen_url+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64]; //Buffer to hold all keystrokes
 char *pos;
 extern uint8_t fade;
 /*************************************/
@@ -148,7 +148,7 @@ void setup() {
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
-  //delay(7000); //Enable to see starup serial messages
+  delay(7000); //Enable to see starup serial messages
   #ifdef US_VERSION
   PDmode = false;
   #else
@@ -171,7 +171,7 @@ void setup() {
   uint8_t *ptr;
   ptr = nonce;
   int isinit = onlykey_flashget_noncehash (ptr, 32);
-  //FSEC currently set to 0x54, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
+  //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
       int nn;
       wipeEEPROM();
@@ -341,19 +341,28 @@ void checkKey(Task* me) {
 //Type out on Keyboard the contents of Keybuffer
 /*************************************/
 void sendKey(Task* me) {
-   if ((uint8_t)*pos == 128) {
+    if ((uint8_t)*pos == 00){
+    #ifdef DEBUG
+    Serial.print(pos);
+    #endif
+    Keyboard.end();
+    SoftTimer.remove(&taskKB);
+    SoftTimer.add(&taskKey);
+    return;
+    }
+    else if ((uint8_t)*pos == 1) {
         Keyboard.press(KEY_TAB); 
         delay(10); 
         Keyboard.release(KEY_TAB); 
         pos++;  
     } 
-    else if ((uint8_t)*pos == 129) {
+    else if ((uint8_t)*pos == 2) {
         Keyboard.press(KEY_RETURN);
         delay(10); 
         Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
-    else if ((uint8_t)*pos == 130 && !PDmode) {
+    else if ((uint8_t)*pos == 9 && !PDmode) {
         #ifdef DEBUG
         Serial.println("Starting U2F...");
         #endif
@@ -371,24 +380,13 @@ void sendKey(Task* me) {
         SoftTimer.add(&taskKey);
         return;
     }
-    else if ((uint8_t)*pos >= 131) {
-        delay((*pos - 131)*1000);   
+    else if ((uint8_t)*pos >= 10 && (uint8_t)*pos <= 31) {
+        delay((*pos - 10)*1000);   
         pos++;  
     } 
     else if (*pos){
         Keyboard.write(*pos);
         pos++;
-    }
-    else {
-    #ifdef DEBUG
-    Serial.print(pos);
-    #endif
-    Keyboard.press(KEY_RETURN); 
-    delay(10);
-    Keyboard.release(KEY_RETURN);  
-    Keyboard.end();
-    SoftTimer.remove(&taskKB);
-    SoftTimer.add(&taskKey);
     }
 }
 /*************************************/
@@ -601,11 +599,13 @@ void process_slot(int s) {
   char* newcode;
   static uint8_t index;
   uint8_t temp[64];
+  int urllength;
   int usernamelength;
   int passwordlength;
   int otplength;
   int delay1 = 0;
   int delay2 = 0;
+  int delay3 = 0;
   uint8_t *ptr;
   int slot=s;
 index = 0;
@@ -616,7 +616,76 @@ index = 0;
       memset(temp, 0, 64); //Wipe all data from buffer
       memset(keybuffer, 0, sizeof(keybuffer)); //Wipe all data from keybuffer
       ptr = temp;
-      usernamelength = onlykey_eeget_username(ptr, slot);
+      urllength = onlykey_flashget_url(ptr, slot);
+      if(urllength > 0)
+      {
+        #ifdef DEBUG
+        Serial.println("Reading URL from EEPROM...");
+        Serial.print("URL Length = ");
+        Serial.println(urllength);
+        #endif
+        if (!PDmode) {
+        #ifdef DEBUG
+        Serial.println("Encrypted");
+            for (int z = 0; z < urllength; z++) {
+            Serial.print(temp[z], HEX);
+            }
+            Serial.println();
+        #endif
+        #ifdef US_VERSION
+        aes_gcm_decrypt(temp, (uint8_t*)('u'+ID[34]+slot), phash, urllength);
+        #endif
+        }
+        ByteToChar2(temp, keybuffer, urllength, index);
+        #ifdef DEBUG
+            Serial.println("Unencrypted");
+            for (int z = 0; z < urllength; z++) {
+            Serial.print(temp[z], HEX);
+            }
+            Serial.println();
+        #endif
+        index=urllength;
+      }
+      memset(temp, 0, 64); //Wipe all data from buffer
+      onlykey_eeget_addchar1(ptr, slot);
+      if(temp[0] > 0)
+      {
+        if(temp[0] == 0x31) {
+        #ifdef DEBUG
+        Serial.println("Reading addchar1 from EEPROM...");
+        #endif
+        keybuffer[index] = 1;
+        #ifdef DEBUG
+        Serial.println("TAB");
+        #endif
+        index++;
+        }
+        else if(temp[0] == 0x32) {
+        #ifdef DEBUG
+        Serial.println("Reading addchar1 from EEPROM...");
+        #endif
+        keybuffer[index] = 2;
+        #ifdef DEBUG
+        Serial.println("RETURN");
+        #endif
+        index++;
+        }
+      }
+      memset(temp, 0, 64); //Wipe all data from buffer
+      onlykey_eeget_delay1(ptr, slot);
+      if(temp[0] > 0)
+      {
+        #ifdef DEBUG
+        Serial.println("Reading Delay1 from EEPROM...");
+        Serial.print("Delay ");
+        Serial.print(temp[0]);
+        Serial.println(" Seconds before entering username");
+        #endif
+        delay1=temp[0];
+        keybuffer[index] = temp[0] + 10;
+        index++;
+      }
+      usernamelength = onlykey_flashget_username(ptr, slot);
       if(usernamelength > 0)
       {
         #ifdef DEBUG
@@ -644,17 +713,17 @@ index = 0;
             }
             Serial.println();
         #endif
-        index=usernamelength;
+        index=usernamelength+index;
       }
       memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_addchar1(ptr, slot);
+      onlykey_eeget_addchar2(ptr, slot);
       if(temp[0] > 0)
       {
         if(temp[0] == 0x31) {
         #ifdef DEBUG
-        Serial.println("Reading addchar1 from EEPROM...");
+        Serial.println("Reading addchar2 from EEPROM...");
         #endif
-        keybuffer[index] = 128;
+        keybuffer[index] = 1;
         #ifdef DEBUG
         Serial.println("TAB");
         #endif
@@ -662,9 +731,9 @@ index = 0;
         }
         else if(temp[0] == 0x32) {
         #ifdef DEBUG
-        Serial.println("Reading addchar1 from EEPROM...");
+        Serial.println("Reading addchar2 from EEPROM...");
         #endif
-        keybuffer[index] = 129;
+        keybuffer[index] = 2;
         #ifdef DEBUG
         Serial.println("RETURN");
         #endif
@@ -672,17 +741,17 @@ index = 0;
         }
       }
       memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_delay1(ptr, slot);
+      onlykey_eeget_delay2(ptr, slot);
       if(temp[0] > 0)
       {
         #ifdef DEBUG
-        Serial.println("Reading Delay from EEPROM...");
+        Serial.println("Reading Delay2 from EEPROM...");
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering password");
         #endif
-        delay1=temp[0];
-        keybuffer[index] = temp[0] + 131;
+        delay2=temp[0];
+        keybuffer[index] = temp[0] + 10;
         index++;
       }
       passwordlength = onlykey_eeget_password(ptr, slot);
@@ -716,38 +785,38 @@ index = 0;
         index=passwordlength+index;
       }
       memset(temp, 0, 64); //Wipe all data from buffer    
-      onlykey_eeget_addchar2(ptr, slot);
+      onlykey_eeget_addchar3(ptr, slot);
       if(temp[0] > 0)
       {
         if(temp[0] == 0x31) {
         #ifdef DEBUG
-        Serial.println("Reading addchar2 from EEPROM...");
+        Serial.println("Reading addchar3 from EEPROM...");
         Serial.println("TAB");
         #endif
-        keybuffer[index] = 128;
+        keybuffer[index] = 1;
         index++;
         }
         else if(temp[0] == 0x32) {
         #ifdef DEBUG
-        Serial.println("Reading addchar2 from EEPROM...");      
+        Serial.println("Reading addchar3 from EEPROM...");      
         Serial.println("Return");
         #endif
-        keybuffer[index] = 129;
+        keybuffer[index] = 2;
         index++;
         }
       }
       memset(temp, 0, 64); //Wipe all data from buffer    
-      onlykey_eeget_delay2(ptr, slot);
+      onlykey_eeget_delay3(ptr, slot);
       if(temp[0] > 0)
       {
         #ifdef DEBUG
-        Serial.println("Reading Delay2 from EEPROM...");
+        Serial.println("Reading Delay3 from EEPROM...");
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering 2FA");
         #endif
-        delay2=temp[0];
-        keybuffer[index] = temp[0] + 131;
+        delay3=temp[0];
+        keybuffer[index] = temp[0] + 10;
         index++;
       }
       memset(temp, 0, 64); //Wipe all data from buffer 
@@ -782,7 +851,7 @@ index = 0;
         #endif
           TOTP totp1 = TOTP(temp, otplength);
           GMT = now();
-          GMT = GMT + delay1 + delay2;
+          GMT = GMT + delay1 + delay2 + delay3;
           #ifdef DEBUG
           Serial.println(GMT);
           #endif
@@ -794,7 +863,6 @@ index = 0;
             keybuffer[index+3]='S';
             keybuffer[index+4]='E';
             keybuffer[index+5]='T';
-            keybuffer[index+6]=0x00;
           } else {
             keybuffer[index]=*newcode;
             keybuffer[index+1]=*(newcode+1);
@@ -802,7 +870,6 @@ index = 0;
             keybuffer[index+3]=*(newcode+3);
             keybuffer[index+4]=*(newcode+4);
             keybuffer[index+5]=*(newcode+5);
-            keybuffer[index+6]=0x00;
           }
           index=index+6;
           memset(temp, 0, 64); //Wipe all data from buffer 
@@ -817,11 +884,31 @@ index = 0;
         #endif
         }
         if(temp[0] == 117 && !PDmode) { //U2F
-        keybuffer[index] = 130;
+        keybuffer[index] = 9;
         index++;
         }
       }
-          
+      memset(temp, 0, 64); //Wipe all data from buffer    
+      onlykey_eeget_addchar4(ptr, slot);
+      if(temp[0] > 0)
+      {
+        if(temp[0] == 0x31) {
+        #ifdef DEBUG
+        Serial.println("Reading addchar4 from EEPROM...");
+        Serial.println("TAB");
+        #endif
+        keybuffer[index] = 1;
+        index++;
+        }
+        else if(temp[0] == 0x32) {
+        #ifdef DEBUG
+        Serial.println("Reading addchar4 from EEPROM...");      
+        Serial.println("Return");
+        #endif
+        keybuffer[index] = 2;
+        index++;
+        }
+      }  
           #ifdef DEBUG
           Serial.println("Displaying Full Keybuffer");
           for (int i=0; keybuffer[i]!=0x00; i++) {

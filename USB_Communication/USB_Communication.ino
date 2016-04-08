@@ -1,4 +1,5 @@
 #include <EEPROM.h>
+#include <Time.h>
 #include "sha256.h"
 #include "uecc.h"
 #include "ykcore.h"
@@ -65,6 +66,8 @@
 
 #define U2FHID_IF_VERSION       2  // Current interface implementation version
 
+uint32_t unixTimeStamp;
+const int ledPin = 13;
 byte expected_next_packet;
 int large_data_len;
 int large_data_offset;
@@ -74,6 +77,7 @@ byte recv_buffer[64];
 byte resp_buffer[64];
 byte handle[64];
 byte sha256_hash[32];
+
 #define MAX_CHANNEL 4
 
 const char attestation_key[] = "\xf3\xfc\xcc\x0d\x00\xd8\x03\x19\x54\xf9"
@@ -751,7 +755,7 @@ void loop() {
   int n;
   int c;
   int z;
-  Serial.println("Waiting for Packet");
+  //Serial.print("");
   n = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
 #ifdef DEBUG   
 /*
@@ -1003,6 +1007,18 @@ void SETTIME (byte *buffer)
 #ifdef DEBUG
       Serial.println((int)cmd, HEX);
 #endif
+    int i, j;                
+    for(i=0, j=3; i<4; i++, j--){
+    unixTimeStamp |= ((uint32_t)buffer[j + 5] << (i*8) );
+    Serial.println(buffer[j+5], HEX);
+    }
+                      
+      time_t t2 = unixTimeStamp;
+      Serial.print(F("Received Unix Epoch Time: "));
+      Serial.println(unixTimeStamp, HEX); 
+      setTime(t2); 
+      Serial.print(F("Current Time Set to: "));
+      digitalClockDisplay();  
       delay(4000);
       return;
 }
@@ -1255,4 +1271,37 @@ void WIPEYUBI (byte *buffer)
 #endif
       delay(4000);
       return;
+}
+
+void digitalClockDisplay(){
+  // digital clock display of the time
+  Serial.print(hour());
+  printDigits(minute());
+  printDigits(second());
+  Serial.print(" ");
+  Serial.print(day());
+  Serial.print(" ");
+  Serial.print(month());
+  Serial.print(" ");
+  Serial.print(year()); 
+  Serial.println(); 
+}
+
+void printDigits(int digits){
+  // utility function for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}
+
+void blink(int times){
+  
+  int i;
+  for(i = 0; i < times; i++){
+    digitalWrite(ledPin, HIGH);
+    delay(100);
+    digitalWrite(ledPin, LOW);
+    delay(100);
+  }
 }

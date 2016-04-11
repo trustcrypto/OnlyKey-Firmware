@@ -162,7 +162,8 @@ extern "C" {
 
 void setup() {
   Serial.begin(9600);
-  Serial.println(F("U2F"));
+  pinMode(ledPin, OUTPUT);
+  blink(3);
   uECC_set_rng(&RNG);
 }
 
@@ -997,7 +998,7 @@ void SETPIN (byte *buffer)
 #ifdef DEBUG
       Serial.println((int)cmd, HEX);
 #endif
-      delay(4000);
+      blink(3);
       return;
 }
 
@@ -1020,7 +1021,7 @@ void SETTIME (byte *buffer)
       setTime(t2); 
       Serial.print(F("Current Time Set to: "));
       digitalClockDisplay();  
-      delay(4000);
+      blink(3);
       return;
 }
 
@@ -1031,7 +1032,7 @@ void GETLABELS (byte *buffer)
 #ifdef DEBUG
       Serial.println((int)cmd, HEX);
 #endif
-      delay(4000);
+      blink(3);
       return;
 }
 
@@ -1194,6 +1195,7 @@ void SETSLOT (byte *buffer)
 #endif
       //delay(4000);
       */
+      blink(3);
       return;
 }
 
@@ -1220,21 +1222,21 @@ void WIPESLOT (byte *buffer)
             case 1:
             //Set value in EEPROM
             Serial.println(); //newline
-            Serial.print("Writing Label Value to EEPROM...");
+            Serial.print("Wiping Label Value...");
             yubikey_eeset_label((buffer + 7), EElen_label, slot);
             return;
             break;
             case 2:
             //Set value in EEPROM
             Serial.println(); //newline
-            Serial.print("Writing Username Value to EEPROM...");
+            Serial.print("Wiping Username Value...");
             yubikey_eeset_username((buffer + 7), EElen_username, slot);
             return;
             break;
             case 3:
             //Set value in EEPROM
             Serial.println(); //newline
-            Serial.print("Writing Additional Character1 to EEPROM...");
+            Serial.print("Wiping Additional Character1 Value...");
             yubikey_eeset_addchar1((buffer + 7), slot);
             return;
             break;
@@ -1248,28 +1250,28 @@ void WIPESLOT (byte *buffer)
             case 5:
             //Set value in EEPROM
             Serial.println(); //newline
-            Serial.print("Writing Password to EEPROM...");
+            Serial.print("Wiping Password Value...");
             yubikey_eeset_password((buffer + 7), length, slot);
             return;
             break;
             case 6:
             //Set value in EEPROM
             Serial.println(); //newline
-            Serial.print("Writing Additional Character2 to EEPROM...");
+            Serial.print("Wiping Additional Character2 Value...");
             yubikey_eeset_addchar2((buffer + 7), slot);
             return;
             break;
             case 7:
             //Set value in EEPROM
             Serial.println(); //newline
-            Serial.print("Writing Delay2 to EEPROM...");
+            Serial.print("Wiping Delay2 Value...");
             yubikey_eeset_delay2((buffer + 7), slot);
             return;
             break;
             case 8:
             //Set value in EEPROM
             Serial.println(); //newline
-            Serial.print("Writing 2FA Type to EEPROM...");
+            Serial.print("Wiping 2FA Type Value...");
             yubikey_eeset_2FAtype((buffer + 7), slot);
             return;
             break;
@@ -1283,7 +1285,7 @@ void WIPESLOT (byte *buffer)
             case 10:
             //Set value in EEPROM
             Serial.println(); //newline
-            Serial.print("Writing Yubikey AES Key, Priviate ID, and Public ID to EEPROM...");
+            Serial.print("Wiping Yubikey AES Key, Priviate ID, and Public ID...");
             yubikey_eeset_aeskey((buffer + 7), EElen_aeskey);
             yubikey_eeset_private((buffer + 7 + EElen_aeskey));
             yubikey_eeset_public((buffer + 7 + EElen_aeskey + EElen_private), EElen_public);
@@ -1292,6 +1294,7 @@ void WIPESLOT (byte *buffer)
             default: 
             break;
           }
+      blink(3);
       return;
 }
 
@@ -1304,14 +1307,16 @@ void SETU2FPRIV (byte *buffer)
 #endif
 //Set pointer to first empty flash sector
   uintptr_t adr = flashFirstEmptySector();
-  unsigned long long1 = buffer[5] | (buffer[6] << 8L) | (buffer[7] << 16L) | (buffer[8] << 24L);
+  unsigned long sector1 = buffer[5] | (buffer[6] << 8L) | (buffer[7] << 16L) | (buffer[8] << 24L);
+  unsigned long sector2 = buffer[9] | (buffer[10] << 8L) | (buffer[11] << 16L) | (buffer[12] << 24L);
   //Write long to empty sector 
-  Serial.printf("Program 0x%X, value 0x%X ", adr, long1);
-  if ( flashProgramWord((unsigned long*)adr, &long1) ) Serial.printf("NOT ");
+  Serial.printf("Program 0x%X, value 0x%X ", adr, sector1);
+  if ( flashProgramWord((unsigned long*)adr, &sector1) ) Serial.printf("NOT ");
   Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)adr));
   //Increment to next sector
   adr=adr+4;
   //Write long to empty sector and read value back from flash
+  blink(3);
       return;
 }
 
@@ -1322,7 +1327,7 @@ void WIPEU2FPRIV (byte *buffer)
 #ifdef DEBUG
       Serial.println((int)cmd, HEX);
 #endif
-      delay(4000);
+      blink(3);
       return;
 }
 
@@ -1333,7 +1338,7 @@ void SETU2FCERT (byte *buffer)
 #ifdef DEBUG
       Serial.println((int)cmd, HEX);
 #endif
-      delay(4000);
+      blink(3);
       return;
 }
 
@@ -1344,7 +1349,7 @@ void WIPEU2FCERT (byte *buffer)
 #ifdef DEBUG
       Serial.println((int)cmd, HEX);
 #endif
-      delay(4000);
+      blink(3);
       return;
 }
 
@@ -1355,7 +1360,7 @@ void SETYUBI (byte *buffer)
 #ifdef DEBUG
       Serial.println((int)cmd, HEX);
 #endif
-      delay(4000);
+      blink(3);
       return;
 }
 
@@ -1366,7 +1371,7 @@ void WIPEYUBI (byte *buffer)
 #ifdef DEBUG
       Serial.println((int)cmd, HEX);
 #endif
-      delay(4000);
+      blink(3);
       return;
 }
 

@@ -17,6 +17,7 @@
 
   
 void setup()
+
 {
 
   Serial.begin(9600);
@@ -39,7 +40,7 @@ void setup()
  
   //Set pointer to first empty flash sector
   uintptr_t adr = flashFirstEmptySector();
-  //Write long to empty sector and read value back from flash
+  //Write long to empty sector 
   Serial.printf("Program 0x%X, value 0x%X ", adr, pinhash1);
   if ( flashProgramWord((unsigned long*)adr, &pinhash1) ) Serial.printf("NOT ");
   Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)adr));

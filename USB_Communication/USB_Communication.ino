@@ -64,6 +64,7 @@
 #define MAX_CONTINUATION_PACKET 59
 #define SET_MSG_LEN(b, v) do { (b)[5] = ((v) >> 8) & 0xff;  (b)[6] = (v) & 0xff; } while(0)
 
+#define CERTMAXLENGTH       1024  // Make sure size of certificate is limited so that the whole flash is not overwritten
 
 #define U2FHID_IF_VERSION       2  // Current interface implementation version
 
@@ -78,6 +79,7 @@ byte recv_buffer[64];
 byte resp_buffer[64];
 byte handle[64];
 byte sha256_hash[32];
+
 
 #define MAX_CHANNEL 4
 
@@ -835,14 +837,6 @@ void loop() {
       WIPEU2FCERT(recv_buffer);
       return;
       break;
-      case OKSETYUBI:
-      SETYUBI(recv_buffer);
-      return;
-      break;
-      case OKWIPEYUBI:
-      WIPEYUBI(recv_buffer);
-      return;
-      break;
       default: 
       break;
     }
@@ -1301,21 +1295,29 @@ void WIPESLOT (byte *buffer)
 void SETU2FPRIV (byte *buffer)
 {
       Serial.println("OKSETU2FPRIV MESSAGE RECEIVED");
-      char cmd = buffer[4]; //cmd or continuation
-#ifdef DEBUG
-      Serial.println((int)cmd, HEX);
-#endif
+
 //Set pointer to first empty flash sector
   uintptr_t adr = flashFirstEmptySector();
-  unsigned long sector1 = buffer[5] | (buffer[6] << 8L) | (buffer[7] << 16L) | (buffer[8] << 24L);
-  unsigned long sector2 = buffer[9] | (buffer[10] << 8L) | (buffer[11] << 16L) | (buffer[12] << 24L);
-  //Write long to empty sector 
-  Serial.printf("Program 0x%X, value 0x%X ", adr, sector1);
-  if ( flashProgramWord((unsigned long*)adr, &sector1) ) Serial.printf("NOT ");
-  Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)adr));
-  //Increment to next sector
-  adr=adr+4;
-  //Write long to empty sector and read value back from flash
+  unsigned int length = buffer[5];
+  Serial.print("Length of U2F private = ");
+  Serial.println(length);
+ 
+  yubikey_eeset_U2Fprivlen(buffer + 5); //length is number of bytes
+  uint8_t addr[2];
+  uint8_t *ptr;
+      addr[0] = (int)((adr >> 8) & 0XFF); //convert long to array
+      addr[1] = (int)((adr & 0XFF));
+  ptr = addr;
+  yubikey_eeset_U2Fprivpos(ptr); //Set the starting position for U2F Priv
+
+  for( int z = 6; z <= length && z <= 58; z=z+4, adr=adr+4){
+  unsigned long sector = buffer[z] | (buffer[z+1] << 8L) | (buffer[z+2] << 16L) | (buffer[z+3] << 24L);
+   //Write long to empty sector 
+  Serial.println();
+  Serial.printf("Writing to Sector 0x%X, value 0x%X ", adr, sector);
+  if ( flashProgramWord((unsigned long*)adr, &sector) ) Serial.printf("NOT ");
+  //Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)adr));
+  }
   blink(3);
       return;
 }
@@ -1323,10 +1325,26 @@ void SETU2FPRIV (byte *buffer)
 void WIPEU2FPRIV (byte *buffer)
 {
       Serial.println("OKWIPEU2FPRIV MESSAGE RECEIVED");
-      char cmd = buffer[4]; //cmd or continuation
-#ifdef DEBUG
-      Serial.println((int)cmd, HEX);
-#endif
+      uint8_t addr[2];
+      uint8_t *ptr;
+      ptr = addr;
+      yubikey_eeget_U2Fprivlen(ptr); //Get the length for U2F private
+      int length = addr[0] | (addr[1] << 8);
+      Serial.println(length);
+      
+      yubikey_eeget_U2Fprivpos(ptr); //Get the starting position for U2F private
+      //Set adr to position of U2F private in flash
+      unsigned long address = addr[1] | (addr[0] << 8L);
+      uintptr_t adr = address;
+      unsigned long sector = 0x00;
+      Serial.println(address);
+      for( int z = 0; z <= length; z=z+4, adr=adr+4){
+     //Write long to sector 
+        Serial.println();
+        Serial.printf("Writing to Sector 0x%X, value 0x%X ", adr, sector);
+        if ( flashProgramWord((unsigned long*)adr, &sector) ) Serial.printf("NOT ");
+        //Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)adr));
+      }
       blink(3);
       return;
 }
@@ -1334,10 +1352,49 @@ void WIPEU2FPRIV (byte *buffer)
 void SETU2FCERT (byte *buffer)
 {
       Serial.println("OKSETU2FCERT MESSAGE RECEIVED");
-      char cmd = buffer[4]; //cmd or continuation
-#ifdef DEBUG
-      Serial.println((int)cmd, HEX);
-#endif
+  //Set pointer to first empty flash sector
+  uintptr_t adr = flashFirstEmptySector();
+  int length = buffer[5] | (buffer[6] << 8);
+    if(length <= CERTMAXLENGTH){ 
+    Serial.print("Length of certificate = ");
+    Serial.println(length);
+    yubikey_eeset_U2Fcertlen((buffer + 5)); //length is number of bytes
+    }
+    else {
+      return;
+    }
+  uint8_t addr[2];
+  uint8_t *ptr;
+      addr[0] = (int)((adr >> 8) & 0XFF); //convert long to array
+      addr[1] = (int)((adr & 0XFF));
+  ptr = addr;
+  yubikey_eeset_U2Fcertpos(ptr); //Set the starting position for U2F Cert
+
+
+  //Write packets to flash up to reaching length of certificate
+
+  int n;
+  int x;
+  int written = 0;
+  while(written <= length){ 
+    n = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
+    if (n > 0) {  
+      Serial.print(F("\n\nReceived packet"));
+      for (x=0; x<64; x++) {
+          Serial.print(recv_buffer[x], HEX);
+      }
+  
+      for( int z = 0; z <= 64; z=z+4, adr=adr+4, written=written+4){
+         unsigned long sector = buffer[z] | (buffer[z+1] << 8L) | (buffer[z+2] << 16L) | (buffer[z+3] << 24L);
+     //Write long to empty sector 
+        Serial.println();
+        Serial.printf("Writing to Sector 0x%X, value 0x%X ", adr, sector);
+        if ( flashProgramWord((unsigned long*)adr, &sector) ) Serial.printf("NOT ");
+        //Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)adr));
+      }
+  }
+  }
+  
       blink(3);
       return;
 }
@@ -1345,32 +1402,26 @@ void SETU2FCERT (byte *buffer)
 void WIPEU2FCERT (byte *buffer)
 {
       Serial.println("OKWIPEU2FCERT MESSAGE RECEIVED");
-      char cmd = buffer[4]; //cmd or continuation
-#ifdef DEBUG
-      Serial.println((int)cmd, HEX);
-#endif
-      blink(3);
-      return;
-}
-
-void SETYUBI (byte *buffer)
-{
-      Serial.println("OKSETYUBI MESSAGE RECEIVED");
-      char cmd = buffer[4]; //cmd or continuation
-#ifdef DEBUG
-      Serial.println((int)cmd, HEX);
-#endif
-      blink(3);
-      return;
-}
-
-void WIPEYUBI (byte *buffer)
-{
-      Serial.println("OKWIPEYUBI MESSAGE RECEIVED");
-      char cmd = buffer[4]; //cmd or continuation
-#ifdef DEBUG
-      Serial.println((int)cmd, HEX);
-#endif
+      uint8_t addr[2];
+      uint8_t *ptr;
+      ptr = addr;
+      yubikey_eeget_U2Fcertlen(ptr); //Get the length for U2F Cert
+      int length = addr[0] | (addr[1] << 8);
+      Serial.println(length);
+      
+      yubikey_eeget_U2Fcertpos(ptr); //Get the starting position for U2F Cert
+      //Set adr to position of U2F Cert in flash
+      unsigned long address = addr[1] | (addr[0] << 8L);
+      uintptr_t adr = address;
+      unsigned long sector = 0x00;
+      Serial.println(address);
+      for( int z = 0; z <= length; z=z+4, adr=adr+4){
+     //Write long to sector 
+        Serial.println();
+        Serial.printf("Writing to Sector 0x%X, value 0x%X ", adr, sector);
+        if ( flashProgramWord((unsigned long*)adr, &sector) ) Serial.printf("NOT ");
+        //Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)adr));
+      }
       blink(3);
       return;
 }

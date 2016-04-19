@@ -13,12 +13,11 @@
 #include "sha1.h"
 #include "totp.h"
 #include "Time.h"
-#include "okconfig.h"
-//#include "u2f.h"
+#include "onlykey.h"
+#include "flashkinetis.h"
+#include <RNG.h>
 
-
-
-//Teensy PIN assignments
+//PIN assignments
 /*************************************/
 #define BLINKPIN   13
 #define TOUCHPIN1    01
@@ -91,46 +90,9 @@ static int u2f_button = 0;
 
 //Yubikey 
 /*************************************/
-yubikey_ctx_st1 ctx1;
+yubikey_ctx_st ctx;
 
 /*************************************/
-
-
-
-//Random Number Generator
-/*************************************/
-extern "C" {
-
-  static int RNG(uint8_t *dest, unsigned size) {
-    // Use the least-significant bits from the ADC for an unconnected pin (or connected to a source of
-    // random noise). This can take a long time to generate random data if the result of analogRead(0)
-    // doesn't change very frequently.
-    while (size) {
-      uint8_t val = 0;
-      for (unsigned i = 0; i < 8; ++i) {
-        int init = analogRead(0);
-        int count = 0;
-        while (analogRead(0) == init) {
-          ++count;
-        }
-
-        if (count == 0) {
-          val = (val << 1) | (init & 0x01);
-        } else {
-          val = (val << 1) | (count & 0x01);
-        }
-      }
-      *dest = val;
-      ++dest;
-      --size;
-    }
-    // NOTE: it would be a good idea to hash the resulting random data using SHA-256 or similar.
-    return 1;
-  }
-
-}  // extern "C"
-/*************************************/
-
 
 //Arduino Setup 
 /*************************************/
@@ -153,70 +115,72 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
   static int count;
-  yubikey_incr_timestamp1(&ctx1);
+  yubikey_incr_timestamp(&ctx);
 
 
 
   //u2f.recvmsg(); //TODO move this to inside if statement below
   //OK.recvmsg(); //TODO move this to inside if statement below
   if (password.evaluate() == true) {
-    uECC_set_rng(&RNG); //seed random number generator
+    uECC_set_rng(&RNG2); //seed random number generator
     
   }
   
-  if (touchRead(TOUCHPIN1) > 1000) {
+  // Stir the touchread values into the entropy pool.
+  int touchread1 = touchRead(TOUCHPIN1);
+  RNG.stir((uint8_t *)touchread1, sizeof(touchread1));
+  int touchread2 = touchRead(TOUCHPIN2);
+  RNG.stir((uint8_t *)touchread2, sizeof(touchread2));
+  int touchread3 = touchRead(TOUCHPIN3);
+  RNG.stir((uint8_t *)touchread3, sizeof(touchread3));
+  int touchread4 = touchRead(TOUCHPIN4);
+  RNG.stir((uint8_t *)touchread4, sizeof(touchread4));
+  int touchread5 = touchRead(TOUCHPIN5);
+  RNG.stir((uint8_t *)touchread5, sizeof(touchread5));
+  int touchread6 = touchRead(TOUCHPIN6);
+  RNG.stir((uint8_t *)touchread6, sizeof(touchread6));
+
+  if (touchread1 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '5';
-    Serial.println("Button #5 Pressed, Sensor reads ");
-    Serial.println(touchRead(TOUCHPIN1));
-    //delay(5);
-  } 
-    else if (touchRead(TOUCHPIN2) > 1000) {
+    Serial.println(touchread1);
+  }      
+    else if (touchread2 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '2';
-    //Serial.println("Button #2 Pressed, Sensor reads ");
-    //Serial.println(touchRead(TOUCHPIN2));
-    //delay(5);
+    Serial.println(touchread2);
   } 
-    else if (touchRead(TOUCHPIN3) > 1000) {
+    else if (touchread3 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '1';
-    //Serial.println("Button #1 Pressed, Sensor reads ");
-    //Serial.println(touchRead(TOUCHPIN3));
-    //delay(5);
+    Serial.println(touchread3);
   } 
-   else if (touchRead(TOUCHPIN4) > 1000) {
+   else if (touchread4 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '3';
-    //Serial.println("Button #3 Pressed, Sensor reads ");
-    //Serial.println(touchRead(TOUCHPIN4));
-    //delay(5);
+    Serial.println(touchread4);
   } 
-   else if (touchRead(TOUCHPIN5) > 1000) {
+   else if (touchread5 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '4';
-    //Serial.println("Button #4 Pressed, Sensor reads ");
-    //Serial.println(touchRead(TOUCHPIN5));
-    //delay(5);
+    Serial.println(touchread5);
   } 
-   else if (touchRead(TOUCHPIN6) > 1000) {
+   else if (touchread6 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '6';
-    //Serial.println("Button #6 Pressed, Sensor reads ");
-    //Serial.println(touchRead(TOUCHPIN6));
-    //delay(5);
+    Serial.println(touchread6);
   } 
 
   else {
@@ -251,7 +215,7 @@ void sendKey(Task* me) {
 //Keypad passcode checker
 /*************************************/
 void payload(int duration) {
-   OK.blink(1);
+   blink(1);
    if (password.evaluate() != true) {
      if (pass_keypress < MAX_PASSWORD_LENGTH) {
         password.append(button_selected);
@@ -262,7 +226,7 @@ void payload(int duration) {
         pass_keypress++;   
       } else {
         failed_attempts++;
-        OK.blink(3);
+        blink(3);
         Serial.print("Login Failed, there are ");
         Serial.print(10 - failed_attempts);
         Serial.println(" remaining attempts before a factory reset will occur");
@@ -295,7 +259,7 @@ void gen_token(void) {
   
   long GMT;
   char* newcode;
-  OK.blink(1);
+  blink(1);
   char buffer[32];
   switch (button_selected) {
     case '1': //TODO - Future code commented out below
@@ -391,7 +355,7 @@ void gen_static(void) {
   switch (button_selected) {
     case '1':
       digitalWrite(BLINKPIN, LOW);
-      yubikey_eeget_static1 ((uint8_t *) buffer);
+      //yubikey_eeget_password ((uint8_t *) buffer);
       yubikey_modhex_encode (otp, buffer, 16);
       Serial.print("Gen static slot ");
       Serial.println(button_selected-'0');
@@ -466,20 +430,20 @@ void YubikeyInit() {
   time1 = micros();
 
   ptr = aeskey1;
-  yubikey_eeget_aeskey1(ptr);
+  yubikey_eeget_aeskey(ptr);
   yubikey_hex_encode(aes_id1, (char *)aeskey1, 6);
   
   ptr = (uint8_t*) &counter;
-  yubikey_eeget_counter1(ptr);
+  yubikey_eeget_counter(ptr);
 
   
   ptr = privID1;
-  yubikey_eeget_private1(ptr);
+  yubikey_eeget_private(ptr);
   yubikey_hex_encode(private_id1, (char *)privID1, 6);
 
   
   ptr = pubID1;
-  yubikey_eeget_public1(ptr);
+  yubikey_eeget_public(ptr);
   yubikey_hex_encode(public_id1, (char *)pubID1, 6);
 
       Serial.println("aeskey1");
@@ -498,13 +462,13 @@ void YubikeyInit() {
   
  
   
-  yubikey_init1(&ctx1, aeskey1, public_id1, private_id1, counter, time, seed1);
+  yubikey_init1(&ctx, aeskey1, public_id1, private_id1, counter, time, seed1);
  
-  yubikey_incr_counter1(&ctx1);
+  yubikey_incr_counter(&ctx);
  
   
-  ptr = (uint8_t*) &(ctx1.counter1);
-  yubikey_eeset_counter1(ptr);
+  ptr = (uint8_t*) &(ctx.counter);
+  yubikey_eeset_counter(ptr);
   
   time2 = micros();
   Serial.print("done in ");
@@ -526,23 +490,23 @@ void YubikeyEEInit() {
 
   memset (&buffer, 0, 20);
   yubikey_modhex_decode ((char *) &buffer, "idhgelivduibtjjeuvrggeeiluuictrf", 16);
-  yubikey_eeset_aeskey1(buffer, 16);
+  //yubikey_eeset_aeskey1(buffer, 16);
  
 
   ptr = (uint8_t *) &counter;
-  yubikey_eeset_counter1(ptr);
+  //yubikey_eeset_counter1(ptr);
   
   memset (&buffer, 0, 20);
   yubikey_modhex_decode ((char *) &buffer, "hdulurfvtubk", 6);
-  yubikey_eeset_private1(buffer);
+  //yubikey_eeset_private1(buffer);
 
   memset (&buffer, 0, 20);
   yubikey_modhex_decode ((char *) &buffer, "vvncrccvidvh", 6);
-  yubikey_eeset_public1(buffer, 6);
+  //yubikey_eeset_public1(buffer, 6);
  
   memset (&buffer, 0, 20);
   yubikey_modhex_decode ((char *) &buffer, "OpenKey", 16);
-  yubikey_eeset_static1(buffer, 16);
+  //yubikey_eeset_password(buffer, 16);
  
 
   time2 = micros();
@@ -551,66 +515,66 @@ void YubikeyEEInit() {
   Serial.println(" micros");
 
   
-  Serial.print(EEpos_aeskey1);
+  Serial.print(EEpos_aeskey);
   Serial.println("= aeskey1 pos");
 
-  Serial.print(EEpos_counter1);
+  Serial.print(EEpos_counter);
   Serial.println("= counter1 pos");
-  Serial.print(EElen_counter1);
+  Serial.print(EElen_counter);
     Serial.println("= counter1 len");
 
-  Serial.print(EEpos_private1);
+  Serial.print(EEpos_private);
   Serial.println("= private1 pos");
-  Serial.print(EElen_private1);
+  Serial.print(EElen_private);
     Serial.println("= private1 len");
     
-  Serial.print(EEpos_public1);
+  Serial.print(EEpos_public);
     Serial.println("= public1 pos");
-  Serial.print(EElen_public1);
+  Serial.print(EElen_public);
     Serial.println("= public1 len");
     
-  Serial.print(EEpos_static1);
+  Serial.print(EEpos_password1);
     Serial.println("= static1 pos");
-  Serial.print(EElen_static1);
+  Serial.print(EElen_password);
     Serial.println("= static1 len");
     
-  Serial.print(EEpos_keylen1);
+  Serial.print(EEpos_keylen);
   Serial.println("= keylen1 pos");
-  Serial.print(EElen_keylen1);
+  Serial.print(EElen_keylen);
   Serial.println("= keylen1 len");
-  yubikey_eeget_keylen1(&len);
+  yubikey_eeget_keylen(&len);
   Serial.print("> ");
   Serial.println(len);
 
-  Serial.print(EEpos_ctrlen1);
+  Serial.print(EEpos_ctrlen);
   Serial.println("=ctrlen1 pos");
-  Serial.print(EElen_ctrlen1);
+  Serial.print(EElen_ctrlen);
     Serial.println("=ctrlen1 len");
-  yubikey_eeget_ctrlen1(&len);
+  yubikey_eeget_ctrlen(&len);
   Serial.print("> ");
   Serial.println(len);
 
-  Serial.print(EEpos_prvlen1);
+  Serial.print(EEpos_prvlen);
   Serial.println("= prvlen1 pos");
-  Serial.print(EElen_prvlen1);
+  Serial.print(EElen_prvlen);
     Serial.println("= prvlen1 len");
-  yubikey_eeget_prvlen1(&len);
+  yubikey_eeget_prvlen(&len);
   Serial.print("> ");
   Serial.println(len);
 
-  Serial.print(EEpos_publen1);
+  Serial.print(EEpos_publen);
   Serial.println("= publen1 pos");
-  Serial.print(EElen_publen1);
+  Serial.print(EElen_publen);
     Serial.println("= publen1 len");
-  yubikey_eeget_publen1(&len);
+  yubikey_eeget_publen(&len);
   Serial.print("> ");
   Serial.println(len);
 
-  Serial.print(EEpos_statlen1);
+  Serial.print(EEpos_password1len);
   Serial.println("= statlen1 pos");
-  Serial.print(EElen_statlen1);
+  Serial.print(EElen_passwordlen);
     Serial.println("= statlen1 len");
-  yubikey_eeget_statlen1(&len);
+  yubikey_eeget_passwordlen1(&len);
   Serial.print("> ");
   Serial.println(len);
 

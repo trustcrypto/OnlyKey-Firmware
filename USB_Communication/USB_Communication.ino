@@ -988,10 +988,13 @@ void loop() {
 void SETPIN (byte *buffer)
 {
       Serial.println("OKSETPIN MESSAGE RECEIVED");
-      char cmd = buffer[4]; //cmd or continuation
-#ifdef DEBUG
-      Serial.println((int)cmd, HEX);
-#endif
+      uint8_t pin[32];
+      uint8_t *ptr;
+      //char pinid[32+1];
+
+    if (yubikey_eeget_pinhash(ptr) == 0x00) {
+      Serial.println("PIN Not Set");
+    }
       blink(3);
       return;
 }
@@ -1016,6 +1019,7 @@ void SETTIME (byte *buffer)
       Serial.print(F("Current Time Set to: "));
       digitalClockDisplay();  
       //TODO Check if PIN is set first
+      //if pin set 
      resp_buffer[0] = 0x49;
       resp_buffer[1] = 0x4e;
       resp_buffer[2] = 0x49;
@@ -1027,7 +1031,22 @@ void SETTIME (byte *buffer)
       resp_buffer[8] = 0x5a;
       resp_buffer[9] = 0x45;
       resp_buffer[10] = 0x44;
-      
+      //else
+      /*
+      resp_buffer[0] = 0x55;
+      resp_buffer[1] = 0x4e;
+      resp_buffer[0] = 0x49;
+      resp_buffer[1] = 0x4e;
+      resp_buffer[2] = 0x49;
+      resp_buffer[3] = 0x54;
+      resp_buffer[4] = 0x49;
+      resp_buffer[5] = 0x41;
+      resp_buffer[6] = 0x4c;
+      resp_buffer[7] = 0x49;
+      resp_buffer[8] = 0x5a;
+      resp_buffer[9] = 0x45;
+      resp_buffer[10] = 0x44;
+      */
       RawHID.send(resp_buffer, 0);
       blink(3);
       return;

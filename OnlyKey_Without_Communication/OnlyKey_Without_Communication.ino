@@ -1,6 +1,4 @@
-// Six Button Yubikey, Google Authenticator, and U2F simulator using Teensy 3.x capacitive touch sensors
-//
-// use touch sensor on Pins 01, 15, 16, 17, 22, and 23 as key press
+// OnlyKey Alpha
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -15,7 +13,9 @@
 #include "Time.h"
 #include "onlykey.h"
 #include "flashkinetis.h"
+#include <Crypto.h>
 #include <RNG.h>
+#include <transistornoisesource.h>
 
 //PIN assignments
 /*************************************/
@@ -28,14 +28,12 @@
 #define TOUCHPIN6    23
 /*************************************/
 
-//2FA Slot Assignments
+//RNG assignments
 /*************************************/
-#define Yubikey1    '1'  //Slot 1
-#define Yubikey2    '2'  //Slot2
-#define TOTP1    '3'  //Slot3
-#define TOTP2    '4'  //Slot4
-#define TOTP3    '5'  //Slot5
-#define U2F   '6'  //Slot6
+#define RNG_APP_TAG "OnlyKey"
+// Noise source to seed the random number generator.
+TransistorNoiseSource noise(A1);
+bool calibrating = false;
 /*************************************/
 
 //SoftTimer
@@ -49,13 +47,14 @@ char otp[YUBIKEY_OTP_MAXSIZE];
 char *pos;
 /*************************************/
 
-//Keypad password variables and set password
+//Keypad password assignments
 /*************************************/
 static int button_selected = 0;    //Key selected 1-6
 static int pass_keypress = 1;  //The number key presses in current password attempt
-static int failed_attempts = 0; //Need to have this counter stored in EEPROM and flashSecurityLockBits enabled
-Password password = Password( "3436353" );
-Password selfdestruct = Password( "6565656" );
+static int session_attempts = 0; //The number of password attempts this session
+static bool firsttime = true;
+static bool unlocked = false;
+extern Password password;
 /*************************************/
 
 //Google Auth key converted from base 32 to hex
@@ -84,14 +83,16 @@ uint8_t hmacKey11[] = {0x60, 0xAF, 0x89, 0x87, 0x65, 0xF0, 0x39, 0xAC, 0xF9, 0x5
 TOTP totp11 = TOTP(hmacKey11, 10);
 uint8_t hmacKey12[] = {0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72, 0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72};
 TOTP totp12 = TOTP(hmacKey12, 20);
+/*************************************/
 
+//U2F assignments
 /*************************************/
 static int u2f_button = 0;
+/*************************************/
 
 //Yubikey 
 /*************************************/
 yubikey_ctx_st ctx;
-
 /*************************************/
 
 //Arduino Setup 
@@ -101,14 +102,14 @@ void setup() {
   //while (!Serial) ; // wait for serial
   delay(1000);
   pinMode(BLINKPIN, OUTPUT);
-  //uncomment YubikeyEEInit to overwrite keys and counters
-  //YubikeyEEInit();
+  // Initialize the random number generator.
+  RNG.begin(RNG_APP_TAG, EEpos_noncehash);
   YubikeyInit(); //Set keys and counters
   SoftTimer.add(&taskKey);
 }
 /*************************************/
 
-//Main Loop to Read Key Press Using Capacitive Touch
+//Main Loop, Read Key Press Using Capacitive Touch
 /*************************************/
 void checkKey(Task* me) {
   static int key_press = 0;
@@ -118,69 +119,68 @@ void checkKey(Task* me) {
   yubikey_incr_timestamp(&ctx);
 
 
-
-  //u2f.recvmsg(); //TODO move this to inside if statement below
-  //OK.recvmsg(); //TODO move this to inside if statement below
-  if (password.evaluate() == true) {
+  rngloop();
+  recvmsg();
+  if (unlocked == true) {
     uECC_set_rng(&RNG2); //seed random number generator
     
   }
   
   // Stir the touchread values into the entropy pool.
-  int touchread1 = touchRead(TOUCHPIN1);
-  RNG.stir((uint8_t *)touchread1, sizeof(touchread1));
-  int touchread2 = touchRead(TOUCHPIN2);
-  RNG.stir((uint8_t *)touchread2, sizeof(touchread2));
-  int touchread3 = touchRead(TOUCHPIN3);
-  RNG.stir((uint8_t *)touchread3, sizeof(touchread3));
-  int touchread4 = touchRead(TOUCHPIN4);
-  RNG.stir((uint8_t *)touchread4, sizeof(touchread4));
-  int touchread5 = touchRead(TOUCHPIN5);
-  RNG.stir((uint8_t *)touchread5, sizeof(touchread5));
-  int touchread6 = touchRead(TOUCHPIN6);
-  RNG.stir((uint8_t *)touchread6, sizeof(touchread6));
+  unsigned int touchread1 = touchRead(TOUCHPIN1);
+  RNG.stir((uint8_t *)touchread1, sizeof(touchread1), sizeof(touchread1) * 2);
+  unsigned int touchread2 = touchRead(TOUCHPIN2);
+  RNG.stir((uint8_t *)touchread2, sizeof(touchread2), sizeof(touchread2) * 2);
+  unsigned int touchread3 = touchRead(TOUCHPIN3);
+  RNG.stir((uint8_t *)touchread3, sizeof(touchread3), sizeof(touchread3) * 2);
+  unsigned int touchread4 = touchRead(TOUCHPIN4);
+  RNG.stir((uint8_t *)touchread4, sizeof(touchread4), sizeof(touchread4) * 2);
+  unsigned int touchread5 = touchRead(TOUCHPIN5);
+  RNG.stir((uint8_t *)touchread5, sizeof(touchread5), sizeof(touchread5) * 2);
+  unsigned int touchread6 = touchRead(TOUCHPIN6);
+  RNG.stir((uint8_t *)touchread6, sizeof(touchread6), sizeof(touchread6) * 2);
 
   if (touchread1 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '5';
-    Serial.println(touchread1);
+    //Serial.println(touchread1);
   }      
     else if (touchread2 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '2';
-    Serial.println(touchread2);
+    //Serial.println(touchread2);
   } 
     else if (touchread3 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '1';
-    Serial.println(touchread3);
+    //Serial.println(touchread3);
   } 
    else if (touchread4 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '3';
-    Serial.println(touchread4);
+    //Serial.println(touchread4);
   } 
    else if (touchread5 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '4';
-    Serial.println(touchread5);
+    //Serial.println(touchread5);
   } 
    else if (touchread6 > 1000) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '6';
-    Serial.println(touchread6);
+    //Serial.println(touchread6);
   } 
 
   else {
@@ -196,7 +196,7 @@ void checkKey(Task* me) {
 }
 /*************************************/
 
-//Type out values
+//Type out on Keyboard
 /*************************************/
 void sendKey(Task* me) {
   if (*pos) {
@@ -216,8 +216,35 @@ void sendKey(Task* me) {
 /*************************************/
 void payload(int duration) {
    blink(1);
-   if (password.evaluate() != true) {
-     if (pass_keypress < MAX_PASSWORD_LENGTH) {
+   extern int PINSET;
+   uint8_t pass_attempts[1];
+   uint8_t *ptr;
+   ptr = pass_attempts;
+
+    if (session_attempts >= 3) { //Limit 3 password attempts per session to make sure that someone does not accidentally wipe device
+    Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
+    Serial.println();
+    return;
+    }
+   
+   if (firsttime==true) //Get failed login counter from eeprom and increment for new login attempt
+   {
+   yubikey_eeget_failedlogins (ptr);
+   pass_attempts[0]++;
+   Serial.println(pass_attempts[0]);
+   if (pass_attempts[0] >= 10) {
+   factorydefault();
+   pass_attempts[0] = 0;
+   return;
+   }
+   //Serial.print(pass_attempts[0]); //TODO Remove Debug
+   yubikey_eeset_failedlogins (ptr); 
+   firsttime = false;
+   }
+   
+   if (password.hashevaluate() != true) { //TODO remove after pin set complete
+     
+       if (pass_keypress <= MAX_PASSWORD_LENGTH) {
         password.append(button_selected);
         Serial.print("password appended with ");
         Serial.println(button_selected-'0');
@@ -225,18 +252,28 @@ void payload(int duration) {
         Serial.println(pass_keypress);
         pass_keypress++;   
       } else {
-        failed_attempts++;
+        firsttime = true;
+        session_attempts++;
         blink(3);
         Serial.print("Login Failed, there are ");
-        Serial.print(10 - failed_attempts);
+        yubikey_eeget_failedlogins (ptr);
+        Serial.print(9 - pass_attempts[0]);
         Serial.println(" remaining attempts before a factory reset will occur");
         Serial.println("WARNING: This will render all device information unrecoverable");
         password.reset(); //reset the guessed password to NULL
         pass_keypress=1;
       }
-       if (failed_attempts >= 10) factorydefault(); //TODO Factory Default function to wipe sensitive flash and EEPROM
-       if (selfdestruct.evaluate() == true) factorydefault(); //TODO Self Destruct PIN
+       
+      // if (selfdestruct.evaluate() == true) factorydefault(); //TODO Self Destruct PIN
   } else {
+    yubikey_eeset_failedlogins(0);
+    unlocked = true;
+        
+    if (PINSET > 0) {
+       password.append(button_selected);
+       
+       return;
+     }
     *otp = '\0';
     if (duration <= 10) gen_token();
     if (duration >= 11) gen_static();
@@ -248,10 +285,19 @@ void payload(int duration) {
 }
 /*************************************/
 
-void factorydefault(void) {
+void factorydefault() {
   //To do add function from flashKinetis to wipe secure flash and eeprom values and flashQuickUnlockBits 
+        uint8_t temp [32];
+        uint8_t *ptr;
+        for (int i = 0; i < 32; i++)
+        {
+        temp[i] = 0x00;
+        }
+        ptr=temp;
+        yubikey_eeset_pinhash (ptr);
+        yubikey_eeset_noncehash (ptr);
+        yubikey_eeset_failedlogins (0);
         Serial.println("factory reset has been completed");
-        failed_attempts=0;
 }
 /*************************************/
 
@@ -320,7 +366,7 @@ void gen_token(void) {
       break;
 
     case '4':
-
+      Serial.print("Slot 4");
       break;
 
     case '5':
@@ -340,6 +386,7 @@ void gen_token(void) {
       break;
     case '6':
       //u2f_button = 1;
+            Serial.print("Slot 6");
       break;
     default:
       break;
@@ -586,6 +633,15 @@ void YubikeyEEInit() {
 
 
 
+void rngloop() {
+    // Track changes to the calibration state on the noise source.
+    bool newCalibrating = noise.calibrating();
+    if (newCalibrating != calibrating) {
+        calibrating = newCalibrating;
+    }
+    // Perform regular housekeeping on the random number generator.
+    RNG.loop();
+}
 
 
 

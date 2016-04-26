@@ -985,16 +985,61 @@ void loop() {
   }
 }
 
+int PINSET = 0;
+uint8_t pinhash[32];
+uint8_t *ptr;
+char guess [32];
+
 void SETPIN (byte *buffer)
 {
       Serial.println("OKSETPIN MESSAGE RECEIVED");
-      uint8_t pin[32];
-      uint8_t *ptr;
-      //char pinid[32+1];
-
-    if (yubikey_eeget_pinhash(ptr) == 0x00) {
-      Serial.println("PIN Not Set");
-    }
+    switch (PINSET) {} {
+      case 0:
+      Serial.println("Enter PIN");
+      PINSET = 1;
+      return;
+      case 1:
+      if(strlen(guess) > 6 && strlen(guess) < 11)
+      {
+        Serial.println("Storing PIN");
+        Serial.println(guess);  //TODO remove this debug
+        password.set(guess);
+        password.reset();
+      }
+      else
+      {
+        Serial.println("Error PIN is not between 7 - 10 characters");
+        password.reset();
+      }
+      PINSET = 2;
+      return;
+      case 2:
+      Serial.println("Confirm PIN");
+      PINSET = 3;
+      return;
+      case 3:
+       if(strlen(guess) > 6 && strlen(guess) < 11)
+      {
+        Serial.println("Storing PIN");
+        Serial.println(guess); //TODO remove this debug
+          if (password.evaluate() == true) {
+            Serial.println("Both PINs Match");
+            //TODO hash and store PIN
+            password.reset();
+          }
+          else {
+            Serial.println("Error PINs Don't Match");
+            password.reset();
+          }
+      }
+      else
+      {
+        Serial.println("Error PIN is not between 7 - 10 characters");
+        password.reset();
+      }
+      PINSET = 0;
+      return;
+      
       blink(3);
       return;
 }
@@ -1491,3 +1536,7 @@ void blink(int times){
     delay(100);
   }
 }
+
+
+
+

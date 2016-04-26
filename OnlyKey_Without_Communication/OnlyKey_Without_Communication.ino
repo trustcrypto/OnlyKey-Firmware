@@ -32,7 +32,7 @@
 /*************************************/
 #define RNG_APP_TAG "OnlyKey"
 // Noise source to seed the random number generator.
-TransistorNoiseSource noise(A1);
+TransistorNoiseSource noise(A0);
 bool calibrating = false;
 /*************************************/
 

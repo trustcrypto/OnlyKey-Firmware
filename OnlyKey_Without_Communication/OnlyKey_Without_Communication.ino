@@ -53,7 +53,7 @@ static int button_selected = 0;    //Key selected 1-6
 static int pass_keypress = 1;  //The number key presses in current password attempt
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
-static bool unlocked = false;
+static bool unlocked = false; //To bypass PIN entry for testing this can be set true
 extern Password password;
 /*************************************/
 
@@ -105,6 +105,40 @@ void setup() {
   // Initialize the random number generator.
   RNG.begin(RNG_APP_TAG, EEpos_noncehash);
   YubikeyInit(); //Set keys and counters
+  
+  //TODO remove this rescue function once flash security is tested
+  for (int i = 0; i < 100; i++)
+  {
+    Serial.print(".");
+    switch(Serial.read()) {
+    case 'a':
+      Serial.print("FTFL_FSEC=0x");
+      Serial.println(FTFL_FSEC,HEX);
+    break;
+    case 'b':
+      //FTFL_FSEC!=0x64;
+      flashSecurityLockBits(254);
+      Serial.print("Flash security bits ");
+      Serial.println("written successfully");
+      Serial.println("\nHit the program button to very basically reset Teensy now.");
+    break;
+    case 'c':
+      Serial.println("By the time you read this it should be safe");
+      Serial.println("to hit the program button to upload a new (or");
+      Serial.println("the previous) sketch. Teensy will not be");
+      Serial.println("responsive again until you do.");
+      flashQuickUnlockBits();
+     break;
+  }
+  delay(70);
+  }
+  
+  Serial.print("FTFL_FSEC=0x");
+  Serial.println(FTFL_FSEC,HEX);
+  if(FTFL_FSEC!=0x64) { 
+    
+    unlocked = true; //Flash is not protected, First time use
+  }
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -116,14 +150,14 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
   static int count;
-  yubikey_incr_timestamp(&ctx);
+  
 
 
-  rngloop();
-  recvmsg();
+  rngloop(); //
   if (unlocked == true) {
-    uECC_set_rng(&RNG2); //seed random number generator
-    
+    recvmsg();
+    uECC_set_rng(&RNG2); 
+    yubikey_incr_timestamp(&ctx);
   }
   
   // Stir the touchread values into the entropy pool.
@@ -231,26 +265,42 @@ void payload(int duration) {
    {
    yubikey_eeget_failedlogins (ptr);
    pass_attempts[0]++;
-   Serial.println(pass_attempts[0]);
+   //Serial.println(pass_attempts[0]);
    if (pass_attempts[0] >= 10) {
    factorydefault();
    pass_attempts[0] = 0;
    return;
    }
-   //Serial.print(pass_attempts[0]); //TODO Remove Debug
    yubikey_eeset_failedlogins (ptr); 
    firsttime = false;
    }
    
-   if (password.hashevaluate() != true) { //TODO remove after pin set complete
-     
-       if (pass_keypress <= MAX_PASSWORD_LENGTH) {
+   if (unlocked == true || password.hashevaluate() == true) { 
+        yubikey_eeset_failedlogins(0);
+        unlocked = true;
+      if (PINSET > 0) {
+       password.append(button_selected);
+       return;
+        }
+      *otp = '\0';
+      if (duration <= 10) gen_token();
+      if (duration >= 11) gen_static();
+      pos = otp;
+      Keyboard.begin();
+      SoftTimer.remove(&taskKey);
+      SoftTimer.add(&taskKB);
+  }
+       
+      // if (selfdestruct.evaluate() == true) factorydefault(); //TODO Self Destruct PIN
+   else {
+    if (pass_keypress <= MAX_PASSWORD_LENGTH) {
         password.append(button_selected);
         Serial.print("password appended with ");
         Serial.println(button_selected-'0');
         Serial.print("Number of keys entered for this passcode = ");
         Serial.println(pass_keypress);
-        pass_keypress++;   
+        pass_keypress++; 
+        return;  
       } else {
         firsttime = true;
         session_attempts++;
@@ -262,26 +312,9 @@ void payload(int duration) {
         Serial.println("WARNING: This will render all device information unrecoverable");
         password.reset(); //reset the guessed password to NULL
         pass_keypress=1;
+        return;
       }
-       
-      // if (selfdestruct.evaluate() == true) factorydefault(); //TODO Self Destruct PIN
-  } else {
-    yubikey_eeset_failedlogins(0);
-    unlocked = true;
-        
-    if (PINSET > 0) {
-       password.append(button_selected);
-       
-       return;
-     }
-    *otp = '\0';
-    if (duration <= 10) gen_token();
-    if (duration >= 11) gen_static();
-  }
-  pos = otp;
-  Keyboard.begin();
-  SoftTimer.remove(&taskKey);
-  SoftTimer.add(&taskKB);
+   }
 }
 /*************************************/
 
@@ -297,6 +330,7 @@ void factorydefault() {
         yubikey_eeset_pinhash (ptr);
         yubikey_eeset_noncehash (ptr);
         yubikey_eeset_failedlogins (0);
+        flashQuickUnlockBits();
         Serial.println("factory reset has been completed");
 }
 /*************************************/

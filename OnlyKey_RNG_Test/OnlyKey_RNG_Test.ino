@@ -95,6 +95,7 @@ static int u2f_button = 0;
 yubikey_ctx_st ctx;
 /*************************************/
 
+unsigned long previousMillis = 0;  
 //Arduino Setup 
 /*************************************/
 void setup() {
@@ -153,11 +154,16 @@ void checkKey(Task* me) {
   uint8_t temp[32];
       uint8_t *ptr;
       ptr = temp;
-
+ 
 
   rngloop(); //
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= 1000) {
+    previousMillis = currentMillis;
   getrng(ptr, 32);
-  Keyboard.println();
+    Keyboard.println();
+  }
+
   if (unlocked == true) {
     recvmsg();
     uECC_set_rng(&RNG2); 
@@ -676,6 +682,7 @@ void rngloop() {
     bool newCalibrating = noise.calibrating();
     if (newCalibrating != calibrating) {
         calibrating = newCalibrating;
+        Serial.println("calibrating");
     }
     // Perform regular housekeeping on the random number generator.
     RNG.loop();

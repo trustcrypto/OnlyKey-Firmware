@@ -139,10 +139,13 @@ void setup() {
   if(FTFL_FSEC==0xDE) { 
     unlocked = true; //Flash is not protected, First time use
     Serial.print("UNLOCKED, FIRST TIME USE");
+    hidprint("UNINITIALIZED");
   }
   if(FTFL_FSEC==0x44) { 
     unlocked = false;
     Serial.print("INITIALIZED");
+    hidprint("INITIALIZED");
+    
   }
   Serial.print(FTFL_FSEC); //TODO remove debug
   rngloop(); //

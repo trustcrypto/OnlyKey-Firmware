@@ -83,7 +83,6 @@ static int button_selected = 0;    //Key selected 1-6
 static int pass_keypress = 1;  //The number key presses in current password attempt
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
-extern bool unlocked = false; //To bypass PIN entry for testing this can be set true
 extern Password password;
 /*************************************/
 
@@ -135,12 +134,19 @@ void setup() {
   // Initialize the random number generator with stored NONCE and device MAC
   read_mac();
   RNG.begin((char*)mac, EEpos_noncehash);
-  YubikeyInit(); //Set keys and counters
-  
+  delay(7000);
   //TODO fix should be 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
     unlocked = true; //Flash is not protected, First time use
+    Serial.print("UNLOCKED, FIRST TIME USE");
   }
+  if(FTFL_FSEC==0x44) { 
+    unlocked = false;
+    Serial.print("INITIALIZED");
+  }
+  Serial.print(FTFL_FSEC); //TODO remove debug
+  rngloop(); //
+  YubikeyInit(); //Set keys and counters
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -157,8 +163,10 @@ void checkKey(Task* me) {
   
   if (unlocked == true) {
     recvmsg();
+    if(FTFL_FSEC==0x44) {
     uECC_set_rng(&RNG2); 
     yubikey_incr_timestamp(&ctx);
+    }
   }
   
   // Stir the touchread values into the entropy pool.
@@ -249,12 +257,11 @@ void sendKey(Task* me) {
 //Keypad passcode checker
 /*************************************/
 void payload(int duration) {
-   blink(1);
+   //blink(1); faster without blink
    extern int PINSET;
    uint8_t pass_attempts[1];
    uint8_t *ptr;
    ptr = pass_attempts;
-   flashQuickUnlockBits(); //TODO remove debug
     if (session_attempts >= 3) { //Limit 3 password attempts per session to make sure that someone does not accidentally wipe device
     Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
     Serial.println();
@@ -276,11 +283,13 @@ void payload(int duration) {
    }
    
    if (unlocked == true || password.hashevaluate() == true) { 
-        hidprint("UNLOCKED");
+        hidprint("UNLOCKED     ");
         yubikey_eeset_failedlogins(0);
         unlocked = true;
       if (PINSET > 0) {
        password.append(button_selected);
+       Serial.print("password appended with ");
+        Serial.println(button_selected-'0');
        return;
         }
       *otp = '\0';

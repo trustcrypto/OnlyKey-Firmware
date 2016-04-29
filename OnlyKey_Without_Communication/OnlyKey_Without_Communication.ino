@@ -16,6 +16,7 @@
 #include <Crypto.h>
 #include <RNG.h>
 #include <transistornoisesource.h>
+#include "T3Mac.h"
 
 //PIN assignments
 /*************************************/
@@ -30,7 +31,6 @@
 
 //RNG assignments
 /*************************************/
-#define RNG_APP_TAG "OnlyKey"
 // Noise source to seed the random number generator.
 TransistorNoiseSource noise(A0);
 bool calibrating = false;
@@ -102,13 +102,16 @@ void setup() {
   //while (!Serial) ; // wait for serial
   delay(1000);
   pinMode(BLINKPIN, OUTPUT);
-  // Initialize the random number generator.
-  RNG.begin(RNG_APP_TAG, EEpos_noncehash);
+  // Initialize the random number generator with stored NONCE and device MAC
+  read_mac();
+  RNG.begin((char*)mac, EEpos_noncehash);
   YubikeyInit(); //Set keys and counters
+  
   
   //TODO remove this rescue function once flash security is tested
   for (int i = 0; i < 100; i++)
   {
+    uintptr_t adr = 0x40c;
     Serial.print(".");
     switch(Serial.read()) {
     case 'a':
@@ -116,8 +119,14 @@ void setup() {
       Serial.println(FTFL_FSEC,HEX);
     break;
     case 'b':
-      //FTFL_FSEC!=0x64;
-      flashSecurityLockBits();
+      //FTFL_FSEC=0x64;
+      Serial.println();
+      //flashEraseSector(*adr);
+      //Serial.print("Erased Sector");
+      //Serial.printf(" 0x%X", *((unsigned int*)adr));
+      eraseSecurityLockBits(0xFE);
+      flashQuickUnlockBits();
+      flashSecurityLockBits(0x64);
       Serial.print("Flash security bits ");
       Serial.println("written successfully");
       Serial.println("\nHit the program button to very basically reset Teensy now.");
@@ -130,9 +139,11 @@ void setup() {
       flashQuickUnlockBits();
      break;
   }
-  delay(70);
+  delay(100);
   }
-  
+  Serial.println();
+  uintptr_t adr = 0x40c;
+  Serial.printf(" 0x%X", *((unsigned int*)adr));
   Serial.print("FTFL_FSEC=0x");
   Serial.println(FTFL_FSEC,HEX);
   //TODO fix mass storage write should be 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
@@ -156,8 +167,7 @@ void checkKey(Task* me) {
 
 
   rngloop(); //
-  getrng(ptr, 32);
-  Keyboard.println();
+  
   if (unlocked == true) {
     recvmsg();
     uECC_set_rng(&RNG2); 
@@ -258,7 +268,7 @@ void payload(int duration) {
    uint8_t pass_attempts[1];
    uint8_t *ptr;
    ptr = pass_attempts;
-
+   flashQuickUnlockBits(); //TODO remove debug
     if (session_attempts >= 3) { //Limit 3 password attempts per session to make sure that someone does not accidentally wipe device
     Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
     Serial.println();

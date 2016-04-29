@@ -1,4 +1,34 @@
 // OnlyKey Alpha
+/*
+ * Tim Steiner
+ * Copyright (c) 2016 , CryptoTrust LLC.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *
+ *    * Redistributions in binary form must reproduce the above
+ *      copyright notice, this list of conditions and the following
+ *      disclaimer in the documentation and/or other materials provided
+ *      with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+*/
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -16,6 +46,7 @@
 #include <Crypto.h>
 #include <RNG.h>
 #include <transistornoisesource.h>
+#include "T3Mac.h"
 
 //PIN assignments
 /*************************************/
@@ -30,7 +61,6 @@
 
 //RNG assignments
 /*************************************/
-#define RNG_APP_TAG "OnlyKey"
 // Noise source to seed the random number generator.
 TransistorNoiseSource noise(A0);
 bool calibrating = false;
@@ -47,13 +77,13 @@ char otp[YUBIKEY_OTP_MAXSIZE];
 char *pos;
 /*************************************/
 
-//Keypad password assignments
+//Keypad password set assignments
 /*************************************/
 static int button_selected = 0;    //Key selected 1-6
 static int pass_keypress = 1;  //The number key presses in current password attempt
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
-static bool unlocked = false; //To bypass PIN entry for testing this can be set true
+extern bool unlocked = false; //To bypass PIN entry for testing this can be set true
 extern Password password;
 /*************************************/
 
@@ -95,7 +125,6 @@ static int u2f_button = 0;
 yubikey_ctx_st ctx;
 /*************************************/
 
-unsigned long previousMillis = 0;  
 //Arduino Setup 
 /*************************************/
 void setup() {
@@ -103,41 +132,13 @@ void setup() {
   //while (!Serial) ; // wait for serial
   delay(1000);
   pinMode(BLINKPIN, OUTPUT);
-  // Initialize the random number generator.
-  RNG.begin(RNG_APP_TAG, EEpos_noncehash);
+  // Initialize the random number generator with stored NONCE and device MAC
+  read_mac();
+  RNG.begin((char*)mac, EEpos_noncehash);
   YubikeyInit(); //Set keys and counters
   
-  //TODO remove this rescue function once flash security is tested
-  for (int i = 0; i < 100; i++)
-  {
-    Serial.print(".");
-    switch(Serial.read()) {
-    case 'a':
-      Serial.print("FTFL_FSEC=0x");
-      Serial.println(FTFL_FSEC,HEX);
-    break;
-    case 'b':
-      //FTFL_FSEC!=0x64;
-      //flashSecurityLockBits();
-      Serial.print("Flash security bits ");
-      Serial.println("written successfully");
-      Serial.println("\nHit the program button to very basically reset Teensy now.");
-    break;
-    case 'c':
-      Serial.println("By the time you read this it should be safe");
-      Serial.println("to hit the program button to upload a new (or");
-      Serial.println("the previous) sketch. Teensy will not be");
-      Serial.println("responsive again until you do.");
-      flashQuickUnlockBits();
-     break;
-  }
-  delay(70);
-  }
-  
-  Serial.print("FTFL_FSEC=0x");
-  Serial.println(FTFL_FSEC,HEX);
-  //TODO fix mass storage write should be 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
-  if(FTFL_FSEC!=0x44) { 
+  //TODO fix should be 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
+  if(FTFL_FSEC==0xDE) { 
     unlocked = true; //Flash is not protected, First time use
   }
   SoftTimer.add(&taskKey);
@@ -151,19 +152,9 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
   static int count;
-  uint8_t temp[32];
-      uint8_t *ptr;
-      ptr = temp;
- 
-
+  
   rngloop(); //
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= 1000) {
-    previousMillis = currentMillis;
-  getrng(ptr, 32);
-    Keyboard.println();
-  }
-
+  
   if (unlocked == true) {
     recvmsg();
     uECC_set_rng(&RNG2); 
@@ -255,7 +246,6 @@ void sendKey(Task* me) {
 
 }
 /*************************************/
-
 //Keypad passcode checker
 /*************************************/
 void payload(int duration) {
@@ -264,7 +254,7 @@ void payload(int duration) {
    uint8_t pass_attempts[1];
    uint8_t *ptr;
    ptr = pass_attempts;
-
+   flashQuickUnlockBits(); //TODO remove debug
     if (session_attempts >= 3) { //Limit 3 password attempts per session to make sure that someone does not accidentally wipe device
     Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
     Serial.println();
@@ -286,6 +276,7 @@ void payload(int duration) {
    }
    
    if (unlocked == true || password.hashevaluate() == true) { 
+        hidprint("UNLOCKED");
         yubikey_eeset_failedlogins(0);
         unlocked = true;
       if (PINSET > 0) {
@@ -328,23 +319,6 @@ void payload(int duration) {
 }
 /*************************************/
 
-void factorydefault() {
-  //To do add function from flashKinetis to wipe secure flash and eeprom values and flashQuickUnlockBits 
-        uint8_t temp [32];
-        uint8_t *ptr;
-        for (int i = 0; i < 32; i++)
-        {
-        temp[i] = 0x00;
-        }
-        ptr=temp;
-        yubikey_eeset_pinhash (ptr);
-        yubikey_eeset_noncehash (ptr);
-        yubikey_eeset_failedlogins (0);
-        flashQuickUnlockBits();
-        Serial.println("factory reset has been completed");
-}
-/*************************************/
-
 void gen_token(void) {
   
   long GMT;
@@ -352,73 +326,22 @@ void gen_token(void) {
   blink(1);
   char buffer[32];
   switch (button_selected) {
-    case '1': //TODO - Future code commented out below
-    //yubikey_eeget_user1 ((uint8_t *) buffer);    
-    //if (buffer != 0) {
-    //Keyboard.println(buffer);
-    //}
-    Keyboard.println("openkey1234567@gmail.com");
-    //yubikey_eeget_delay1 ((uint8_t *) buffer);  
-    //if (buffer != 0) {
-    //delay(buffer);
-    //}
-    delay(2000);
-    //yubikey_eeget_password1 ((uint8_t *) buffer);  
-    //if (buffer != 0) {
-    //TODO -Figure out how to encrypt/dectypt buffer using function below
-    //yubikey_aes_decrypt (uint8_t * state, const uint8_t * key);  
-    //Keyboard.println(buffer);
-    //}
-    Keyboard.println("OpenKey!#!");
-    //yubikey_eeget_delay1 ((uint8_t *) buffer);  
-    //if (buffer != 0) {
-    //delay(buffer);
-    //}
-    delay(1000);
-    //yubikey_eeget_2FAmode1 ((uint8_t *) buffer); 
-      //switch (2FAmode1) { 
-      //case '1':
-          GMT = now();
-          newcode = totp1.getCode(GMT);
-          if(strcmp(otp, newcode) != 0) {
-          strcpy(otp, newcode);
-          } 
-          Keyboard.println(otp);
-      //break;
-      //case '2':
-      //u2f_button = 1;
-      //break;
-      //case '3':
-      //u2f_button = 1;
-      //break;
-      //default:
-      //break;
-  //}
-
+    case '1': //TODO 
+      Serial.print("Generate OTP slot ");
+      Serial.println(button_selected-'0');
     case '2':
-
-      Serial.print("Generate YubiKey OTP slot ");
+      Serial.print("Generate OTP slot ");
       Serial.println(button_selected-'0');
-
       break;
-
     case '3':
- 
-      Serial.print("Generate YubiKey OTP slot ");
+      Serial.print("Generate OTP slot ");
       Serial.println(button_selected-'0');
-
       break;
-
     case '4':
-      Serial.print("Slot 4");
+      Serial.print("Generate OTP slot ");
+      Serial.println(button_selected-'0');
       break;
-
     case '5':
-     Keyboard.write('s');
-
-      Keyboard.write('\n');
-
-
       Serial.print("Generate Google Auth OTP slot ");
       Serial.println(button_selected-'0');
       GMT = now();
@@ -430,7 +353,7 @@ void gen_token(void) {
       break;
     case '6':
       //u2f_button = 1;
-            Serial.print("Slot 6");
+      Serial.print("Slot 6");
       break;
     default:
       break;
@@ -445,48 +368,22 @@ void gen_static(void) {
   char buffer[16];
   switch (button_selected) {
     case '1':
-      digitalWrite(BLINKPIN, LOW);
-      //yubikey_eeget_password ((uint8_t *) buffer);
-      yubikey_modhex_encode (otp, buffer, 16);
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
-      Serial.println(otp);
+      Serial.print("Slot 1b");
       break;
-
     case '2':
-      digitalWrite(BLINKPIN, LOW);
-
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
-
+      Serial.print("Slot 2b");
       break;
-
     case '3':
-      digitalWrite(BLINKPIN, LOW);
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
+      Serial.print("Slot 3b");
       break;
-
     case '4':
-      digitalWrite(BLINKPIN, LOW);
-      //yubikey_eeget_static4 ((uint8_t *) buffer);
-      //yubikey_modhex_encode (otp, buffer, 16);
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
-      //Serial.println(otp);
+      Serial.print("Slot 4b");
       break;
-
     case '5':
-      digitalWrite(BLINKPIN, LOW);
-      //yubikey_eeget_static5 ((uint8_t *) buffer);
-      //yubikey_modhex_encode (otp, buffer, 16);
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
-      //Serial.println(otp);
+      Serial.print("Slot 5b");
       break;
-
     case '6':
-      digitalWrite(BLINKPIN, LOW);
+      Serial.print("Slot 6b");
       break;
     default:
       break;
@@ -495,30 +392,22 @@ void gen_static(void) {
 /*************************************/
 
 void YubikeyInit() {
-  unsigned long time1, time2;
   
-  uint32_t seed1         = analogRead(0);
-
+  uint32_t seed1;
+  uint8_t *ptr = (uint8_t *)&seed1;
+  getrng(ptr, 32); //Seed the YubiKey with random data
+  
   uint8_t aeskey1[16];
-
   uint8_t privID1[6];
-
   uint8_t pubID1[16];
-
   uint16_t counter;
-  uint8_t *ptr;
-
+  
   char aes_id1[32+1];
-
   char public_id1[32+1];
-
   char private_id1[12+1];
 
 
-  uint32_t time = 0x010203;
-
   Serial.println("Initializing YubiKey ...");
-  time1 = micros();
 
   ptr = aeskey1;
   yubikey_eeget_aeskey(ptr);
@@ -526,163 +415,47 @@ void YubikeyInit() {
   
   ptr = (uint8_t*) &counter;
   yubikey_eeget_counter(ptr);
-
   
   ptr = privID1;
   yubikey_eeget_private(ptr);
   yubikey_hex_encode(private_id1, (char *)privID1, 6);
-
   
   ptr = pubID1;
   yubikey_eeget_public(ptr);
   yubikey_hex_encode(public_id1, (char *)pubID1, 6);
 
-      Serial.println("aeskey1");
-    Serial.println(aes_id1);
+  Serial.println("aeskey1"); //TODO remove debug
+  Serial.println(aes_id1);
 
-    Serial.println("public_id1");
+  Serial.println("public_id1"); //TODO remove debug
   Serial.println(public_id1);
-    Serial.println("private_id1");
+  
+  Serial.println("private_id1"); //TODO remove debug
   Serial.println(private_id1);
-    Serial.println("counter");
+  
+  Serial.println("counter"); //TODO remove debug
   Serial.println(counter);
-      Serial.println("time");
-  Serial.println(time);
-      Serial.println("seed1");
+  
+  Serial.println("seed1");
   Serial.println(seed1);
-  
- 
-  
+
+  uint32_t time = 0x010203; //TODO why is time set to this?
+    
   yubikey_init1(&ctx, aeskey1, public_id1, private_id1, counter, time, seed1);
  
   yubikey_incr_counter(&ctx);
  
-  
   ptr = (uint8_t*) &(ctx.counter);
   yubikey_eeset_counter(ptr);
-  
-  time2 = micros();
-  Serial.print("done in ");
-  Serial.print(time2-time1);
-  Serial.println(" micros");
 }
 
 /*************************************/
-
-void YubikeyEEInit() {
-  
-  unsigned long time1, time2;
-  uint8_t *ptr, len;
-  uint16_t counter  = 0x0000;
-  uint8_t buffer[20];
-
-  Serial.println("Resetting EEPROM of YubiKeySim ...");
-  time1 = micros();
-
-  memset (&buffer, 0, 20);
-  yubikey_modhex_decode ((char *) &buffer, "idhgelivduibtjjeuvrggeeiluuictrf", 16);
-  //yubikey_eeset_aeskey1(buffer, 16);
- 
-
-  ptr = (uint8_t *) &counter;
-  //yubikey_eeset_counter1(ptr);
-  
-  memset (&buffer, 0, 20);
-  yubikey_modhex_decode ((char *) &buffer, "hdulurfvtubk", 6);
-  //yubikey_eeset_private1(buffer);
-
-  memset (&buffer, 0, 20);
-  yubikey_modhex_decode ((char *) &buffer, "vvncrccvidvh", 6);
-  //yubikey_eeset_public1(buffer, 6);
- 
-  memset (&buffer, 0, 20);
-  yubikey_modhex_decode ((char *) &buffer, "OpenKey", 16);
-  //yubikey_eeset_password(buffer, 16);
- 
-
-  time2 = micros();
-  Serial.print("done in ");
-  Serial.print(time2-time1);
-  Serial.println(" micros");
-
-  
-  Serial.print(EEpos_aeskey);
-  Serial.println("= aeskey1 pos");
-
-  Serial.print(EEpos_counter);
-  Serial.println("= counter1 pos");
-  Serial.print(EElen_counter);
-    Serial.println("= counter1 len");
-
-  Serial.print(EEpos_private);
-  Serial.println("= private1 pos");
-  Serial.print(EElen_private);
-    Serial.println("= private1 len");
-    
-  Serial.print(EEpos_public);
-    Serial.println("= public1 pos");
-  Serial.print(EElen_public);
-    Serial.println("= public1 len");
-    
-  Serial.print(EEpos_password1);
-    Serial.println("= static1 pos");
-  Serial.print(EElen_password);
-    Serial.println("= static1 len");
-    
-  Serial.print(EEpos_keylen);
-  Serial.println("= keylen1 pos");
-  Serial.print(EElen_keylen);
-  Serial.println("= keylen1 len");
-  yubikey_eeget_keylen(&len);
-  Serial.print("> ");
-  Serial.println(len);
-
-  Serial.print(EEpos_ctrlen);
-  Serial.println("=ctrlen1 pos");
-  Serial.print(EElen_ctrlen);
-    Serial.println("=ctrlen1 len");
-  yubikey_eeget_ctrlen(&len);
-  Serial.print("> ");
-  Serial.println(len);
-
-  Serial.print(EEpos_prvlen);
-  Serial.println("= prvlen1 pos");
-  Serial.print(EElen_prvlen);
-    Serial.println("= prvlen1 len");
-  yubikey_eeget_prvlen(&len);
-  Serial.print("> ");
-  Serial.println(len);
-
-  Serial.print(EEpos_publen);
-  Serial.println("= publen1 pos");
-  Serial.print(EElen_publen);
-    Serial.println("= publen1 len");
-  yubikey_eeget_publen(&len);
-  Serial.print("> ");
-  Serial.println(len);
-
-  Serial.print(EEpos_password1len);
-  Serial.println("= statlen1 pos");
-  Serial.print(EElen_passwordlen);
-    Serial.println("= statlen1 len");
-  yubikey_eeget_passwordlen1(&len);
-  Serial.print("> ");
-  Serial.println(len);
-
- 
-}
-
-
-/*************************************/
-
-
 
 void rngloop() {
     // Track changes to the calibration state on the noise source.
     bool newCalibrating = noise.calibrating();
     if (newCalibrating != calibrating) {
         calibrating = newCalibrating;
-        Serial.println("calibrating");
     }
     // Perform regular housekeeping on the random number generator.
     RNG.loop();

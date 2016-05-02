@@ -11,7 +11,7 @@ OnlyKey pre-orders are available here: [OnlyKey Pre-order](http://www.crp.to/po)
 In order to install the latest version of the OnlyKey firmware:  
 - Click here to download the latest version of the OnlyKey firmware and save it to a convenient location on your PC.
 - Ensure that your copy of the firmware has not been tampered with by checking the digital signature
-- Load the firmware that you downloaded (OnlyKeyUS_vX_X.hex) using the instructional video here ![Load Firmware using Teensy Loader](http://img.youtube.com/vi/qJUjz0gFhqg/0.jpg)(http://www.youtube.com/watch?v=qJUjz0gFhqg)
+- Load the firmware that you downloaded (OnlyKeyUS_vX_X.hex) using the instructional video here [![Load Firmware using Teensy Loader](http://img.youtube.com/vi/qJUjz0gFhqg/0.jpg)](http://www.youtube.com/watch?v=qJUjz0gFhqg)
 
 ## Development ##
 OnlyKey is currently in development **WARNING** The OnlyKey firmware alpha is available for testing purposes only and is not to be used to store any sensitive information. The following items are in progress:

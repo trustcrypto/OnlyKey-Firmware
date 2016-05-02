@@ -184,6 +184,7 @@ void checkKey(Task* me) {
   unsigned int touchread6 = touchRead(TOUCHPIN6);
   RNG.stir((uint8_t *)touchread6, sizeof(touchread6), sizeof(touchread6) * 2);
 
+  /*
   if (touchread1 > 1000) {
     key_off = 0;
     key_press = 0;
@@ -226,6 +227,7 @@ void checkKey(Task* me) {
     button_selected = '6';
     //Serial.println(touchread6);
   } 
+  */
 
   else {
     if (key_on > THRESHOLD) key_press = key_on;

@@ -53,7 +53,6 @@ static int button_selected = 0;    //Key selected 1-6
 static int pass_keypress = 1;  //The number key presses in current password attempt
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
-static bool unlocked = false; //To bypass PIN entry for testing this can be set true
 extern Password password;
 /*************************************/
 
@@ -164,11 +163,6 @@ void checkKey(Task* me) {
     Keyboard.println();
   }
 
-  if (unlocked == true) {
-    recvmsg();
-    uECC_set_rng(&RNG2); 
-    yubikey_incr_timestamp(&ctx);
-  }
   
   // Stir the touchread values into the entropy pool.
   unsigned int touchread1 = touchRead(TOUCHPIN1);
@@ -227,13 +221,14 @@ void checkKey(Task* me) {
     button_selected = '6';
     //Serial.println(touchread6);
   } 
-  */
+  
 
   else {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
   }
+  */
 
   if ((key_press > 0) && (key_off > THRESHOLD)) {
     payload(key_press);
@@ -330,22 +325,7 @@ void payload(int duration) {
 }
 /*************************************/
 
-void factorydefault() {
-  //To do add function from flashKinetis to wipe secure flash and eeprom values and flashQuickUnlockBits 
-        uint8_t temp [32];
-        uint8_t *ptr;
-        for (int i = 0; i < 32; i++)
-        {
-        temp[i] = 0x00;
-        }
-        ptr=temp;
-        yubikey_eeset_pinhash (ptr);
-        yubikey_eeset_noncehash (ptr);
-        yubikey_eeset_failedlogins (0);
-        flashQuickUnlockBits();
-        Serial.println("factory reset has been completed");
-}
-/*************************************/
+
 
 void gen_token(void) {
   
@@ -354,85 +334,17 @@ void gen_token(void) {
   blink(1);
   char buffer[32];
   switch (button_selected) {
-    case '1': //TODO - Future code commented out below
-    //yubikey_eeget_user1 ((uint8_t *) buffer);    
-    //if (buffer != 0) {
-    //Keyboard.println(buffer);
-    //}
-    Keyboard.println("openkey1234567@gmail.com");
-    //yubikey_eeget_delay1 ((uint8_t *) buffer);  
-    //if (buffer != 0) {
-    //delay(buffer);
-    //}
-    delay(2000);
-    //yubikey_eeget_password1 ((uint8_t *) buffer);  
-    //if (buffer != 0) {
-    //TODO -Figure out how to encrypt/dectypt buffer using function below
-    //yubikey_aes_decrypt (uint8_t * state, const uint8_t * key);  
-    //Keyboard.println(buffer);
-    //}
-    Keyboard.println("OpenKey!#!");
-    //yubikey_eeget_delay1 ((uint8_t *) buffer);  
-    //if (buffer != 0) {
-    //delay(buffer);
-    //}
-    delay(1000);
-    //yubikey_eeget_2FAmode1 ((uint8_t *) buffer); 
-      //switch (2FAmode1) { 
-      //case '1':
-          GMT = now();
-          newcode = totp1.getCode(GMT);
-          if(strcmp(otp, newcode) != 0) {
-          strcpy(otp, newcode);
-          } 
-          Keyboard.println(otp);
-      //break;
-      //case '2':
-      //u2f_button = 1;
-      //break;
-      //case '3':
-      //u2f_button = 1;
-      //break;
-      //default:
-      //break;
-  //}
-
+    case '1': 
+      break;
     case '2':
-
-      Serial.print("Generate YubiKey OTP slot ");
-      Serial.println(button_selected-'0');
-
       break;
-
     case '3':
- 
-      Serial.print("Generate YubiKey OTP slot ");
-      Serial.println(button_selected-'0');
-
       break;
-
     case '4':
-      Serial.print("Slot 4");
       break;
-
     case '5':
-     Keyboard.write('s');
-
-      Keyboard.write('\n');
-
-
-      Serial.print("Generate Google Auth OTP slot ");
-      Serial.println(button_selected-'0');
-      GMT = now();
-      newcode = totp5.getCode(GMT);
-        if(strcmp(otp, newcode) != 0) {
-        strcpy(otp, newcode);
-        } 
-      Serial.println(otp);
       break;
     case '6':
-      //u2f_button = 1;
-            Serial.print("Slot 6");
       break;
     default:
       break;
@@ -447,48 +359,16 @@ void gen_static(void) {
   char buffer[16];
   switch (button_selected) {
     case '1':
-      digitalWrite(BLINKPIN, LOW);
-      //yubikey_eeget_password ((uint8_t *) buffer);
-      yubikey_modhex_encode (otp, buffer, 16);
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
-      Serial.println(otp);
       break;
-
     case '2':
-      digitalWrite(BLINKPIN, LOW);
-
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
-
       break;
-
     case '3':
-      digitalWrite(BLINKPIN, LOW);
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
       break;
-
     case '4':
-      digitalWrite(BLINKPIN, LOW);
-      //yubikey_eeget_static4 ((uint8_t *) buffer);
-      //yubikey_modhex_encode (otp, buffer, 16);
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
-      //Serial.println(otp);
       break;
-
     case '5':
-      digitalWrite(BLINKPIN, LOW);
-      //yubikey_eeget_static5 ((uint8_t *) buffer);
-      //yubikey_modhex_encode (otp, buffer, 16);
-      Serial.print("Gen static slot ");
-      Serial.println(button_selected-'0');
-      //Serial.println(otp);
       break;
-
     case '6':
-      digitalWrite(BLINKPIN, LOW);
       break;
     default:
       break;

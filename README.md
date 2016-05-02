@@ -11,13 +11,14 @@ OnlyKey pre-orders are available here: [OnlyKey Pre-order](http://www.crp.to/po)
 In order to install the latest version of the OnlyKey firmware:  
 - Click here to download the latest version of the OnlyKey firmware and save it to a convenient location on your PC.
 - Ensure that your copy of the firmware has not been tampered with by checking the digital signature
-- Load the firmware that you downloaded (OnlyKeyUS_vX_X.hex) using the instructional video here ![Load Firmware using Teensy Loader](http://img.youtube.com/vi/qJUjz0gFhqg/0.jpg)](http://www.youtube.com/watch?v=qJUjz0gFhqg)
+- Load the firmware that you downloaded (OnlyKeyUS_vX_X.hex) using the instructional video here ![Load Firmware using Teensy Loader](http://img.youtube.com/vi/qJUjz0gFhqg/0.jpg)(http://www.youtube.com/watch?v=qJUjz0gFhqg)
 
 ## Development ##
 OnlyKey is currently in development **WARNING** The OnlyKey firmware alpha is available for testing purposes only and is not to be used to store any sensitive information. The following items are in progress:
 - U2F Certificate set/wipe - Receive U2F cerificate from chrome app and store to flash/ erase from flash (untested)
 - Self Destruct PIN feature
 - Plausible Deniability PIN feature
+- Selectable self destruct wipe mode
 - U2F key generation
 - U2F - Investigate using deterministic signing - https://github.com/kmackay/micro-ecc/issues/37
 - U2F - Remove placeholder handlekey, generate from nonce.

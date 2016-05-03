@@ -39,5 +39,6 @@ To suggest additional test cases or to report your findings email k@crp.to
 ## Support ##
 
 Check out the [OnlyKey Support Forum](https://groups.google.com/forum/#!forum/onlykey).
+
 Check out the [OnlyKey Firmware FAQs](https://github.com/onlykey/OnlyKey-Firmware-US/wiki/FAQs)
 

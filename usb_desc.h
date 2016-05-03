@@ -49,45 +49,35 @@ Each group of #define lines below corresponds to one of the
 settings in the Tools > USB Type menu.  This file defines what
 type of USB device is actually created for each of those menu
 options.
-
 Each "interface" is a set of functionality your PC or Mac will
 use and treat as if it is a unique device.  Within each interface,
 the "endpoints" are the actual communication channels.  Most
 interfaces use 1, 2 or 3 endpoints.  By editing only this file,
 you can customize the USB Types to be any collection of interfaces.
-
 To modify a USB Type, delete the XYZ_INTERFACE lines for any
 interfaces you wish to remove, and copy them from another USB Type
 for any you want to add.
-
 Give each interface a unique number, and edit NUM_INTERFACE to
 reflect the total number of interfaces.
-
 Next, assign unique endpoint numbers to all the endpoints across
 all the interfaces your device has.  You can reuse an endpoint
 number for transmit and receive, but the same endpoint number must
 not be used twice to transmit, or twice to receive.
-
 Most endpoints also require their maximum size, and some also
 need an interval specification (the number of milliseconds the
 PC will check for data from that endpoint).  For existing
 interfaces, usually these other settings should not be changed.
-
 Edit NUM_ENDPOINTS to be at least the largest endpoint number used.
-
 Edit NUM_USB_BUFFERS to control how much memory the USB stack will
 allocate.  At least 2 should be used for each endpoint.  More
 memory will allow higher throughput for user programs that have
 high latency (eg, spending time doing things other than interacting
 with the USB).
-
 Edit the ENDPOINT*_CONFIG lines so each endpoint is configured
 the proper way (transmit, receive, or both).
-
 If you are using existing interfaces (making your own device with
 a different set of interfaces) the code in all other files should
 automatically adapt to the new endpoints you specify here.
-
 If you need to create a new type of interface, you'll need to write
 the code which sends and receives packets, and presents an API to
 the user.  Usually, a pair of files are added for the actual code,
@@ -95,18 +85,15 @@ and code is also added in usb_dev.c for any control transfers,
 interrupt-level code, or other very low-level stuff not possible
 from the packet send/receive functons.  Code also is added in
 usb_inst.c to create an instance of your C++ object.
-
 You may edit the Vendor and Product ID numbers, and strings.  If
 the numbers are changed, Teensyduino may not be able to automatically
 find and reboot your board when you click the Upload button in
 the Arduino IDE.  You will need to press the Program button on
 Teensy to initiate programming.
-
 Some operating systems, especially Windows, may cache USB device
 info.  Changes to the device name may not update on the same
 computer unless the vendor or product ID numbers change, or the
 "bcdDevice" revision code is increased.
-
 If these instructions are missing steps or could be improved, please
 let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 */

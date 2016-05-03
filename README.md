@@ -36,5 +36,7 @@ The current publicly available test case document is [here] (https://docs.google
 
 To suggest additional test cases or to report your findings email k@crp.to
 
+## Support ##
 
+Check out the OnlyKey [support forum](https://groups.google.com/forum/#!forum/onlykey).
 

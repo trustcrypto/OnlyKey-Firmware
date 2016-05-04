@@ -84,6 +84,8 @@ static int pass_keypress = 1;  //The number key presses in current password atte
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
 extern Password password;
+extern Password sdpassword;
+extern Password pdpassword;
 /*************************************/
 
 //Google Auth key converted from base 32 to hex
@@ -149,7 +151,7 @@ void setup() {
   }
   Serial.print(FTFL_FSEC); //TODO remove debug
   rngloop(); //
-  YubikeyInit(); //Set keys and counters
+  YubikeyInit(); //Set keys and counters TODO move inside unlock function
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -289,11 +291,25 @@ void payload(int duration) {
         hidprint("UNLOCKED     ");
         yubikey_eeset_failedlogins(0);
         unlocked = true;
-      if (PINSET > 0) {
-       password.append(button_selected);
-       Serial.print("password appended with ");
-        Serial.println(button_selected-'0');
-       return;
+      if (PINSET==0) { 
+        }
+      else if (PINSET<=3) { 
+            password.append(button_selected);
+            Serial.print("password appended with ");
+            Serial.println(button_selected-'0');
+            return;
+        }
+      else if (PINSET<=6) {
+            sdpassword.append(button_selected);
+            Serial.print("SD password appended with ");
+            Serial.println(button_selected-'0');
+            return;
+        }
+      else {
+            pdpassword.append(button_selected);
+            Serial.print("PD password appended with ");
+            Serial.println(button_selected-'0');
+            return;
         }
       *otp = '\0';
       if (duration <= 10) gen_token();
@@ -302,9 +318,16 @@ void payload(int duration) {
       Keyboard.begin();
       SoftTimer.remove(&taskKey);
       SoftTimer.add(&taskKB);
+      return;
   }
-       
-      // if (selfdestruct.evaluate() == true) factorydefault(); //TODO Self Destruct PIN
+   else if (password.sdhashevaluate() == true) {
+    Serial.println("Self Destruct PIN entered"); //TODO remove debug
+    factorydefault(); 
+   }
+   else if (unlocked == true || password.pdhashevaluate() == true) {
+    Serial.println("PLausible Deniability PIN entered"); //TODO remove debug
+    //TODO add PD functions
+   }
    else {
     if (pass_keypress <= MAX_PASSWORD_LENGTH) {
         password.append(button_selected);

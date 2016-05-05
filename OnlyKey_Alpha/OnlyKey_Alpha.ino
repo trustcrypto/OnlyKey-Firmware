@@ -235,6 +235,8 @@ void checkKey(Task* me) {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
+    if (unlocked == false) digitalWrite(BLINKPIN, LOW); //LED OFF
+    else digitalWrite(BLINKPIN, HIGH); //LED ON
   }
 
   if ((key_press > 0) && (key_off > THRESHOLD)) {
@@ -262,14 +264,17 @@ void sendKey(Task* me) {
 //Keypad passcode checker
 /*************************************/
 void payload(int duration) {
-   //blink(1); faster without blink
-   extern int PINSET;
+   if (unlocked == false) digitalWrite(BLINKPIN, HIGH); //LED ON
+   else digitalWrite(BLINKPIN, LOW); //LED OFF
    uint8_t pass_attempts[1];
    uint8_t *ptr;
    ptr = pass_attempts;
     if (session_attempts >= 3) { //Limit 3 password attempts per session to make sure that someone does not accidentally wipe device
     Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
-    Serial.println();
+      while(1==1)
+        {
+        blink(3);
+        }
     return;
     }
    
@@ -329,7 +334,7 @@ void payload(int duration) {
     //TODO add PD functions
    }
    else {
-    if (pass_keypress <= MAX_PASSWORD_LENGTH) {
+    if (pass_keypress <= 10) {
         password.append(button_selected);
         Serial.print("password appended with ");
         Serial.println(button_selected-'0');
@@ -355,26 +360,29 @@ void payload(int duration) {
 /*************************************/
 
 void gen_token(void) {
-  
+  digitalWrite(BLINKPIN, LOW); //LED OFF
   long GMT;
   char* newcode;
-  blink(1);
   char buffer[32];
   switch (button_selected) {
     case '1': //TODO 
       Serial.print("Generate OTP slot ");
       Serial.println(button_selected-'0');
+      delay(100);
     case '2':
       Serial.print("Generate OTP slot ");
       Serial.println(button_selected-'0');
+      delay(100);
       break;
     case '3':
       Serial.print("Generate OTP slot ");
       Serial.println(button_selected-'0');
+      delay(100);
       break;
     case '4':
       Serial.print("Generate OTP slot ");
       Serial.println(button_selected-'0');
+      delay(100);
       break;
     case '5':
       Serial.print("Generate Google Auth OTP slot ");
@@ -385,10 +393,12 @@ void gen_token(void) {
         strcpy(otp, newcode);
         } 
       Serial.println(otp);
+      delay(100);
       break;
     case '6':
       //u2f_button = 1;
       Serial.print("Slot 6");
+      delay(100);
       break;
     default:
       break;
@@ -400,25 +410,32 @@ void gen_token(void) {
 /*************************************/
 
 void gen_static(void) {
+  digitalWrite(BLINKPIN, LOW); //LED OFF
   char buffer[16];
   switch (button_selected) {
     case '1':
       Serial.print("Slot 1b");
+      delay(100);
       break;
     case '2':
       Serial.print("Slot 2b");
+      delay(100);
       break;
     case '3':
       Serial.print("Slot 3b");
+      delay(100);
       break;
     case '4':
       Serial.print("Slot 4b");
+      delay(100);
       break;
     case '5':
       Serial.print("Slot 5b");
+      delay(100);
       break;
     case '6':
       Serial.print("Slot 6b");
+      delay(100);
       break;
     default:
       break;

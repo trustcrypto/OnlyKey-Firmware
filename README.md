@@ -49,13 +49,24 @@ Check out the [OnlyKey Libraries Here](https://github.com/onlykey/libraries).
 A special thanks to those who made this project possible:
 
 PJRC - https://www.pjrc.com/teensy/td_libs.html
+
 Arduino - http://playground.arduino.cc/Main/LibraryList
+
 Yubico - https://github.com/Yubico/
+
 pagong/arduino-yksim - https://github.com/pagong/arduino-yksim 
+
 lucadentella/ArduinoLib_TOTP - https://github.com/lucadentella/ArduinoLib_TOTP
+
 damico/ARDUINO-OATH-TOKEN - https://github.com/damico/ARDUINO-OATH-TOKEN
+
 Cathedrow/Cryptosuite - https://github.com/Cathedrow/Cryptosuite 
+
 Frank Boesing - https://github.com/FrankBoesing/Arduino-Teensy3-Flash 
-Yohanes - https://github.com/yohanes/teensy-u2f Note: The key handle generation in use differs from this implementation *SEE FAQ.
+
+Yohanes - https://github.com/yohanes/teensy-u2f 
+
 Ken MacKay - https://github.com/kmackay/micro-ecc
+
 Rhys Weatherley - https://github.com/rweather/arduinolibs
+

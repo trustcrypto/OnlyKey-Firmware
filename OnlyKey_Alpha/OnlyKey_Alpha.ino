@@ -46,7 +46,7 @@
 #include <Crypto.h>
 #include <RNG.h>
 #include <transistornoisesource.h>
-#include "T3Mac.h"
+#include "T3MacLib.h"
 
 //PIN assignments
 /*************************************/
@@ -136,6 +136,8 @@ void setup() {
   // Initialize the random number generator with stored NONCE and device MAC
   read_mac();
   RNG.begin((char*)mac, EEpos_noncehash);
+  CHIP_ID();
+  RNG.stir((byte*)ID, sizeof(ID));
   delay(7000);
   //TODO fix should be 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 

@@ -143,13 +143,10 @@ void setup() {
   if(FTFL_FSEC==0xDE) { 
     unlocked = true; //Flash is not protected, First time use
     Serial.print("UNLOCKED, FIRST TIME USE");
-    hidprint("UNINITIALIZED");
   }
   if(FTFL_FSEC==0x44) { 
     unlocked = false;
     Serial.print("INITIALIZED");
-    hidprint("INITIALIZED");
-    
   }
   Serial.print(FTFL_FSEC); //TODO remove debug
   rngloop(); //
@@ -165,7 +162,8 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
   static int count;
-  
+
+    
   rngloop(); //
   
   if (unlocked == true) {
@@ -175,6 +173,11 @@ void checkKey(Task* me) {
     yubikey_incr_timestamp(&ctx);
     }
   }
+  else
+  {
+    hidprint("INITIALIZED");
+  }
+  
   
   // Stir the touchread values into the entropy pool.
   unsigned int touchread1 = touchRead(TOUCHPIN1);
@@ -295,7 +298,6 @@ void payload(int duration) {
    }
    
    if (unlocked == true || password.hashevaluate() == true) { 
-        hidprint("UNLOCKED     ");
         yubikey_eeset_failedlogins(0);
         unlocked = true;
       if (PINSET==0) { 

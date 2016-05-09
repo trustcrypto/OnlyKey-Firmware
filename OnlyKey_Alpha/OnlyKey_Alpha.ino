@@ -73,7 +73,7 @@ bool calibrating = false;
 #define TIME_SEND  10 // send kb codes every 10 ms
 Task taskKey(TIME_POLL, checkKey);
 Task taskKB (TIME_SEND, sendKey);
-char otp[YUBIKEY_OTP_MAXSIZE];
+char keybuffer[EElen_username+EElen_addchar+EElen_password+EElen_addchar+YUBIKEY_OTP_MAXSIZE];
 char *pos;
 /*************************************/
 
@@ -155,6 +155,7 @@ void setup() {
 }
 /*************************************/
 
+elapsedMillis sincelast; //
 //Main Loop, Read Key Press Using Capacitive Touch
 /*************************************/
 void checkKey(Task* me) {
@@ -173,9 +174,11 @@ void checkKey(Task* me) {
     yubikey_incr_timestamp(&ctx);
     }
   }
-  else
+  else if (sincelast >= 1000)
   {
     hidprint("INITIALIZED");
+    Serial.println("INITIALIZED");
+    sincelast = sincelast - 1000;
   }
   
   
@@ -296,35 +299,39 @@ void payload(int duration) {
    yubikey_eeset_failedlogins (ptr); 
    firsttime = false;
    }
-   
+   password.append(button_selected);
    if (unlocked == true || password.hashevaluate() == true) { 
-        yubikey_eeset_failedlogins(0);
-        unlocked = true;
-      if (PINSET==0) { 
+        if (unlocked != true) //A correct PIN was just entered do the following for first login
+        {
+          yubikey_eeset_failedlogins(0); //Set failed login counter to 0
+          password.reset(); //reset the guessed password to NULL
+          hidprint("UNLOCKED       "); 
+          Serial.println("UNLOCKED       ");
+          unlocked = true;
+          return;
+        }
+      else if (PINSET==0) { 
         }
       else if (PINSET<=3) { 
-            password.append(button_selected);
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
             return;
         }
       else if (PINSET<=6) {
-            sdpassword.append(button_selected);
             Serial.print("SD password appended with ");
             Serial.println(button_selected-'0');
             return;
         }
       else {
-            pdpassword.append(button_selected);
             Serial.print("PD password appended with ");
             Serial.println(button_selected-'0');
             return;
         }
-      *otp = '\0';
+      Keyboard.begin();
+      *keybuffer = '\0';
       if (duration <= 10) gen_token();
       if (duration >= 11) gen_static();
-      pos = otp;
-      Keyboard.begin();
+      pos = keybuffer;
       SoftTimer.remove(&taskKey);
       SoftTimer.add(&taskKB);
       return;
@@ -338,8 +345,7 @@ void payload(int duration) {
     //TODO add PD functions
    }
    else {
-    if (pass_keypress <= 10) {
-        password.append(button_selected);
+    if (pass_keypress < 10) {
         Serial.print("password appended with ");
         Serial.println(button_selected-'0');
         Serial.print("Number of keys entered for this passcode = ");
@@ -367,12 +373,58 @@ void gen_token(void) {
   digitalWrite(BLINKPIN, LOW); //LED OFF
   long GMT;
   char* newcode;
-  char buffer[32];
+  uint8_t temp[32];
+  uint8_t length[1];
+  uint8_t *ptr;
+  
   switch (button_selected) {
     case '1': //TODO 
-      Serial.print("Generate OTP slot ");
+      Serial.print("Slot Number ");
       Serial.println(button_selected-'0');
-      delay(100);
+      ptr = length;
+      yubikey_eeget_usernamelen1(ptr);
+      if(length[0] > 0)
+      {
+        Serial.println("Typing out Username");
+      }
+      yubikey_eeget_addchar1(ptr, 1);
+      if(length[0] > 0)
+      {
+        Serial.println("Typing out Additional Characters");
+      }
+      yubikey_eeget_delay1(ptr, 1);
+      if(length[0] > 0)
+      {
+        Serial.print("Delay ");
+        Serial.print(length[0]);
+        Serial.print(" Seconds before entering password");
+        delay(length[0]*1000);
+      }
+      yubikey_eeget_passwordlen1(ptr);
+      if(length[0] > 0)
+      {
+        Serial.println("Typing out Password");
+      }
+      yubikey_eeget_addchar2(ptr, 1);
+      if(length[0] > 0)
+      {
+        Serial.print("Typing out Additional Characters");
+      }
+      yubikey_eeget_delay2(ptr, 1);
+      if(length[0] > 0)
+      {
+        Serial.print("Delay ");
+        Serial.print(length[0]);
+        Serial.print(" Seconds before entering 2FA");
+        delay(length[0]*1000);
+      }
+      yubikey_eeget_2FAtype(ptr, 1);
+      if(length[0] > 0)
+      {
+        Serial.print("2FA Type is"); //TODO add OTP here
+        Serial.println(length[0]);
+      }
+      break;
     case '2':
       Serial.print("Generate OTP slot ");
       Serial.println(button_selected-'0');
@@ -393,10 +445,10 @@ void gen_token(void) {
       Serial.println(button_selected-'0');
       GMT = now();
       newcode = totp5.getCode(GMT);
-        if(strcmp(otp, newcode) != 0) {
-        strcpy(otp, newcode);
+        if(strcmp(keybuffer, newcode) != 0) {
+        strcpy(keybuffer, newcode);
         } 
-      Serial.println(otp);
+      Serial.println(keybuffer);
       delay(100);
       break;
     case '6':

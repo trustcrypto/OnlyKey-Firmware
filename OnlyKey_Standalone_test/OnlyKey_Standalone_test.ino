@@ -392,8 +392,8 @@ void gen_press(void) {
         yubikey_eeget_username(ptr, 1);
         Serial.print("Username =");
         
-        yubikey_aes_decrypt (ptr, aeskey1);
-        yubikey_aes_decrypt (ptr+16, aeskey1);
+        //yubikey_aes_decrypt (ptr, aeskey1);
+        //yubikey_aes_decrypt (ptr+16, aeskey1);
         ByteToChar2(temp, keybuffer, usernamelength, index);
         for(int i = 0; i<=usernamelength; i++) {
           Serial.print(keybuffer[i]);
@@ -402,7 +402,7 @@ void gen_press(void) {
       }
       
       yubikey_eeget_addchar1(ptr, 1);
-      yubikey_aes_decrypt (ptr, aeskey1);
+      //yubikey_aes_decrypt (ptr, aeskey1);
       if(temp[0] > 0)
       {
         Serial.print("Typing out Additional Characters ");
@@ -436,8 +436,8 @@ void gen_press(void) {
         Serial.println("Typing out Password");
         passwordlength = temp[0];
         yubikey_eeget_password(ptr, 1);
-        yubikey_aes_decrypt (ptr, aeskey1);
-        yubikey_aes_decrypt (ptr+16, aeskey1);
+        //yubikey_aes_decrypt (ptr, aeskey1);
+        //yubikey_aes_decrypt (ptr+16, aeskey1);
         ByteToChar2(temp, keybuffer, passwordlength, index);
         for(int i = 0; i<=passwordlength; i++) {
           Serial.print(keybuffer[i+index]);
@@ -446,7 +446,7 @@ void gen_press(void) {
         
       }
       yubikey_eeget_addchar2(ptr, 1);
-      yubikey_aes_decrypt (ptr, aeskey1);
+      //yubikey_aes_decrypt (ptr, aeskey1);
       if(temp[0] > 0)
       {
         Serial.println("Typing out Additional Characters");
@@ -462,7 +462,7 @@ void gen_press(void) {
         }
       }
       yubikey_eeget_delay2(ptr, 1);
-      yubikey_aes_decrypt (ptr, aeskey1);
+      //yubikey_aes_decrypt (ptr, aeskey1);
       if(temp[0] > 0)
       {
         Serial.print("Delay ");
@@ -472,15 +472,15 @@ void gen_press(void) {
         index++;
       }
       yubikey_eeget_2FAtype(ptr, 1);
-      yubikey_aes_decrypt (ptr, aeskey1);
+      //yubikey_aes_decrypt (ptr, aeskey1);
       if(temp[0] > 0)
       {
         if(temp[0] == 1) { //Google Auth
           yubikey_eeget_totpkeylen1(ptr);
           otplength=temp[0];
           yubikey_eeget_totpkey(ptr, 1);
-          yubikey_aes_decrypt (ptr, aeskey1);
-          yubikey_aes_decrypt (ptr+16, aeskey1);
+          //yubikey_aes_decrypt (ptr, aeskey1);
+          //yubikey_aes_decrypt (ptr+16, aeskey1);
           Serial.println("2FA Type is TOTP"); 
           /*************************************/
           TOTP totp1 = TOTP(temp, otplength);

@@ -44,9 +44,12 @@
 #include "onlykey.h"
 #include "flashkinetis.h"
 #include <Crypto.h>
+#include <AES.h>
+#include <GCM.h>
 #include <RNG.h>
 #include <transistornoisesource.h>
 #include "T3MacLib.h"
+#define DEBUG
 
 //PIN assignments
 /*************************************/
@@ -75,7 +78,6 @@ Task taskKey(TIME_POLL, checkKey);
 Task taskKB (TIME_SEND, sendKey);
 char keybuffer[EElen_username+2+EElen_password+2+YUBIKEY_OTP_MAXSIZE];
 char *pos;
-
 /*************************************/
 
 //Keypad password set assignments
@@ -98,7 +100,7 @@ extern Password pdpassword;
 
 /*************************************/
 
-//Yubikey 
+//onlykey 
 /*************************************/
 yubikey_ctx_st ctx;
 /*************************************/
@@ -130,7 +132,7 @@ void setup() {
   Serial.print("EEPROM Used");
   Serial.println(EEpos_failedlogins);
   rngloop(); //
-  
+  Serial.print(EEpos_aeskey);
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -282,7 +284,7 @@ void payload(int duration) {
    
    if (firsttime==true) //Get failed login counter from eeprom and increment for new login attempt
    {
-   yubikey_eeget_failedlogins (ptr);
+   onlykey_eeget_failedlogins (ptr);
    pass_attempts[0]++;
    //Serial.println(pass_attempts[0]);
    if (pass_attempts[0] >= 10) {
@@ -290,18 +292,18 @@ void payload(int duration) {
    pass_attempts[0] = 0;
    return;
    }
-   yubikey_eeset_failedlogins (ptr); 
+   onlykey_eeset_failedlogins (ptr); 
    firsttime = false;
    }
    password.append(button_selected);
    if (unlocked == true || password.hashevaluate() == true) { 
         if (unlocked != true) //A correct PIN was just entered do the following for first login
         {
-          yubikey_eeset_failedlogins(0); //Set failed login counter to 0
+          onlykey_eeset_failedlogins(0); //Set failed login counter to 0
           password.reset(); //reset the guessed password to NULL
           hidprint("UNLOCKED       "); 
           Serial.println("UNLOCKED       ");
-          YubikeyInit(); 
+          onlykeyInit(); 
           unlocked = true;
           return;
         }
@@ -352,7 +354,7 @@ void payload(int duration) {
         session_attempts++;
         blink(3);
         Serial.print("Login Failed, there are ");
-        yubikey_eeget_failedlogins (ptr);
+        onlykey_eeget_failedlogins (ptr);
         Serial.print(9 - pass_attempts[0]);
         Serial.println(" remaining attempts before a factory reset will occur");
         Serial.println("WARNING: This will render all device information unrecoverable");
@@ -370,119 +372,162 @@ void gen_press(void) {
   char* newcode;
   static uint8_t index = 0;
   uint8_t temp[32];
-  uint8_t usernamelength;
-  uint8_t passwordlength;
-  uint8_t otplength;
+  int usernamelength;
+  int passwordlength;
+  int otplength;
   uint8_t aeskey1[32]; 
-  uint8_t *ptr = aeskey1;
-  yubikey_eeget_pinhash (ptr);
+  uint8_t *ptr;
   simulateapp(); //For Testing without the chrome app
+  ptr=aeskey1;
+  onlykey_eeget_pinhash(ptr, 32);
   switch (button_selected) {
     case '1':
-      
       Serial.print("Slot Number ");
       Serial.println(button_selected-'0');
+      for (int i=0; i<32; i++) { //Wipe all data from buffer
+      temp[i] = 0x00;
+      }
       ptr = temp;
-      yubikey_eeget_usernamelen1(ptr);
-      Serial.print("Username Length =");
-      Serial.println(temp[0]);
-      if(temp[0] > 0)
+      usernamelength = onlykey_eeget_username(ptr, 1);
+      if(usernamelength > 0)
       {
-        usernamelength = temp[0];
-        yubikey_eeget_username(ptr, 1);
-        Serial.print("Username =");
-        
-        //yubikey_aes_decrypt (ptr, aeskey1);
-        //yubikey_aes_decrypt (ptr+16, aeskey1);
+        Serial.println("Reading Username from EEPROM...");
+        #ifdef DEBUG
+        Serial.println("Encrypted");
+            for (int z = 0; z < 32; z++) {
+            Serial.print(temp[z], HEX);
+            }
+            Serial.println();
+          #endif
+        Serial.print("Username Length = ");
+        Serial.println(usernamelength);
+        aes_gcm_decrypt(temp, (uint8_t*)EEpos_username1, aeskey1, usernamelength);
         ByteToChar2(temp, keybuffer, usernamelength, index);
-        for(int i = 0; i<=usernamelength; i++) {
-          Serial.print(keybuffer[i]);
-        }
+        #ifdef DEBUG
+            Serial.println("Unencrypted");
+            for (int z = 0; z < 32; z++) {
+            Serial.print(temp[z], HEX);
+            }
+            Serial.println();
+        #endif
         index=usernamelength;
       }
-      
-      yubikey_eeget_addchar1(ptr, 1);
-      //yubikey_aes_decrypt (ptr, aeskey1);
+      for (int i=0; i<32; i++) { //Wipe all data from buffer
+      temp[i] = 0x00;
+      }
+      onlykey_eeget_addchar1(ptr, 1);
       if(temp[0] > 0)
       {
-        Serial.print("Typing out Additional Characters ");
+        Serial.println("Reading addchar1 from EEPROM...");
         if(temp[0] == 1) {
         keybuffer[index] = 128;
         Serial.println("TAB");
-        Serial.print(keybuffer[index]);
         index++;
         }
         else if(temp[0] == 2) {
+        Serial.println("Reading addchar1 from EEPROM...");
         keybuffer[index] = 129;
         Serial.println("RETURN");
-        Serial.print(keybuffer[index]);
         ByteToChar2(temp, keybuffer, 1, index);
         index++;
         }
       }
-      yubikey_eeget_delay1(ptr, 1);
+      for (int i=0; i<32; i++) { //Wipe all data from buffer
+      temp[i] = 0x00;
+      }
+      onlykey_eeget_delay1(ptr, 1);
       if(temp[0] > 0)
       {
+        Serial.println("Reading Delay from EEPROM...");
         Serial.print("Delay ");
         Serial.print(temp[0]);
-        Serial.print(" Seconds before entering password");
+        Serial.println(" Seconds before entering password");
         keybuffer[index] = temp[0] + 129;
-        Serial.print(temp[0]);
         index++;
       }
-      yubikey_eeget_passwordlen1(ptr);
-      if(temp[0] > 0)
+      passwordlength = onlykey_eeget_password(ptr, 1);
+      if(passwordlength > 0)
       {
-        Serial.println("Typing out Password");
-        passwordlength = temp[0];
-        yubikey_eeget_password(ptr, 1);
-        //yubikey_aes_decrypt (ptr, aeskey1);
-        //yubikey_aes_decrypt (ptr+16, aeskey1);
+        Serial.println("Reading Password from EEPROM...");
+        #ifdef DEBUG
+        Serial.println("Encrypted");
+            for (int z = 0; z < 32; z++) {
+            Serial.print(temp[z], HEX);
+            }
+            Serial.println();
+          #endif
+        Serial.print("Password Length = ");
+        Serial.println(passwordlength);
+        aes_gcm_decrypt(temp, (uint8_t*)EEpos_password1, aeskey1, passwordlength);
         ByteToChar2(temp, keybuffer, passwordlength, index);
-        for(int i = 0; i<=passwordlength; i++) {
-          Serial.print(keybuffer[i+index]);
-        }
-        index=index+passwordlength;
-        
+        #ifdef DEBUG
+        Serial.println("Unencrypted");
+            for (int z = 0; z < 32; z++) {
+            Serial.print(temp[z], HEX);
+            }
+         Serial.println();
+        #endif
+        index=passwordlength+index;
       }
-      yubikey_eeget_addchar2(ptr, 1);
-      //yubikey_aes_decrypt (ptr, aeskey1);
+      for (int i=0; i<32; i++) { //Wipe all data from buffer
+      temp[i] = 0x00;
+      }     
+      onlykey_eeget_addchar2(ptr, 1);
       if(temp[0] > 0)
       {
-        Serial.println("Typing out Additional Characters");
+        Serial.println("Reading addchar2 from EEPROM...");
         if(temp[0] == 1) {
         keybuffer[index] = 128;
         Serial.println("TAB");
         index++;
         }
         else if(temp[0] == 2) {
+        Serial.println("Reading addchar2 from EEPROM...");
         keybuffer[index] = 129;
         Serial.println("Return");
         index++;
         }
       }
-      yubikey_eeget_delay2(ptr, 1);
-      //yubikey_aes_decrypt (ptr, aeskey1);
+      for (int i=0; i<32; i++) { //Wipe all data from buffer
+      temp[i] = 0x00;
+      }     
+      onlykey_eeget_delay2(ptr, 1);
       if(temp[0] > 0)
       {
+        Serial.println("Reading Delay2 from EEPROM...");
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering 2FA");
         keybuffer[index] = temp[0] + 129;
         index++;
       }
-      yubikey_eeget_2FAtype(ptr, 1);
-      //yubikey_aes_decrypt (ptr, aeskey1);
+      for (int i=0; i<32; i++) { //Wipe all data from buffer
+      temp[i] = 0x00;
+      }   
+      onlykey_eeget_2FAtype(ptr, 1);
       if(temp[0] > 0)
       {
         if(temp[0] == 1) { //Google Auth
-          yubikey_eeget_totpkeylen1(ptr);
-          otplength=temp[0];
-          yubikey_eeget_totpkey(ptr, 1);
-          //yubikey_aes_decrypt (ptr, aeskey1);
-          //yubikey_aes_decrypt (ptr+16, aeskey1);
-          Serial.println("2FA Type is TOTP"); 
-          /*************************************/
+          Serial.println("Reading TOTP Key from EEPROM...");
+          otplength = onlykey_eeget_totpkey(ptr, 1);
+        #ifdef DEBUG
+        Serial.println("Encrypted");
+            for (int z = 0; z < 32; z++) {
+            Serial.print(temp[z], HEX);
+            }
+           Serial.println();
+          #endif
+        Serial.print("TOTP Key Length = ");
+        Serial.println(otplength);
+        aes_gcm_decrypt(temp, (uint8_t*)EEpos_totpkey1, aeskey1, otplength);
+        ByteToChar2(temp, keybuffer, otplength, index);
+        #ifdef DEBUG
+        Serial.println("Unencrypted");
+            for (int z = 0; z < 32; z++) {
+            Serial.print(temp[z], HEX);
+            }
+            Serial.println();
+        #endif
           TOTP totp1 = TOTP(temp, otplength);
           GMT = now();
           newcode = totp1.getCode(GMT);
@@ -493,22 +538,26 @@ void gen_press(void) {
             keybuffer[index+3]=*(newcode+3);
             keybuffer[index+4]=*(newcode+4);
             keybuffer[index+5]=*(newcode+5);
+            keybuffer[index+6]=0x00;
           
           index=index+6;
-          Serial.print("Test");
         }
-        if(temp[0] == 2) { //Yubikey
+        if(temp[0] == 2) { //onlykey
+        Serial.println("Generating onlykey OTP...");
         yubikey_simulate1((char*)keybuffer[index], &ctx);
         yubikey_incr_usage(&ctx);
         index=index+44;
         }
         if(temp[0] == 3) { //U2F
+        Serial.println("Starting U2F...");
         u2f_button = 1;
         }
       }
           //TODO remove debug print full keybuffer
+          Serial.println("Displaying Full Keybuffer");
           for (int i=0; i<64; i++) {
-            Serial.println(keybuffer[i]);
+            Serial.print
+            (keybuffer[i]);
           }
           
       break;
@@ -580,57 +629,59 @@ void gen_hold(void) {
 }
 /*************************************/
 
-void YubikeyInit() {
+void onlykeyInit() {
   
-  uint32_t seed1;
-  uint8_t *ptr = (uint8_t *)&seed1;
-  getrng(ptr, 32); //Seed the YubiKey with random data
-  
-  uint8_t aeskey1[16];
-  uint8_t privID1[6];
-  uint8_t pubID1[16];
+  uint32_t seed;
+  uint8_t *ptr = (uint8_t *)&seed;
+  getrng(ptr, 32); //Seed the onlyKey with random data
+
+  uint8_t temp[32];
+  uint8_t aeskey[16];
+  uint8_t privID[6];
+  uint8_t pubID[16];
   uint16_t counter;
-  
-  char aes_id1[32+1];
-  char public_id1[32+1];
-  char private_id1[12+1];
+  char public_id[32+1];
+  char private_id[12+1];
 
-
-  Serial.println("Initializing YubiKey ...");
-
+  uint8_t aeskey1[32]; 
   ptr = aeskey1;
-  yubikey_eeget_aeskey(ptr);
-  yubikey_hex_encode(aes_id1, (char *)aeskey1, 6);
+  onlykey_eeget_pinhash (ptr, 32);
+  
+  Serial.println("Initializing onlyKey ...");
+  
+  memset(temp, 0, 32); //Clear temp buffer
+  
+  ptr = temp;
+  onlykey_eeget_aeskey(ptr);
+  
+  ptr = (temp+EElen_aeskey);
+  onlykey_eeget_private(ptr);
+
+  ptr = (temp+EElen_aeskey+EElen_private);
+  onlykey_eeget_public(ptr);
+
+  aes_gcm_decrypt(temp, (uint8_t*)EEpos_aeskey, aeskey1, (EElen_aeskey+EElen_private+EElen_aeskey));
+
+  for (int i = 0; i <= EElen_aeskey; i++) {
+    aeskey[i] = temp[i];
+  }
+  for (int i = 0; i <= EElen_private; i++) {
+    privID[i] = temp[i+EElen_aeskey];
+  }
+  for (int i = 0; i <= EElen_public; i++) {
+    pubID[i] = temp[i+EElen_aeskey+EElen_private];
+  }
+  memset(temp, 0, 32); //Clear temp buffer
   
   ptr = (uint8_t*) &counter;
   yubikey_eeget_counter(ptr);
-  
-  ptr = privID1;
-  yubikey_eeget_private(ptr);
-  yubikey_hex_encode(private_id1, (char *)privID1, 6);
-  
-  ptr = pubID1;
-  yubikey_eeget_public(ptr);
-  yubikey_hex_encode(public_id1, (char *)pubID1, 6);
-
-  Serial.println("aeskey1"); //TODO remove debug
-  Serial.println(aes_id1);
-
-  Serial.println("public_id1"); //TODO remove debug
-  Serial.println(public_id1);
-  
-  Serial.println("private_id1"); //TODO remove debug
-  Serial.println(private_id1);
-  
-  Serial.println("counter"); //TODO remove debug
-  Serial.println(counter);
-  
-  Serial.println("seed1");
-  Serial.println(seed1);
 
   uint32_t time = 0x010203; //TODO why is time set to this?
-    
-  yubikey_init1(&ctx, aeskey1, public_id1, private_id1, counter, time, seed1);
+
+  yubikey_hex_encode(private_id, (char *)privID, 6);
+  yubikey_hex_encode(public_id, (char *)pubID, 6);
+  
+  yubikey_init1(&ctx, aeskey, public_id, private_id, counter, time, seed);
  
   yubikey_incr_counter(&ctx);
  
@@ -658,9 +709,9 @@ void simulateapp()  {
 
   //Slot settings
   char label[] = "Label";
-  char username[] = "username";
+  char username[] = "username123456789@gmail.com";
   uint8_t addchar1 = 1;
-  char password[] = "password";
+  char password[] = "password123456789";
   uint8_t delay1 = 1;
   uint8_t addchar2 = 2;
   uint8_t delay2 = 1;
@@ -764,7 +815,7 @@ void simulateapp()  {
   }
   
   buffer[5] = 1; //Writing to Slot 1
-  buffer[6] = 10;     //Writing to Value 10 (Yubikey AES KEY, PRIV ID, PUB ID)
+  buffer[6] = 10;     //Writing to Value 10 (onlykey AES KEY, PRIV ID, PUB ID)
   for (int i = 0; i <= EElen_aeskey; i++) {
     buffer[i+7] = aeskey[i];
   }
@@ -780,4 +831,5 @@ Serial.println("Done");
 
 
 }
+
 

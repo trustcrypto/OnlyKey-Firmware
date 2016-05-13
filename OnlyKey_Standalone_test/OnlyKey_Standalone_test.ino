@@ -96,6 +96,14 @@ extern Password pdpassword;
 yubikey_ctx_st ctx;
 /*************************************/
 
+//PIN HASH
+/*************************************/
+extern uint8_t phash[32];
+extern uint8_t sdhash[32];
+extern uint8_t pdhash[32];
+extern uint8_t nonce[32];
+/*************************************/
+
 //Arduino Setup 
 /*************************************/
 void setup() {
@@ -109,21 +117,33 @@ void setup() {
   CHIP_ID();
   RNG.stir((byte*)ID, sizeof(ID));
   delay(7000);
-  //TODO fix should be 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
+  uint8_t *ptr;
+  ptr = phash;
+  //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
     unlocked = true; //Flash is not protected, First time use
-    Serial.print("UNLOCKED, FIRST TIME USE");
-    //TODO set all EEPROM to random values or 0s?
-  }
-  if(FTFL_FSEC==0x44) { 
-    unlocked = false;
-    Serial.print("INITIALIZED");
-  }
-  Serial.println(FTFL_FSEC); //TODO remove debug
-  Serial.print("EEPROM Used");
+    initialized = false;
+    factorydefault();
+    Serial.println("UNLOCKED, FIRST TIME USE");  
+  } else if(FTFL_FSEC==0x44 && onlykey_eeget_pinhash (ptr, 32)) { 
+        unlocked = false;
+        initialized = true;
+        Serial.println("INITIALIZED");
+        ptr = sdhash;
+        onlykey_eeget_selfdestructhash (ptr); //store self destruct PIN hash
+        ptr = pdhash;
+        onlykey_eeget_plausdenyhash (ptr); //store plausible deniability PIN hash
+        ptr = nonce;
+        onlykey_eeget_noncehash (ptr, 32); //Get nonce from EEPROM
+  } else if (FTFL_FSEC==0x44 && !onlykey_eeget_pinhash (ptr, 32)) {
+        unlocked = true;
+        initialized = false;
+        Serial.println("UNLOCKED, PIN HAS NOT BEEN SET");
+        factorydefault();
+  } 
+  Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
-  rngloop(); //
-  Serial.print(EEpos_aeskey);
+  rngloop(); //Start RNG
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -142,7 +162,7 @@ void checkKey(Task* me) {
   
   if (unlocked == true) {
     recvmsg();
-    if(FTFL_FSEC==0x44) {
+    if(initialized==true) {
     uECC_set_rng(&RNG2); 
     yubikey_incr_timestamp(&ctx);
     }
@@ -279,6 +299,8 @@ void payload(int duration) {
    pass_attempts[0]++;
    //Serial.println(pass_attempts[0]);
    if (pass_attempts[0] >= 10) {
+    Serial.println("Password attempts exhausted");
+    Serial.println(pass_attempts[0]);
    factorydefault();
    pass_attempts[0] = 0;
    return;
@@ -292,9 +314,9 @@ void payload(int duration) {
         {
           onlykey_eeset_failedlogins(0); //Set failed login counter to 0
           password.reset(); //reset the guessed password to NULL
-          hidprint("UNLOCKED       "); 
-          Serial.println("UNLOCKED       ");
-          onlykeyInit(); 
+          hidprint("UNLOCKED"); 
+          Serial.println("UNLOCKED");
+          yubikeyinit(); 
           unlocked = true;
           return;
         }
@@ -330,7 +352,7 @@ void payload(int duration) {
    }
    else if (unlocked == true || password.pdhashevaluate() == true) {
     Serial.println("PLausible Deniability PIN entered"); //TODO remove debug
-    //TODO add PD functions
+    PDmode=true;
    }
    else {
     if (pass_keypress < 10) {
@@ -361,25 +383,27 @@ void gen_press(void) {
   digitalWrite(BLINKPIN, LOW); //LED OFF
   long GMT;
   char* newcode;
-  static uint8_t index = 0;
+  static uint8_t index;
   uint8_t temp[32];
   int usernamelength;
   int passwordlength;
   int otplength;
-  uint8_t aeskey1[32]; 
+  int slot;
   uint8_t *ptr;
   simulateapp(); //For Testing without the chrome app
-  ptr=aeskey1;
-  onlykey_eeget_pinhash(ptr, 32);
+  if (PDmode==true) {
+    slot=(button_selected-'0')+12;
+  } else {
+    slot=button_selected-'0';
+  }
   switch (button_selected) {
     case '1':
+      index = 0;
       Serial.print("Slot Number ");
       Serial.println(button_selected-'0');
-      for (int i=0; i<32; i++) { //Wipe all data from buffer
-      temp[i] = 0x00;
-      }
+      memset(temp, 0, 32); //Wipe all data from buffer
       ptr = temp;
-      usernamelength = onlykey_eeget_username(ptr, 1);
+      usernamelength = onlykey_eeget_username(ptr, slot);
       if(usernamelength > 0)
       {
         Serial.println("Reading Username from EEPROM...");
@@ -392,7 +416,7 @@ void gen_press(void) {
           #endif
         Serial.print("Username Length = ");
         Serial.println(usernamelength);
-        aes_gcm_decrypt(temp, (uint8_t*)EEpos_username1, aeskey1, usernamelength);
+        aes_gcm_decrypt(temp, (uint8_t*)EEpos_username1, phash, usernamelength);
         ByteToChar2(temp, keybuffer, usernamelength, index);
         #ifdef DEBUG
             Serial.println("Unencrypted");
@@ -403,10 +427,8 @@ void gen_press(void) {
         #endif
         index=usernamelength;
       }
-      for (int i=0; i<32; i++) { //Wipe all data from buffer
-      temp[i] = 0x00;
-      }
-      onlykey_eeget_addchar1(ptr, 1);
+      memset(temp, 0, 32); //Wipe all data from buffer
+      onlykey_eeget_addchar1(ptr, slot);
       if(temp[0] > 0)
       {
         Serial.println("Reading addchar1 from EEPROM...");
@@ -423,10 +445,8 @@ void gen_press(void) {
         index++;
         }
       }
-      for (int i=0; i<32; i++) { //Wipe all data from buffer
-      temp[i] = 0x00;
-      }
-      onlykey_eeget_delay1(ptr, 1);
+      memset(temp, 0, 32); //Wipe all data from buffer
+      onlykey_eeget_delay1(ptr, slot);
       if(temp[0] > 0)
       {
         Serial.println("Reading Delay from EEPROM...");
@@ -436,7 +456,7 @@ void gen_press(void) {
         keybuffer[index] = temp[0] + 129;
         index++;
       }
-      passwordlength = onlykey_eeget_password(ptr, 1);
+      passwordlength = onlykey_eeget_password(ptr, slot);
       if(passwordlength > 0)
       {
         Serial.println("Reading Password from EEPROM...");
@@ -449,7 +469,7 @@ void gen_press(void) {
           #endif
         Serial.print("Password Length = ");
         Serial.println(passwordlength);
-        aes_gcm_decrypt(temp, (uint8_t*)EEpos_password1, aeskey1, passwordlength);
+        aes_gcm_decrypt(temp, (uint8_t*)EEpos_password1, phash, passwordlength);
         ByteToChar2(temp, keybuffer, passwordlength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
@@ -460,14 +480,12 @@ void gen_press(void) {
         #endif
         index=passwordlength+index;
       }
-      for (int i=0; i<32; i++) { //Wipe all data from buffer
-      temp[i] = 0x00;
-      }     
-      onlykey_eeget_addchar2(ptr, 1);
+      memset(temp, 0, 32); //Wipe all data from buffer    
+      onlykey_eeget_addchar2(ptr, slot);
       if(temp[0] > 0)
       {
-        Serial.println("Reading addchar2 from EEPROM...");
         if(temp[0] == 1) {
+        Serial.println("Reading addchar2 from EEPROM...");
         keybuffer[index] = 128;
         Serial.println("TAB");
         index++;
@@ -479,10 +497,8 @@ void gen_press(void) {
         index++;
         }
       }
-      for (int i=0; i<32; i++) { //Wipe all data from buffer
-      temp[i] = 0x00;
-      }     
-      onlykey_eeget_delay2(ptr, 1);
+      memset(temp, 0, 32); //Wipe all data from buffer    
+      onlykey_eeget_delay2(ptr, slot);
       if(temp[0] > 0)
       {
         Serial.println("Reading Delay2 from EEPROM...");
@@ -492,15 +508,13 @@ void gen_press(void) {
         keybuffer[index] = temp[0] + 129;
         index++;
       }
-      for (int i=0; i<32; i++) { //Wipe all data from buffer
-      temp[i] = 0x00;
-      }   
-      onlykey_eeget_2FAtype(ptr, 1);
+      memset(temp, 0, 32); //Wipe all data from buffer 
+      onlykey_eeget_2FAtype(ptr, slot);
       if(temp[0] > 0)
       {
         if(temp[0] == 1) { //Google Auth
           Serial.println("Reading TOTP Key from EEPROM...");
-          otplength = onlykey_eeget_totpkey(ptr, 1);
+          otplength = onlykey_eeget_totpkey(ptr, slot);
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < 32; z++) {
@@ -510,7 +524,7 @@ void gen_press(void) {
           #endif
         Serial.print("TOTP Key Length = ");
         Serial.println(otplength);
-        aes_gcm_decrypt(temp, (uint8_t*)EEpos_totpkey1, aeskey1, otplength);
+        aes_gcm_decrypt(temp, (uint8_t*)EEpos_totpkey1, phash, otplength);
         ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
@@ -620,7 +634,7 @@ void gen_hold(void) {
 }
 /*************************************/
 
-void onlykeyInit() {
+void yubikeyinit() {
   
   uint32_t seed;
   uint8_t *ptr = (uint8_t *)&seed;
@@ -634,9 +648,6 @@ void onlykeyInit() {
   char public_id[32+1];
   char private_id[12+1];
 
-  uint8_t aeskey1[32]; 
-  ptr = aeskey1;
-  onlykey_eeget_pinhash (ptr, 32);
   
   Serial.println("Initializing onlyKey ...");
   
@@ -651,7 +662,7 @@ void onlykeyInit() {
   ptr = (temp+EElen_aeskey+EElen_private);
   onlykey_eeget_public(ptr);
 
-  aes_gcm_decrypt(temp, (uint8_t*)EEpos_aeskey, aeskey1, (EElen_aeskey+EElen_private+EElen_aeskey));
+  aes_gcm_decrypt(temp, (uint8_t*)EEpos_aeskey, phash, (EElen_aeskey+EElen_private+EElen_aeskey));
 
   for (int i = 0; i <= EElen_aeskey; i++) {
     aeskey[i] = temp[i];
@@ -696,7 +707,7 @@ void simulateapp()  {
   uint8_t i = 0;
   uint8_t index=0;
   uint8_t len;
-  uint8_t buffer[64] = {0}; //Simulate 64 byte USB packet
+  uint8_t buffer[64]; //Simulate 64 byte USB packet
 
   //Slot settings
   char label[] = "Label";
@@ -712,6 +723,8 @@ void simulateapp()  {
   uint8_t pubID [] = {0xff, 0x16, 0x79, 0x9e, 0x70, 0x3f};  
   uint8_t aeskey [] = {0xe0, 0xf6, 0x82, 0xf6, 0x64, 0xcd, 0x41, 0x74, 0xe4, 0x3c, 0x7f, 0x8d, 0x2a, 0xfe, 0x9f, 0xf3};
 
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
   buffer[5] = 0x01; //Writing to Slot 1
   buffer[6] = 0x01; //Writing to Value 1 (Label)
   index = 7;
@@ -720,9 +733,8 @@ void simulateapp()  {
   Serial.print("Label set to ");
   Serial.println(label);
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 2; //Writing to Value 2 (Username)
   len = sizeof(username);
@@ -730,9 +742,7 @@ void simulateapp()  {
   Serial.print("Username set to ");
   Serial.println(username);
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
 
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 3;   //Writing to Value 3 (Additional Character 1)
@@ -740,9 +750,7 @@ void simulateapp()  {
   Serial.print("Addchar1 set to ");
   Serial.println(addchar1);
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
 
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 4;     //Writing to Value 4 (Delay 1)
@@ -750,9 +758,7 @@ void simulateapp()  {
   Serial.print("Delay2 set to ");
   Serial.println(delay1);
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
 
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 5; //Writing to Value 5 (Password)
@@ -762,9 +768,7 @@ void simulateapp()  {
   Serial.print("Password set to ");
   Serial.println(password);
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
 
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 6;     //Writing to Value 6 (Additional Character 2)
@@ -772,9 +776,7 @@ void simulateapp()  {
   Serial.print("Addchar2 set to ");
   Serial.print(addchar2);
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
   
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 7;       //Writing to Value 7 (Delay 2)
@@ -782,18 +784,14 @@ void simulateapp()  {
   Serial.print("Delay2 set to ");
   Serial.print(delay2);
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
   
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 8;     //Writing to Value 8 (2FA type)
   Serial.print(buffer[6]);
   buffer[7] = type;
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
   
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 9;     //Writing to Value 9 (TOTP Key)
@@ -801,9 +799,7 @@ void simulateapp()  {
     buffer[i+7] = totpkey[i];
   }
   SETSLOT(buffer);
-  for (i=0; i<64; i++) { //Wipe all data from buffer
-    buffer[i] = 0x00;
-  }
+  memset(buffer, 0, 64); //Wipe all data from buffer
   
   buffer[5] = 1; //Writing to Slot 1
   buffer[6] = 10;     //Writing to Value 10 (onlykey AES KEY, PRIV ID, PUB ID)
@@ -818,8 +814,7 @@ void simulateapp()  {
   }
   
   SETSLOT(buffer);
-Serial.println("Done");
-
+  memset(buffer, 0, 64); //Wipe all data from buffer
 
 }
 

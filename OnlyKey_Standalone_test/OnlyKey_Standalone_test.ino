@@ -1,4 +1,4 @@
-// OnlyKey Alpha
+// OnlyKey Standalone test
 /*
  * Tim Steiner
  * Copyright (c) 2016 , CryptoTrust LLC.
@@ -33,8 +33,8 @@
 #include "sha256.h"
 #include <EEPROM.h>
 #include "uecc.h"
-#include "ykcore.h"
 #include "yksim.h"
+#include "ykcore.h"
 #include <softtimer.h>
 #include <password.h>
 //http://www.arduino.cc/playground/uploads/Code/Password.zip
@@ -91,16 +91,7 @@ extern Password sdpassword;
 extern Password pdpassword;
 /*************************************/
 
-//Google Auth key converted from base 32 to hex
-
-/*************************************/
-
-//U2F assignments
-/*************************************/
-
-/*************************************/
-
-//onlykey 
+//yubikey
 /*************************************/
 yubikey_ctx_st ctx;
 /*************************************/

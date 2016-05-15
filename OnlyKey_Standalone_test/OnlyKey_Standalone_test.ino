@@ -380,7 +380,12 @@ void payload(int duration) {
 
 void gen_press(void) {
   digitalWrite(BLINKPIN, LOW); //LED OFF
-    simulateapp(); //For Testing without the chrome app
+simulateappslot1();
+simulateappslot2();
+simulateappslot3();
+simulateappslot4();
+simulateappslot5();
+simulateappslot6();
   int slot;
   if (PDmode==true) {
     slot=(button_selected-'0')+12;
@@ -476,7 +481,8 @@ void rngloop() {
     RNG.loop();
 }
 
-void simulateapp()  {
+
+void simulateappslot6()  {
   uint8_t i = 0;
   uint8_t index=0;
   uint8_t len;
@@ -498,7 +504,7 @@ void simulateapp()  {
 
   memset(buffer, 0, 64); //Wipe all data from buffer
 
-  buffer[5] = 0x01; //Writing to Slot 1
+  buffer[5] = 0x06; //Writing to Slot 6
   buffer[6] = 0x01; //Writing to Value 1 (Label)
   index = 7;
   len = sizeof(label);
@@ -508,7 +514,584 @@ void simulateapp()  {
   SETSLOT(buffer);
   memset(buffer, 0, 64); //Wipe all data from buffer
   
-  buffer[5] = 1; //Writing to Slot 1
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 2; //Writing to Value 2 (Username)
+  len = sizeof(username);
+  CharToByte2(username, buffer, len, 7);
+  Serial.print("Username set to ");
+  Serial.println(username);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 3;   //Writing to Value 3 (Additional Character 1)
+  buffer[7] = addchar1;
+  Serial.print("Addchar1 set to ");
+  Serial.println(addchar1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 4;     //Writing to Value 4 (Delay 1)
+  buffer[7] = delay1;
+  Serial.print("Delay2 set to ");
+  Serial.println(delay1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 5; //Writing to Value 5 (Password)
+  index = 7;
+  len = sizeof(password);
+  CharToByte2(password, buffer, len, index);
+  Serial.print("Password set to ");
+  Serial.println(password);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 6;     //Writing to Value 6 (Additional Character 2)
+  buffer[7] = addchar2;
+  Serial.print("Addchar2 set to ");
+  Serial.print(addchar2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 7;       //Writing to Value 7 (Delay 2)
+  buffer[7] = delay2;
+  Serial.print("Delay2 set to ");
+  Serial.print(delay2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 8;     //Writing to Value 8 (2FA type)
+  Serial.print(buffer[6]);
+  buffer[7] = type;
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 9;     //Writing to Value 9 (TOTP Key)
+  for (int i = 0; i <= sizeof(totpkey); i++) {
+    buffer[i+7] = totpkey[i];
+  }
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 6; //Writing to Slot 6
+  buffer[6] = 10;     //Writing to Value 10 (onlykey AES KEY, PRIV ID, PUB ID)
+  for (int i = 0; i <= EElen_aeskey; i++) {
+    buffer[i+7] = aeskey[i];
+  }
+  for (int i = 0; i <= EElen_private; i++) {
+    buffer[EElen_aeskey+7] = privID[i];
+  }
+  for (int i = 0; i <= EElen_public; i++) {
+    buffer[EElen_aeskey+EElen_private+7] = pubID[i];
+  }
+  
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+}
+
+void simulateappslot5()  {
+  uint8_t i = 0;
+  uint8_t index=0;
+  uint8_t len;
+  uint8_t buffer[64]; //Simulate 64 byte USB packet
+
+  //Slot settings
+  char label[] = "Label";
+  char username[] = "username123456789@gmail.com";
+  uint8_t addchar1 = 1;
+  char password[] = "password123456789";
+  uint8_t delay1 = 1;
+  uint8_t addchar2 = 2;
+  uint8_t delay2 = 1;
+  uint8_t type = 1;
+  uint8_t totpkey[] = {0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72, 0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72};
+  uint8_t privID [] = {0xf1, 0x38, 0xa8, 0x24, 0xad, 0x07};
+  uint8_t pubID [] = {0xff, 0x16, 0x79, 0x9e, 0x70, 0x3f};  
+  uint8_t aeskey [] = {0xe0, 0xf6, 0x82, 0xf6, 0x64, 0xcd, 0x41, 0x74, 0xe4, 0x3c, 0x7f, 0x8d, 0x2a, 0xfe, 0x9f, 0xf3};
+
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 0x05; //Writing to Slot 5
+  buffer[6] = 0x01; //Writing to Value 1 (Label)
+  index = 7;
+  len = sizeof(label);
+  CharToByte2(label, buffer, len, index);
+  Serial.print("Label set to ");
+  Serial.println(label);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 2; //Writing to Value 2 (Username)
+  len = sizeof(username);
+  CharToByte2(username, buffer, len, 7);
+  Serial.print("Username set to ");
+  Serial.println(username);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 3;   //Writing to Value 3 (Additional Character 1)
+  buffer[7] = addchar1;
+  Serial.print("Addchar1 set to ");
+  Serial.println(addchar1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 4;     //Writing to Value 4 (Delay 1)
+  buffer[7] = delay1;
+  Serial.print("Delay2 set to ");
+  Serial.println(delay1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 5; //Writing to Value 5 (Password)
+  index = 7;
+  len = sizeof(password);
+  CharToByte2(password, buffer, len, index);
+  Serial.print("Password set to ");
+  Serial.println(password);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 6;     //Writing to Value 6 (Additional Character 2)
+  buffer[7] = addchar2;
+  Serial.print("Addchar2 set to ");
+  Serial.print(addchar2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 7;       //Writing to Value 7 (Delay 2)
+  buffer[7] = delay2;
+  Serial.print("Delay2 set to ");
+  Serial.print(delay2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 8;     //Writing to Value 8 (2FA type)
+  Serial.print(buffer[6]);
+  buffer[7] = type;
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 9;     //Writing to Value 9 (TOTP Key)
+  for (int i = 0; i <= sizeof(totpkey); i++) {
+    buffer[i+7] = totpkey[i];
+  }
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 5; //Writing to Slot 5
+  buffer[6] = 10;     //Writing to Value 10 (onlykey AES KEY, PRIV ID, PUB ID)
+  for (int i = 0; i <= EElen_aeskey; i++) {
+    buffer[i+7] = aeskey[i];
+  }
+  for (int i = 0; i <= EElen_private; i++) {
+    buffer[EElen_aeskey+7] = privID[i];
+  }
+  for (int i = 0; i <= EElen_public; i++) {
+    buffer[EElen_aeskey+EElen_private+7] = pubID[i];
+  }
+  
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+}
+
+void simulateappslot4()  {
+  uint8_t i = 0;
+  uint8_t index=0;
+  uint8_t len;
+  uint8_t buffer[64]; //Simulate 64 byte USB packet
+
+  //Slot settings
+  char label[] = "Label";
+  char username[] = "username123456789@gmail.com";
+  uint8_t addchar1 = 1;
+  char password[] = "password123456789";
+  uint8_t delay1 = 1;
+  uint8_t addchar2 = 2;
+  uint8_t delay2 = 1;
+  uint8_t type = 1;
+  uint8_t totpkey[] = {0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72, 0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72};
+  uint8_t privID [] = {0xf1, 0x38, 0xa8, 0x24, 0xad, 0x07};
+  uint8_t pubID [] = {0xff, 0x16, 0x79, 0x9e, 0x70, 0x3f};  
+  uint8_t aeskey [] = {0xe0, 0xf6, 0x82, 0xf6, 0x64, 0xcd, 0x41, 0x74, 0xe4, 0x3c, 0x7f, 0x8d, 0x2a, 0xfe, 0x9f, 0xf3};
+
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 0x04; //Writing to Slot 4
+  buffer[6] = 0x01; //Writing to Value 1 (Label)
+  index = 7;
+  len = sizeof(label);
+  CharToByte2(label, buffer, len, index);
+  Serial.print("Label set to ");
+  Serial.println(label);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 2; //Writing to Value 2 (Username)
+  len = sizeof(username);
+  CharToByte2(username, buffer, len, 7);
+  Serial.print("Username set to ");
+  Serial.println(username);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 3;   //Writing to Value 3 (Additional Character 1)
+  buffer[7] = addchar1;
+  Serial.print("Addchar1 set to ");
+  Serial.println(addchar1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 4;     //Writing to Value 4 (Delay 1)
+  buffer[7] = delay1;
+  Serial.print("Delay2 set to ");
+  Serial.println(delay1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 5; //Writing to Value 5 (Password)
+  index = 7;
+  len = sizeof(password);
+  CharToByte2(password, buffer, len, index);
+  Serial.print("Password set to ");
+  Serial.println(password);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 6;     //Writing to Value 6 (Additional Character 2)
+  buffer[7] = addchar2;
+  Serial.print("Addchar2 set to ");
+  Serial.print(addchar2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 7;       //Writing to Value 7 (Delay 2)
+  buffer[7] = delay2;
+  Serial.print("Delay2 set to ");
+  Serial.print(delay2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 8;     //Writing to Value 8 (2FA type)
+  Serial.print(buffer[6]);
+  buffer[7] = type;
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 9;     //Writing to Value 9 (TOTP Key)
+  for (int i = 0; i <= sizeof(totpkey); i++) {
+    buffer[i+7] = totpkey[i];
+  }
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 4; //Writing to Slot 4
+  buffer[6] = 10;     //Writing to Value 10 (onlykey AES KEY, PRIV ID, PUB ID)
+  for (int i = 0; i <= EElen_aeskey; i++) {
+    buffer[i+7] = aeskey[i];
+  }
+  for (int i = 0; i <= EElen_private; i++) {
+    buffer[EElen_aeskey+7] = privID[i];
+  }
+  for (int i = 0; i <= EElen_public; i++) {
+    buffer[EElen_aeskey+EElen_private+7] = pubID[i];
+  }
+  
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+}
+
+
+void simulateappslot3()  {
+  uint8_t i = 0;
+  uint8_t index=0;
+  uint8_t len;
+  uint8_t buffer[64]; //Simulate 64 byte USB packet
+
+  //Slot settings
+  char label[] = "Label";
+  char username[] = "username123456789@gmail.com";
+  uint8_t addchar1 = 1;
+  char password[] = "password123456789";
+  uint8_t delay1 = 1;
+  uint8_t addchar2 = 2;
+  uint8_t delay2 = 1;
+  uint8_t type = 1;
+  uint8_t totpkey[] = {0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72, 0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72};
+  uint8_t privID [] = {0xf1, 0x38, 0xa8, 0x24, 0xad, 0x07};
+  uint8_t pubID [] = {0xff, 0x16, 0x79, 0x9e, 0x70, 0x3f};  
+  uint8_t aeskey [] = {0xe0, 0xf6, 0x82, 0xf6, 0x64, 0xcd, 0x41, 0x74, 0xe4, 0x3c, 0x7f, 0x8d, 0x2a, 0xfe, 0x9f, 0xf3};
+
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 0x03; //Writing to Slot 3
+  buffer[6] = 0x01; //Writing to Value 1 (Label)
+  index = 7;
+  len = sizeof(label);
+  CharToByte2(label, buffer, len, index);
+  Serial.print("Label set to ");
+  Serial.println(label);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 2; //Writing to Value 2 (Username)
+  len = sizeof(username);
+  CharToByte2(username, buffer, len, 7);
+  Serial.print("Username set to ");
+  Serial.println(username);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 3;   //Writing to Value 3 (Additional Character 1)
+  buffer[7] = addchar1;
+  Serial.print("Addchar1 set to ");
+  Serial.println(addchar1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 4;     //Writing to Value 4 (Delay 1)
+  buffer[7] = delay1;
+  Serial.print("Delay2 set to ");
+  Serial.println(delay1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 5; //Writing to Value 5 (Password)
+  index = 7;
+  len = sizeof(password);
+  CharToByte2(password, buffer, len, index);
+  Serial.print("Password set to ");
+  Serial.println(password);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 6;     //Writing to Value 6 (Additional Character 2)
+  buffer[7] = addchar2;
+  Serial.print("Addchar2 set to ");
+  Serial.print(addchar2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 7;       //Writing to Value 7 (Delay 2)
+  buffer[7] = delay2;
+  Serial.print("Delay2 set to ");
+  Serial.print(delay2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 8;     //Writing to Value 8 (2FA type)
+  Serial.print(buffer[6]);
+  buffer[7] = type;
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 9;     //Writing to Value 9 (TOTP Key)
+  for (int i = 0; i <= sizeof(totpkey); i++) {
+    buffer[i+7] = totpkey[i];
+  }
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 3; //Writing to Slot 3
+  buffer[6] = 10;     //Writing to Value 10 (onlykey AES KEY, PRIV ID, PUB ID)
+  for (int i = 0; i <= EElen_aeskey; i++) {
+    buffer[i+7] = aeskey[i];
+  }
+  for (int i = 0; i <= EElen_private; i++) {
+    buffer[EElen_aeskey+7] = privID[i];
+  }
+  for (int i = 0; i <= EElen_public; i++) {
+    buffer[EElen_aeskey+EElen_private+7] = pubID[i];
+  }
+  
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+}
+
+
+void simulateappslot2()  {
+  uint8_t i = 0;
+  uint8_t index=0;
+  uint8_t len;
+  uint8_t buffer[64]; //Simulate 64 byte USB packet
+
+  //Slot settings
+  char label[] = "Label";
+  char username[] = "username123456789@gmail.com";
+  uint8_t addchar1 = 1;
+  char password[] = "password123456789";
+  uint8_t delay1 = 1;
+  uint8_t addchar2 = 2;
+  uint8_t delay2 = 1;
+  uint8_t type = 1;
+  uint8_t totpkey[] = {0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72, 0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72};
+  uint8_t privID [] = {0xf1, 0x38, 0xa8, 0x24, 0xad, 0x07};
+  uint8_t pubID [] = {0xff, 0x16, 0x79, 0x9e, 0x70, 0x3f};  
+  uint8_t aeskey [] = {0xe0, 0xf6, 0x82, 0xf6, 0x64, 0xcd, 0x41, 0x74, 0xe4, 0x3c, 0x7f, 0x8d, 0x2a, 0xfe, 0x9f, 0xf3};
+
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 0x02; //Writing to Slot 2
+  buffer[6] = 0x01; //Writing to Value 1 (Label)
+  index = 7;
+  len = sizeof(label);
+  CharToByte2(label, buffer, len, index);
+  Serial.print("Label set to ");
+  Serial.println(label);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 2; //Writing to Value 2 (Username)
+  len = sizeof(username);
+  CharToByte2(username, buffer, len, 7);
+  Serial.print("Username set to ");
+  Serial.println(username);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 3;   //Writing to Value 3 (Additional Character 1)
+  buffer[7] = addchar1;
+  Serial.print("Addchar1 set to ");
+  Serial.println(addchar1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 4;     //Writing to Value 4 (Delay 1)
+  buffer[7] = delay1;
+  Serial.print("Delay2 set to ");
+  Serial.println(delay1);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 5; //Writing to Value 5 (Password)
+  index = 7;
+  len = sizeof(password);
+  CharToByte2(password, buffer, len, index);
+  Serial.print("Password set to ");
+  Serial.println(password);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 6;     //Writing to Value 6 (Additional Character 2)
+  buffer[7] = addchar2;
+  Serial.print("Addchar2 set to ");
+  Serial.print(addchar2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 7;       //Writing to Value 7 (Delay 2)
+  buffer[7] = delay2;
+  Serial.print("Delay2 set to ");
+  Serial.print(delay2);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 8;     //Writing to Value 8 (2FA type)
+  Serial.print(buffer[6]);
+  buffer[7] = type;
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 9;     //Writing to Value 9 (TOTP Key)
+  for (int i = 0; i <= sizeof(totpkey); i++) {
+    buffer[i+7] = totpkey[i];
+  }
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 2; //Writing to Slot 2
+  buffer[6] = 10;     //Writing to Value 10 (onlykey AES KEY, PRIV ID, PUB ID)
+  for (int i = 0; i <= EElen_aeskey; i++) {
+    buffer[i+7] = aeskey[i];
+  }
+  for (int i = 0; i <= EElen_private; i++) {
+    buffer[EElen_aeskey+7] = privID[i];
+  }
+  for (int i = 0; i <= EElen_public; i++) {
+    buffer[EElen_aeskey+EElen_private+7] = pubID[i];
+  }
+  
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+}
+
+void simulateappslot1()  {
+  uint8_t i = 0;
+  uint8_t index=0;
+  uint8_t len;
+  uint8_t buffer[64]; //Simulate 64 byte USB packet
+
+  //Slot settings
+  char label[] = "Label";
+  char username[] = "username123456789@gmail.com";
+  uint8_t addchar1 = 1;
+  char password[] = "password123456789";
+  uint8_t delay1 = 1;
+  uint8_t addchar2 = 2;
+  uint8_t delay2 = 1;
+  uint8_t type = 1;
+  uint8_t totpkey[] = {0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72, 0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72};
+  uint8_t privID [] = {0xf1, 0x38, 0xa8, 0x24, 0xad, 0x07};
+  uint8_t pubID [] = {0xff, 0x16, 0x79, 0x9e, 0x70, 0x3f};  
+  uint8_t aeskey [] = {0xe0, 0xf6, 0x82, 0xf6, 0x64, 0xcd, 0x41, 0x74, 0xe4, 0x3c, 0x7f, 0x8d, 0x2a, 0xfe, 0x9f, 0xf3};
+
+  memset(buffer, 0, 64); //Wipe all data from buffer
+
+  buffer[5] = 0x01; //Writing to Slot 2
+  buffer[6] = 0x01; //Writing to Value 1 (Label)
+  index = 7;
+  len = sizeof(label);
+  CharToByte2(label, buffer, len, index);
+  Serial.print("Label set to ");
+  Serial.println(label);
+  SETSLOT(buffer);
+  memset(buffer, 0, 64); //Wipe all data from buffer
+  
+  buffer[5] = 1; //Writing to Slot 2
   buffer[6] = 2; //Writing to Value 2 (Username)
   len = sizeof(username);
   CharToByte2(username, buffer, len, 7);

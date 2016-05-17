@@ -118,29 +118,35 @@ void setup() {
   uint8_t *ptr;
   ptr = phash;
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
+  int init = onlykey_eeget_pinhash (ptr, 32);
   if(FTFL_FSEC==0xDE) { 
-    unlocked = true; //Flash is not protected, First time use
-    initialized = false;
     factorydefault();
-    Serial.println("UNLOCKED, FIRST TIME USE");  
-  } else if(FTFL_FSEC==0x44 && onlykey_eeget_pinhash (ptr, 32)) { 
-        unlocked = false;
-        initialized = true;
-        Serial.println("INITIALIZED");
+      int nn;
+      nn=flashSecurityLockBits();
+      Serial.print("Flash security bits ");
+      if(nn) Serial.print("not ");
+      Serial.println("written successfully");
+      unlocked = true; //Flash is not protected, First time use
+      initialized = false;
+      Serial.println("UNLOCKED, FIRST TIME USE");  
+  } else if(FTFL_FSEC==0x44 && init >= 1) { 
         ptr = sdhash;
         onlykey_eeget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
         onlykey_eeget_plausdenyhash (ptr); //store plausible deniability PIN hash
         ptr = nonce;
         onlykey_eeget_noncehash (ptr, 32); //Get nonce from EEPROM
-  } else if (FTFL_FSEC==0x44 && !onlykey_eeget_pinhash (ptr, 32)) {
+        unlocked = false;
+        initialized = true;
+        Serial.println("INITIALIZED");
+  } else if (FTFL_FSEC==0x44 && init==0) {
         unlocked = true;
         initialized = false;
         Serial.println("UNLOCKED, PIN HAS NOT BEEN SET");
-        factorydefault();
   } 
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
+  Serial.println(FTFL_FSEC, HEX);
   rngloop(); //Start RNG
   SoftTimer.add(&taskKey);
 }
@@ -158,14 +164,14 @@ void checkKey(Task* me) {
     
   rngloop(); //
   
-  if (unlocked == true) {
+  if (unlocked) {
     recvmsg();
-    if(initialized==true) {
+    if(initialized) {
     uECC_set_rng(&RNG2); 
     yubikey_incr_timestamp(&ctx);
     }
   }
-  else if (sincelast >= 1000)
+  else if (sincelast >= 1000 && initialized)
   {
     hidprint("INITIALIZED");
     Serial.println("INITIALIZED");
@@ -234,7 +240,7 @@ void checkKey(Task* me) {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
-    if (unlocked == false) digitalWrite(BLINKPIN, LOW); //LED OFF
+    if (!unlocked) digitalWrite(BLINKPIN, LOW); //LED OFF
     else digitalWrite(BLINKPIN, HIGH); //LED ON
   }
 
@@ -277,7 +283,7 @@ void sendKey(Task* me) {
 //Keypad passcode checker
 /*************************************/
 void payload(int duration) {
-   if (unlocked == false) digitalWrite(BLINKPIN, HIGH); //LED ON
+   if (!unlocked) digitalWrite(BLINKPIN, HIGH); //LED ON
    else digitalWrite(BLINKPIN, LOW); //LED OFF
    uint8_t pass_attempts[1];
    uint8_t *ptr;
@@ -291,7 +297,7 @@ void payload(int duration) {
     return;
     }
    
-   if (firsttime==true) //Get failed login counter from eeprom and increment for new login attempt
+   if (firsttime) //Get failed login counter from eeprom and increment for new login attempt
    {
    onlykey_eeget_failedlogins (ptr);
    pass_attempts[0]++;
@@ -307,7 +313,7 @@ void payload(int duration) {
    firsttime = false;
    }
    password.append(button_selected);
-   if (unlocked == true || password.hashevaluate() == true) { 
+   if (unlocked || password.hashevaluate()) { 
         if (unlocked != true) //A correct PIN was just entered do the following for first login
         {
           onlykey_eeset_failedlogins(0); //Set failed login counter to 0
@@ -344,11 +350,11 @@ void payload(int duration) {
       SoftTimer.add(&taskKB);
       return;
   }
-   else if (password.sdhashevaluate() == true) {
+   else if (password.sdhashevaluate()) {
     Serial.println("Self Destruct PIN entered"); //TODO remove debug
     factorydefault(); 
    }
-   else if (unlocked == true || password.pdhashevaluate() == true) {
+   else if (unlocked || password.pdhashevaluate()) {
     Serial.println("Plausible Deniability PIN entered"); //TODO remove debug
     PDmode=true;
    }
@@ -378,6 +384,11 @@ void payload(int duration) {
 /*************************************/
 
 void gen_press(void) {
+  if (!initialized) {
+    Serial.println("UNINITIALIZED - You must set a password first");
+    hidprint("UNINITIALIZED - You must set a password first");
+    return;
+  }
   digitalWrite(BLINKPIN, LOW); //LED OFF
   int slot;
   if (PDmode==true) {
@@ -393,6 +404,11 @@ void gen_press(void) {
 /*************************************/
 
 void gen_hold(void) {
+  if (!initialized) {
+    Serial.println("UNINITIALIZED - You must set a password first");
+    hidprint("UNINITIALIZED - You must set a password first");
+    return;
+  }
   digitalWrite(BLINKPIN, LOW); //LED OFF
   int slot;
   if (PDmode==true) {

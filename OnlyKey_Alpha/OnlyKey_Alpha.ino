@@ -117,8 +117,8 @@ void setup() {
   delay(7000);
   uint8_t *ptr;
   ptr = phash;
+  int isinit = onlykey_eeget_pinhash (ptr, 32);
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
-  int init = onlykey_eeget_pinhash (ptr, 32);
   if(FTFL_FSEC==0xDE) { 
     factorydefault();
       int nn;
@@ -126,10 +126,11 @@ void setup() {
       Serial.print("Flash security bits ");
       if(nn) Serial.print("not ");
       Serial.println("written successfully");
+      onlykey_eeget_pinhash (ptr, 32);
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       Serial.println("UNLOCKED, FIRST TIME USE");  
-  } else if(FTFL_FSEC==0x44 && init >= 1) { 
+  } else if(FTFL_FSEC==0x44 && isinit) { 
         ptr = sdhash;
         onlykey_eeget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
@@ -139,7 +140,7 @@ void setup() {
         unlocked = false;
         initialized = true;
         Serial.println("INITIALIZED");
-  } else if (FTFL_FSEC==0x44 && init==0) {
+  } else {
         unlocked = true;
         initialized = false;
         Serial.println("UNLOCKED, PIN HAS NOT BEEN SET");

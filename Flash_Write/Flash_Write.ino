@@ -21,20 +21,19 @@ void setup()
 {
 
   Serial.begin(9600);
-  while(!Serial);
-  delay(1000);
+  delay(5000);
  
 
 
   unsigned long value = 0x00000000;
   //Set pointer to first empty flash sector
-  uintptr_t adr = 0x0;
+  uintptr_t adr = 0x14820;
   for (int i = 0; i < 7000; i++)
   {
   
   //Write long to empty sector 
   Serial.printf("0x%X", adr);
-  //if ( flashProgramWord((unsigned long*)adr, &value) ) Serial.printf("NOT ");
+  if ( flashProgramWord((unsigned long*)adr, &value) ) Serial.printf("NOT ");
   Serial.printf(" 0x%X", *((unsigned int*)adr));
   Serial.println();
   adr=adr+4;

@@ -117,7 +117,7 @@ void setup() {
   delay(7000);
   uint8_t *ptr;
   ptr = phash;
-  int isinit = onlykey_eeget_pinhash (ptr, 32);
+  int isinit = onlykey_flashget_pinhash (ptr, 32);
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
     factorydefault();
@@ -126,17 +126,17 @@ void setup() {
       Serial.print("Flash security bits ");
       if(nn) Serial.print("not ");
       Serial.println("written successfully");
-      onlykey_eeget_pinhash (ptr, 32);
+      onlykey_flashget_pinhash (ptr, 32);
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       Serial.println("UNLOCKED, FIRST TIME USE");  
   } else if(FTFL_FSEC==0x44 && isinit) { 
         ptr = sdhash;
-        onlykey_eeget_selfdestructhash (ptr); //store self destruct PIN hash
+        onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
-        onlykey_eeget_plausdenyhash (ptr); //store plausible deniability PIN hash
+        onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
         ptr = nonce;
-        onlykey_eeget_noncehash (ptr, 32); //Get nonce from EEPROM
+        onlykey_flashget_noncehash (ptr, 32); //Get nonce from EEPROM
         unlocked = false;
         initialized = true;
         Serial.println("INITIALIZED");
@@ -293,7 +293,8 @@ void payload(int duration) {
     Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
       while(1==1)
         {
-        blink(3);
+        hidprint("Error password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
+        blink(5);
         }
     return;
     }
@@ -314,30 +315,30 @@ void payload(int duration) {
    firsttime = false;
    }
    password.append(button_selected);
-   if (unlocked || password.hashevaluate()) { 
+   if (unlocked || password.hashevaluate() || password.pdhashevaluate()) { 
         if (unlocked != true) //A correct PIN was just entered do the following for first login
         {
           onlykey_eeset_failedlogins(0); //Set failed login counter to 0
           password.reset(); //reset the guessed password to NULL
           hidprint("UNLOCKED"); 
           Serial.println("UNLOCKED");
-          yubikeyinit(); 
+          if (!PDmode) yubikeyinit(); 
           unlocked = true;
           return;
         }
-      else if (PINSET==0) { 
+        else if (PINSET==0) { 
         }
-      else if (PINSET<=3) { 
+        else if (PINSET<=3) { 
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
             return;
         }
-      else if (PINSET<=6) {
+        else if (PINSET<=6) {
             Serial.print("SD password appended with ");
             Serial.println(button_selected-'0');
             return;
         }
-      else {
+        else {
             Serial.print("PD password appended with ");
             Serial.println(button_selected-'0');
             return;
@@ -354,10 +355,6 @@ void payload(int duration) {
    else if (password.sdhashevaluate()) {
     Serial.println("Self Destruct PIN entered"); //TODO remove debug
     factorydefault(); 
-   }
-   else if (unlocked || password.pdhashevaluate()) {
-    Serial.println("Plausible Deniability PIN entered"); //TODO remove debug
-    PDmode=true;
    }
    else {
     if (pass_keypress < 10) {
@@ -587,13 +584,13 @@ index = 0;
       onlykey_eeget_addchar2(ptr, slot);
       if(temp[0] > 0)
       {
-        if(temp[0] == 1) {
+        if(temp[0] == 0x01) {
         Serial.println("Reading addchar2 from EEPROM...");
         keybuffer[index] = 128;
         Serial.println("TAB");
         index++;
         }
-        else if(temp[0] == 2) {
+        else if(temp[0] == 0x02) {
         Serial.println("Reading addchar2 from EEPROM...");
         keybuffer[index] = 129;
         Serial.println("Return");

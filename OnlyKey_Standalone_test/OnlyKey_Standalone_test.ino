@@ -615,10 +615,10 @@ index = 0;
         index++;
       }
       memset(temp, 0, 32); //Wipe all data from buffer 
-      onlykey_eeget_2FAtype(ptr, slot);
+      otplength = onlykey_eeget_2FAtype(ptr, slot);
       if(temp[0] > 0)
       {
-        if(temp[0] == 1) { //Google Auth
+        if(temp[0] == 'g') { //Google Auth
           Serial.println("Reading TOTP Key from EEPROM...");
           otplength = onlykey_eeget_totpkey(ptr, slot);
         #ifdef DEBUG
@@ -631,7 +631,6 @@ index = 0;
         Serial.print("TOTP Key Length = ");
         Serial.println(otplength);
         aes_gcm_decrypt(temp, (uint8_t*)('t'+ID[34]+slot), phash, otplength);
-        ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
             for (int z = 0; z < 32; z++) {
@@ -653,20 +652,20 @@ index = 0;
           
           index=index+6;
         }
-        if(temp[0] == 2) { //onlykey
+        if(temp[0] == 'y') { //onlykey
         Serial.println("Generating onlykey OTP...");
         yubikey_simulate1((char*)keybuffer[index], &ctx);
         yubikey_incr_usage(&ctx);
         index=index+44;
         }
-        if(temp[0] == 3) { //U2F
+        if(temp[0] == 'u') { //U2F
         Serial.println("Starting U2F...");
         u2f_button = 1;
         }
       }
           //TODO remove debug print full keybuffer
           Serial.println("Displaying Full Keybuffer");
-          for (int i=0; i<64; i++) {
+          for (int i=0; keybuffer[i]!=0x00; i++) {
             Serial.print
             (keybuffer[i]);
           }

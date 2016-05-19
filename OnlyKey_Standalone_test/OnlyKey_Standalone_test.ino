@@ -88,6 +88,7 @@ static int pass_keypress = 1;  //The number key presses in current password atte
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
 extern Password password;
+#define TIMEOUT   900000 //Amount of time to remain unlocked before requiring PIN reentry 900000=15min
 /*************************************/
 
 //yubikey
@@ -158,7 +159,9 @@ void setup() {
 }
 /*************************************/
 
-elapsedMillis sincelast; //
+elapsedMillis sincelast; 
+elapsedMillis idletimer; 
+
 //Main Loop, Read Key Press Using Capacitive Touch
 /*************************************/
 void checkKey(Task* me) {
@@ -175,6 +178,7 @@ void checkKey(Task* me) {
     if(initialized) {
     uECC_set_rng(&RNG2); 
     yubikey_incr_timestamp(&ctx);
+    if (idletimer >= TIMEOUT) unlocked = false;
     }
   }
   else if (sincelast >= 1000 && initialized)
@@ -327,7 +331,8 @@ void payload(int duration) {
           password.reset(); //reset the guessed password to NULL
           hidprint("UNLOCKED"); 
           Serial.println("UNLOCKED");
-          if (!PDmode) yubikeyinit(); 
+          if (!PDmode) yubikeyinit();
+          idletimer=0; 
           unlocked = true;
           return;
         }
@@ -393,6 +398,7 @@ void gen_press(void) {
     return;
   }
   digitalWrite(BLINKPIN, LOW); //LED OFF
+  idletimer=0;
   int slot;
   uint8_t *ptr;
   if (PDmode==true) {
@@ -414,6 +420,7 @@ void gen_hold(void) {
     return;
   }
   digitalWrite(BLINKPIN, LOW); //LED OFF
+  idletimer=0;
   int slot;
   if (PDmode==true) {
     slot=(button_selected-'0')+12;

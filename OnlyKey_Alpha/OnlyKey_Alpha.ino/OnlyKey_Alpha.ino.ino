@@ -1,6 +1,5 @@
-// OnlyKey Standalone test - Use with Teensy 3.2 without keypad
-/* WARNING - For testing only, No keypad means no PIN protection of sensitive data
- *  
+// OnlyKey Alpha
+/*
  * Tim Steiner
  * Copyright (c) 2016 , CryptoTrust LLC.
  * All rights reserved.
@@ -154,8 +153,6 @@ void setup() {
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX); 
-  unlocked=true;
-  initialized=true;
   rngloop(); //Start RNG
   SoftTimer.add(&taskKey);
 }
@@ -333,7 +330,7 @@ void payload(int duration) {
           password.reset(); //reset the guessed password to NULL
           hidprint("UNLOCKED"); 
           Serial.println("UNLOCKED");
-          if (!PDmode) yubikeyinit();
+          if (!PDmode) yubikeyinit(); 
           idletimer=0; 
           unlocked = true;
           return;
@@ -400,9 +397,8 @@ void gen_press(void) {
     return;
   }
   digitalWrite(BLINKPIN, LOW); //LED OFF
-  idletimer=0;
+  idletimer=0; 
   int slot;
-  uint8_t *ptr;
   if (PDmode==true) {
     slot=(button_selected-'0')+12;
   } else {
@@ -422,7 +418,7 @@ void gen_hold(void) {
     return;
   }
   digitalWrite(BLINKPIN, LOW); //LED OFF
-  idletimer=0;
+  idletimer=0; 
   int slot;
   if (PDmode==true) {
     slot=(button_selected-'0')+12;
@@ -685,4 +681,3 @@ index = 0;
           }
 
 }
-

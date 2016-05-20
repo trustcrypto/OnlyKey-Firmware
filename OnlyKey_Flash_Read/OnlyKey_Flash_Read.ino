@@ -87,7 +87,7 @@ static int pass_keypress = 1;  //The number key presses in current password atte
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
 extern Password password;
-#define TIMEOUT   900000 //Amount of time to remain unlocked before requiring PIN reentry 900000=15min
+static uint8_t TIMEOUT[1] = {0x15};
 /*************************************/
 
 //yubikey
@@ -110,11 +110,6 @@ void setup() {
   //while (!Serial) ; // wait for serial
   delay(1000);
   pinMode(BLINKPIN, OUTPUT);
-  // Initialize the random number generator with stored NONCE and device MAC
-  read_mac();
-  RNG.begin((char*)mac, EEpos_noncehash);
-  CHIP_ID();
-  RNG.stir((byte*)ID, sizeof(ID));
   delay(7000);
   uint8_t *ptr;
   ptr = phash;
@@ -132,12 +127,15 @@ void setup() {
       initialized = false;
       Serial.println("UNLOCKED, FIRST TIME USE");  
   } else if(FTFL_FSEC==0x44 && isinit) { 
+        ptr = nonce;
+        onlykey_flashget_noncehash (ptr, 32); //Get nonce from EEPROM
         ptr = sdhash;
         onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
-        ptr = nonce;
-        onlykey_flashget_noncehash (ptr, 32); //Get nonce from EEPROM
+        ptr = TIMEOUT;
+        onlykey_eeget_timeout(ptr);
+        if (TIMEOUT[0]==0) TIMEOUT[0] = 15; //Default 15 min idle timeout
         unlocked = false;
         initialized = true;
         Serial.println("INITIALIZED");
@@ -146,9 +144,29 @@ void setup() {
         initialized = false;
         Serial.println("UNLOCKED, PIN HAS NOT BEEN SET");
   } 
+  // Initialize the random number generator with stored NONCE, MAC, and chip ID
+  read_mac();
+  RNG.begin((char*)mac, 0); //Start RNG with the device mac and whatever is in EEPROM
+  CHIP_ID();
+  RNG.stir((byte*)ID, sizeof(ID)); //Stir in unique 128 bit Freescale chip ID
+  RNG.stir((byte*)nonce, sizeof(nonce)); //Stir in unique nonce that is generated from user entropy when OK is first initialized
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX);
+
+  
+  uintptr_t adr = 0x0;
+  for (int i = 0; i < 40000; i++)
+  {
+  
+  //Write long to empty sector 
+  Serial.printf("0x%X", adr);
+
+  Serial.printf(" 0x%X", *((unsigned int*)adr));
+  Serial.println();
+  adr=adr+4;
+  }
+  
   rngloop(); //Start RNG
   SoftTimer.add(&taskKey);
 }
@@ -173,7 +191,7 @@ void checkKey(Task* me) {
     if(initialized) {
     uECC_set_rng(&RNG2); 
     yubikey_incr_timestamp(&ctx);
-    if (idletimer >= TIMEOUT) unlocked = false;
+    if (idletimer >= (TIMEOUT[0]*60000)) unlocked = false; 
     }
   }
   else if (sincelast >= 1000 && initialized)
@@ -621,7 +639,7 @@ index = 0;
       {
         if(temp[0] == 103) { //Google Auth
           Serial.println("Reading TOTP Key from EEPROM...");
-          otplength = onlykey_eeget_totpkey(ptr, slot);
+          otplength = onlykey_flashget_totpkey(ptr, slot);
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < 32; z++) {

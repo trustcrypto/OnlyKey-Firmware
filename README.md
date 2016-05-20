@@ -17,7 +17,8 @@ In order to install the latest version of the OnlyKey firmware:
 OnlyKey is currently in development **WARNING** The OnlyKey firmware alpha is available for testing purposes only and is not to be used to store any sensitive information. The following items are in progress:
 - U2F Certificate set/wipe - Receive U2F cerificate from chrome app and store to flash/ erase from flash (untested)
 - Yubikey Priv ID, Pub ID, Key set/wipe - Receive Yubikey values from chrome app and store to flash/ erase from flash (untested)
-- Plausible Deniability Mode
+- Plausible Deniability Mode - This feature is partially tested. Additional testing is needed here.
+- Self Destruct - This feature is partially tested. Currently it overwrites EEPROM with 0s when self destruct PIN is entered. TODO also overwrite flash variables.
 - U2F key generation
 - U2F - Investigate using deterministic signing - https://github.com/kmackay/micro-ecc/issues/37
 - Factory Default to wipe flash sectors used as well as EEPROM

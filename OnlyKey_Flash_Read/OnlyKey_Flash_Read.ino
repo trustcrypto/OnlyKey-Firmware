@@ -191,7 +191,7 @@ void checkKey(Task* me) {
     if(initialized) {
     uECC_set_rng(&RNG2); 
     yubikey_incr_timestamp(&ctx);
-    if (idletimer >= (TIMEOUT[0]*60000)) unlocked = false; 
+    if (idletimer >= (TIMEOUT[0]*900000)) unlocked = false; 
     }
   }
   else if (sincelast >= 1000 && initialized)

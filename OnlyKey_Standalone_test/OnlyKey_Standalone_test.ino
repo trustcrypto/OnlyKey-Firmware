@@ -114,7 +114,7 @@ void setup() {
   delay(7000);
   uint8_t *ptr;
   ptr = phash;
-  int isinit = onlykey_flashget_pinhash (ptr, 32);
+ int isinit = onlykey_flashget_pinhash (ptr, 32);
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
     factorydefault();
@@ -145,6 +145,7 @@ void setup() {
         initialized = false;
         Serial.println("UNLOCKED, PIN HAS NOT BEEN SET");
   } 
+
   // Initialize the random number generator with stored NONCE, MAC, and chip ID
   read_mac();
   RNG.begin((char*)mac, 0); //Start RNG with the device mac and whatever is in EEPROM
@@ -157,6 +158,10 @@ void setup() {
   unlocked=true;
   initialized=true;
   rngloop(); //Start RNG
+  ptr = nonce;
+  onlykey_flashset_noncehash (ptr); //Get nonce from EEPROM
+  ptr = phash;
+  onlykey_flashset_pinhash (ptr);
   SoftTimer.add(&taskKey);
 }
 /*************************************/

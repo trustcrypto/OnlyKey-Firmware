@@ -283,7 +283,8 @@ void sendKey(Task* me) {
         pos++;  
     } 
     else if ((byte)*pos == 129) {
-        Keyboard.write('\n');  
+        Keyboard.press(KEY_RETURN); 
+        Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
     else if ((byte)*pos > 129) {
@@ -296,7 +297,8 @@ void sendKey(Task* me) {
     }
     else {
     Serial.print(pos);
-    Keyboard.write('\n');   
+    Keyboard.press(KEY_RETURN); 
+    Keyboard.release(KEY_RETURN);  
     Keyboard.end();
     SoftTimer.remove(&taskKB);
     SoftTimer.add(&taskKey);
@@ -532,6 +534,9 @@ index = 0;
       if(usernamelength > 0)
       {
         Serial.println("Reading Username from EEPROM...");
+        Serial.print("Username Length = ");
+        Serial.println(usernamelength);
+        if (!PDmode) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < 32; z++) {
@@ -539,9 +544,8 @@ index = 0;
             }
             Serial.println();
           #endif
-        Serial.print("Username Length = ");
-        Serial.println(usernamelength);
         aes_gcm_decrypt(temp, (uint8_t*)('u'+ID[34]+slot), phash, usernamelength);
+        }
         ByteToChar2(temp, keybuffer, usernamelength, index);
         #ifdef DEBUG
             Serial.println("Unencrypted");
@@ -556,17 +560,16 @@ index = 0;
       onlykey_eeget_addchar1(ptr, slot);
       if(temp[0] > 0)
       {
+        if(temp[0] == 0x31) {
         Serial.println("Reading addchar1 from EEPROM...");
-        if(temp[0] == 1) {
         keybuffer[index] = 128;
         Serial.println("TAB");
         index++;
         }
-        else if(temp[0] == 2) {
+        else if(temp[0] == 0x32) {
         Serial.println("Reading addchar1 from EEPROM...");
         keybuffer[index] = 129;
         Serial.println("RETURN");
-        ByteToChar2(temp, keybuffer, 1, index);
         index++;
         }
       }
@@ -585,6 +588,9 @@ index = 0;
       if(passwordlength > 0)
       {
         Serial.println("Reading Password from EEPROM...");
+        Serial.print("Password Length = ");
+        Serial.println(passwordlength);
+        if (!PDmode) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < 32; z++) {
@@ -592,9 +598,8 @@ index = 0;
             }
             Serial.println();
           #endif
-        Serial.print("Password Length = ");
-        Serial.println(passwordlength);
         aes_gcm_decrypt(temp, (uint8_t*)('p'+ID[34]+slot), phash, passwordlength);
+        }
         ByteToChar2(temp, keybuffer, passwordlength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
@@ -609,13 +614,13 @@ index = 0;
       onlykey_eeget_addchar2(ptr, slot);
       if(temp[0] > 0)
       {
-        if(temp[0] == 0x01) {
+        if(temp[0] == 0x31) {
         Serial.println("Reading addchar2 from EEPROM...");
         keybuffer[index] = 128;
         Serial.println("TAB");
         index++;
         }
-        else if(temp[0] == 0x02) {
+        else if(temp[0] == 0x32) {
         Serial.println("Reading addchar2 from EEPROM...");
         keybuffer[index] = 129;
         Serial.println("Return");

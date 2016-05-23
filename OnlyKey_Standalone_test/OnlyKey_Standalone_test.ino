@@ -272,7 +272,8 @@ void sendKey(Task* me) {
         pos++;  
     } 
     else if ((byte)*pos == 129) {
-        Keyboard.write('\n');  
+        Keyboard.press(KEY_RETURN); 
+        Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
     else if ((byte)*pos > 129) {
@@ -285,7 +286,8 @@ void sendKey(Task* me) {
     }
     else {
     Serial.print(pos);
-    Keyboard.write('\n');   
+    Keyboard.press(KEY_RETURN); 
+    Keyboard.release(KEY_RETURN);  
     Keyboard.end();
     SoftTimer.remove(&taskKB);
     SoftTimer.add(&taskKey);
@@ -548,17 +550,16 @@ index = 0;
       onlykey_eeget_addchar1(ptr, slot);
       if(temp[0] > 0)
       {
+        if(temp[0] == 0x31) {
         Serial.println("Reading addchar1 from EEPROM...");
-        if(temp[0] == 1) {
         keybuffer[index] = 128;
         Serial.println("TAB");
         index++;
         }
-        else if(temp[0] == 2) {
+        else if(temp[0] == 0x32) {
         Serial.println("Reading addchar1 from EEPROM...");
         keybuffer[index] = 129;
         Serial.println("RETURN");
-        ByteToChar2(temp, keybuffer, 1, index);
         index++;
         }
       }
@@ -603,13 +604,13 @@ index = 0;
       onlykey_eeget_addchar2(ptr, slot);
       if(temp[0] > 0)
       {
-        if(temp[0] == 0x01) {
+        if(temp[0] == 0x31) {
         Serial.println("Reading addchar2 from EEPROM...");
         keybuffer[index] = 128;
         Serial.println("TAB");
         index++;
         }
-        else if(temp[0] == 0x02) {
+        else if(temp[0] == 0x32) {
         Serial.println("Reading addchar2 from EEPROM...");
         keybuffer[index] = 129;
         Serial.println("Return");

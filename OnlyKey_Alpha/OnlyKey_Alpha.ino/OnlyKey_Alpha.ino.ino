@@ -135,7 +135,7 @@ void setup() {
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
         ptr = TIMEOUT;
         onlykey_eeget_timeout(ptr);
-        if (TIMEOUT[0]==0) TIMEOUT[0] = 15; //Default 15 min idle timeout
+        if (TIMEOUT[0]< 0x02) TIMEOUT[0] = 0x15; //Default 15 min idle timeout
         unlocked = false;
         initialized = true;
         Serial.println("INITIALIZED");

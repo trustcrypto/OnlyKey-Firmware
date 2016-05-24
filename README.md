@@ -11,8 +11,8 @@ OnlyKey pre-orders are available here: [OnlyKey Pre-order](http://www.crp.to/po)
 In order to install the latest version of the OnlyKey firmware:  
 - Click here to download the latest version of the OnlyKey firmware and save it to a convenient location on your PC.
 - Ensure that your copy of the firmware has not been tampered with by checking to see if the hash matches these:
-- OnlyKey_Standalone_test.cpp.hex - e44c7dc63a9a3cc41bd7c8ffcc12dfb3465bfc885a22bb9f344fbb41f4c28451
-- OnlyKey_Alpha.ino.cpp.hex - b8378e6b51a62b2fa331d782b132d07025524d3e066b34094b2ba5b591082f1d
+- OnlyKey_Standalone_test.cpp.hex - 305ca82152526d2f54f42e39bab6ab2616417f1d28dddd25f0a22301416e8c9b
+- OnlyKey_Alpha.ino.cpp.hex - fb0a806b4ed2dd17a1051f49d3f4bca89a7c2cfb960946af7f0b46596991e972
 - (To do this in Windows open a command prompt and type certUtil -hashfile pathToFileToCheck SHA256)
 - Load the firmware that you downloaded (OnlyKey_XXXXXXX.hex) using the instructional video here [![Load Firmware using Teensy Loader](http://img.youtube.com/vi/qJUjz0gFhqg/0.jpg)](http://www.youtube.com/watch?v=qJUjz0gFhqg)
 

@@ -117,8 +117,8 @@ void setup() {
  int isinit = onlykey_flashget_pinhash (ptr, 32);
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
-    factorydefault();
       int nn;
+      wipeEEPROM();
       nn=flashSecurityLockBits();
       Serial.print("Flash security bits ");
       if(nn) Serial.print("not ");

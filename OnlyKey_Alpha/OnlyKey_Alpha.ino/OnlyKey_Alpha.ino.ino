@@ -116,8 +116,8 @@ void setup() {
   int isinit = onlykey_flashget_pinhash (ptr, 32);
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
-    factorydefault();
       int nn;
+      wipeEEPROM();
       nn=flashSecurityLockBits();
       Serial.print("Flash security bits ");
       if(nn) Serial.print("not ");
@@ -126,7 +126,7 @@ void setup() {
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       Serial.println("UNLOCKED, FIRST TIME USE");  
-  } else if(FTFL_FSEC==0x44 && isinit) { 
+  } else if(FTFL_FSEC==0x44 && isinit>=1) { 
         ptr = nonce;
         onlykey_flashget_noncehash (ptr, 32); //Get nonce from EEPROM
         ptr = sdhash;

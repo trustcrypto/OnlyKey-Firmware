@@ -146,7 +146,7 @@ void setup() {
   } 
   // Initialize the random number generator with stored NONCE, MAC, and chip ID
   read_mac();
-  RNG.begin((char*)mac, 0); //Start RNG with the device mac and whatever is in EEPROM
+  RNG.begin((char*)mac); //Start RNG with the device mac 
   CHIP_ID();
   RNG.stir((byte*)ID, sizeof(ID)); //Stir in unique 128 bit Freescale chip ID
   RNG.stir((byte*)nonce, sizeof(nonce)); //Stir in unique nonce that is generated from user entropy when OK is first initialized

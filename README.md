@@ -10,8 +10,8 @@ OnlyKey pre-orders are available here: [OnlyKey Pre-order](http://www.crp.to/po)
 ## Installation ##
 In order to install the latest version of the OnlyKey firmware:  
 - Download the zip [here](https://github.com/onlykey/OnlyKey-Firmware-US/archive/master.zip) and save it to a convenient location on your PC.
-- For Teensy users you will use the OnlyKey_Standalone_test.cpp.hex firmware.
-- For those lucky enough to have an OnlyKey (you know who you are) you will use the OnlyKey_Alpha.ino.cpp.hex firmware.
+- For Teensy users you will use the OnlyKey_Standalone_test.cpp.hex firmware included in the zip file.
+- For those lucky enough to have an OnlyKey (you know who you are) you will use the OnlyKey_Alpha.ino.cpp.hex firmware included in the zip file.
 - Ensure that your copy of the firmware has not been tampered with by checking to see if the SHA256 hash of the downloaded file matches these:
 - OnlyKey_Alpha.ino.cpp.hex - fb0a806b4ed2dd17a1051f49d3f4bca89a7c2cfb960946af7f0b46596991e972
 - OnlyKey_Standalone_test.cpp.hex - 305ca82152526d2f54f42e39bab6ab2616417f1d28dddd25f0a22301416e8c9b

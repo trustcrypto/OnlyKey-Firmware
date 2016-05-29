@@ -125,7 +125,8 @@ void setup() {
       onlykey_flashget_pinhash (ptr, 32);
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
-      Serial.println("UNLOCKED, FIRST TIME USE");  
+      Serial.println("UNLOCKED, FIRST TIME USE");
+      YubikeyEEInit();  //TODO remove once chrome app supports Yubico OTP SETSLOT
   } else if(FTFL_FSEC==0x44 && isinit>=1) { 
         ptr = nonce;
         onlykey_flashget_noncehash (ptr, 32); //Get nonce from EEPROM
@@ -154,7 +155,7 @@ void setup() {
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX); 
   rngloop(); //Start RNG
-  Serial.println((char*)mac);
+  print_mac();
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -665,8 +666,8 @@ index = 0;
           index=index+6;
         }
         if(temp[0] == 121) { //onlykey
-        Serial.println("Generating onlykey OTP...");
-        yubikey_simulate1((char*)keybuffer[index], &ctx);
+        Serial.println("Generating Yubico OTP...");
+        yubikey_simulate1((keybuffer + index), &ctx);
         yubikey_incr_usage(&ctx);
         index=index+44;
         }
@@ -683,3 +684,22 @@ index = 0;
           }
 
 }
+
+void YubikeyEEInit() {
+  uint8_t *ptr;
+  uint8_t buffer[20];
+  uint16_t counter  = 0x0000;
+
+  ptr = (uint8_t *) &counter;
+  yubikey_eeset_counter(ptr);
+  
+  memset (&buffer, 0, 20);
+  yubikey_modhex_decode ((char *) &buffer, "vdhchdlbufru", 6); //Input Yubico OTP Public Identity
+  onlykey_eeset_public(buffer, 6);
+  yubikey_hex_decode ((char *) &buffer, "47b3b9db8094", 6); //Input Yubico OTP Private Identity
+  onlykey_eeset_private(buffer);
+  yubikey_hex_decode ((char *) &buffer, "001768ad1525a6dce2730ab21a230758", 16); //Input Yubico OTP Secret Key
+  onlykey_eeset_aeskey(buffer, 16);
+  Serial.println("Yubico OTP Public, Private, and Secret Written");
+}
+

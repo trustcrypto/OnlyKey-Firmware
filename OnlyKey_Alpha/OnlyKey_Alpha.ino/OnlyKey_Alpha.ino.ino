@@ -53,13 +53,13 @@
 
 //PIN assignments
 /*************************************/
-#define BLINKPIN   13
-#define TOUCHPIN1    01
-#define TOUCHPIN2    15
-#define TOUCHPIN3    16
+#define BLINKPIN   6
+#define TOUCHPIN1    1
+#define TOUCHPIN2    22
+#define TOUCHPIN3    23
 #define TOUCHPIN4    17
-#define TOUCHPIN5    22
-#define TOUCHPIN6    23
+#define TOUCHPIN5    15
+#define TOUCHPIN6    16
 /*************************************/
 
 //RNG assignments
@@ -154,6 +154,7 @@ void setup() {
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX); 
   rngloop(); //Start RNG
+  Serial.println((char*)mac);
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -202,42 +203,42 @@ void checkKey(Task* me) {
   unsigned int touchread6 = touchRead(TOUCHPIN6);
   RNG.stir((uint8_t *)touchread6, sizeof(touchread6), sizeof(touchread6) * 2);
 
-  if (touchread1 > 1000) {
+  if (touchread1 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '5';
     //Serial.println(touchread1);
   }      
-    else if (touchread2 > 1000) {
+    else if (touchread2 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '2';
     //Serial.println(touchread2);
   } 
-    else if (touchread3 > 1000) {
+    else if (touchread3 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '1';
     //Serial.println(touchread3);
   } 
-   else if (touchread4 > 1000) {
+   else if (touchread4 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '3';
     //Serial.println(touchread4);
   } 
-   else if (touchread5 > 1000) {
+   else if (touchread5 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '4';
     //Serial.println(touchread5);
   } 
-   else if (touchread6 > 1000) {
+   else if (touchread6 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;

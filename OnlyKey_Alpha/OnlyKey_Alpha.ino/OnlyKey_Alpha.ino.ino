@@ -690,7 +690,27 @@ index = 0;
         }
         if(temp[0] == 117) { //U2F
         Serial.println("Starting U2F...");
-        u2f_button = 1;
+        int timer = sincelast;
+        while(sincelast < (timer+4000)) {
+          // fade in from min to max in increments of 5 points:
+          for (int fadeValue = 0 ; fadeValue <= 255; fadeValue += 5) {
+          // sets the value (range from 0 to 255):
+          analogWrite(BLINKPIN, fadeValue);
+          u2f_button = 1;
+          recvmsg();
+          delay(15);
+          }
+          // fade out from max to min in increments of 5 points:
+          for (int fadeValue = 255 ; fadeValue >= 0; fadeValue -= 5) {
+          // sets the value (range from 0 to 255):
+          analogWrite(BLINKPIN, fadeValue);
+          u2f_button = 1;
+          recvmsg();
+          delay(15);
+          }
+          }
+        digitalWrite(BLINKPIN, HIGH);
+        u2f_button = 0;
         }
       }
           //TODO remove debug print full keybuffer

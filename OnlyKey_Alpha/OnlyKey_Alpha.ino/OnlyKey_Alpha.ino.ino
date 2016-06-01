@@ -156,7 +156,6 @@ void setup() {
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX); 
   rngloop(); //Start RNG
-  print_mac();
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -335,9 +334,12 @@ void payload(int duration) {
           password.reset(); //reset the guessed password to NULL
           hidprint("UNLOCKED"); 
           Serial.println("UNLOCKED");
-          if (!PDmode) yubikeyinit(); 
+          if (!PDmode) {
+          yubikeyinit(); 
+          }
           idletimer=0; 
           unlocked = true;
+          
           return;
         }
         else if (PINSET==0) { 
@@ -692,22 +694,12 @@ index = 0;
         Serial.println("Starting U2F...");
         int timer = sincelast;
         while(sincelast < (timer+4000)) {
-          // fade in from min to max in increments of 5 points:
-          for (int fadeValue = 0 ; fadeValue <= 255; fadeValue += 5) {
-          // sets the value (range from 0 to 255):
-          analogWrite(BLINKPIN, fadeValue);
           u2f_button = 1;
           recvmsg();
-          delay(15);
-          }
-          // fade out from max to min in increments of 5 points:
-          for (int fadeValue = 255 ; fadeValue >= 0; fadeValue -= 5) {
-          // sets the value (range from 0 to 255):
-          analogWrite(BLINKPIN, fadeValue);
+          fadein();
           u2f_button = 1;
           recvmsg();
-          delay(15);
-          }
+          fadeout();
           }
         digitalWrite(BLINKPIN, HIGH);
         u2f_button = 0;

@@ -124,6 +124,7 @@ void setup() {
       if(nn) Serial.print("not ");
       Serial.println("written successfully");
       onlykey_flashget_pinhash (ptr, 32);
+      YubikeyEEInit();  //TODO remove once chrome app supports Yubico OTP SETSLOT
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       Serial.println("UNLOCKED, FIRST TIME USE");  
@@ -161,6 +162,7 @@ void setup() {
   onlykey_flashset_noncehash (ptr); //Get nonce from EEPROM
   ptr = phash;
   onlykey_flashset_pinhash (ptr);
+  yubikeyinit();
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -456,7 +458,7 @@ void yubikeyinit() {
 
   
   Serial.println("Initializing onlyKey ...");
-  
+  /*
   memset(temp, 0, 32); //Clear temp buffer
   
   ptr = temp;
@@ -484,11 +486,27 @@ void yubikeyinit() {
   ptr = (uint8_t*) &counter;
   yubikey_eeget_counter(ptr);
 
-  uint32_t time = 0x010203; //TODO why is time set to this?
-
   yubikey_hex_encode(private_id, (char *)privID, 6);
   yubikey_hex_encode(public_id, (char *)pubID, 6);
-  
+
+    Serial.println("public_id");
+  Serial.println(public_id);
+    Serial.println("private_id");
+  Serial.println(private_id);
+    Serial.println("counter");
+  Serial.println(counter);
+  */ //TODO enable this once chrome app supports Yubi OTP key load
+  ptr = (uint8_t*) &counter;
+  yubikey_eeget_counter(ptr);
+  uint32_t time = 0x010203; //TODO why is time set to this?
+  ptr = aeskey;
+  onlykey_eeget_aeskey(ptr); 
+  ptr = privID;
+  onlykey_eeget_private(ptr);
+  yubikey_hex_encode(private_id, (char *)privID, 6);
+  ptr = pubID;
+  onlykey_eeget_public(ptr);
+  yubikey_hex_encode(public_id, (char *)pubID, 6);
   yubikey_init1(&ctx, aeskey, public_id, private_id, counter, time, seed);
  
   yubikey_incr_counter(&ctx);
@@ -672,14 +690,34 @@ index = 0;
           index=index+6;
         }
         if(temp[0] == 121) { //onlykey
-        Serial.println("Generating onlykey OTP...");
-        yubikey_simulate1((char*)keybuffer[index], &ctx);
+        Serial.println("Generating Yubico OTP...");
+        yubikey_simulate1((keybuffer + index), &ctx);
         yubikey_incr_usage(&ctx);
         index=index+44;
         }
         if(temp[0] == 117) { //U2F
         Serial.println("Starting U2F...");
-        u2f_button = 1;
+        int timer = sincelast;
+        while(sincelast < (timer+4000)) {
+          // fade in from min to max in increments of 5 points:
+          for (int fadeValue = 0 ; fadeValue <= 255; fadeValue += 5) {
+          // sets the value (range from 0 to 255):
+          analogWrite(BLINKPIN, fadeValue);
+          u2f_button = 1;
+          recvmsg();
+          delay(15);
+          }
+          // fade out from max to min in increments of 5 points:
+          for (int fadeValue = 255 ; fadeValue >= 0; fadeValue -= 5) {
+          // sets the value (range from 0 to 255):
+          analogWrite(BLINKPIN, fadeValue);
+          u2f_button = 1;
+          recvmsg();
+          delay(15);
+          }
+          }
+        digitalWrite(BLINKPIN, HIGH);
+        u2f_button = 0;
         }
       }
           //TODO remove debug print full keybuffer
@@ -689,5 +727,28 @@ index = 0;
             (keybuffer[i]);
           }
 
+}
+
+void YubikeyEEInit() {
+  uint8_t *ptr;
+  uint8_t buffer[20];
+  uint16_t counter  = 0x0000;
+
+  ptr = (uint8_t *) &counter;
+  yubikey_eeset_counter(ptr);
+  
+  memset (&buffer, 0, 20);
+  yubikey_modhex_decode ((char *) &buffer, "vdhchdlbufru", 6); //Input Yubico OTP Public Identity
+  onlykey_eeset_public(buffer, 6);
+  //ptr = buffer;
+  memset (&buffer, 0, 20);
+  yubikey_hex_decode ((char *) &buffer, "47b3b9db8094", 6); //Input Yubico OTP Public Identity
+  //ptr = (uint8_t *)"47b3b9db8094"; //Input Yubico OTP Private Identity
+  onlykey_eeset_private(buffer);
+  //ptr = (uint8_t *)"001768ad1525a6dce2730ab21a230758"; //Input Yubico OTP Secret Key
+  memset (&buffer, 0, 20);
+  yubikey_hex_decode ((char *) &buffer, "001768ad1525a6dce2730ab21a230758", 16); //Input Yubico OTP Public Identity
+  onlykey_eeset_aeskey(buffer, 16);
+  Serial.println("Yubico OTP Public, Private, and Secret Written");
 }
 

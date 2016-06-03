@@ -108,10 +108,8 @@ extern uint8_t nonce[32];
 /*************************************/
 void setup() {
   Serial.begin(9600);
-  //while (!Serial) ; // wait for serial
   delay(1000);
   pinMode(BLINKPIN, OUTPUT);
-  delay(7000);
   uint8_t *ptr;
   ptr = phash;
   int isinit = onlykey_flashget_pinhash (ptr, 32);

@@ -709,12 +709,12 @@ void YubikeyEEInit() {
   onlykey_eeset_public(buffer, 6);
   //ptr = buffer;
   memset (&buffer, 0, 20);
-  yubikey_hex_decode ((char *) &buffer, "47b3b9db8094", 6); //Input Yubico OTP Public Identity
+  yubikey_hex_decode ((char *) &buffer, "47b3b9db8094", 6); //Input Yubico OTP Private Identity
   //ptr = (uint8_t *)"47b3b9db8094"; //Input Yubico OTP Private Identity
   onlykey_eeset_private(buffer);
-  //ptr = (uint8_t *)"001768ad1525a6dce2730ab21a230758"; //Input Yubico OTP Secret Key
+  //ptr = (uint8_t *)"001768ad1525a6dce2730ab21a230758"; 
   memset (&buffer, 0, 20);
-  yubikey_hex_decode ((char *) &buffer, "001768ad1525a6dce2730ab21a230758", 16); //Input Yubico OTP Public Identity
+  yubikey_hex_decode ((char *) &buffer, "001768ad1525a6dce2730ab21a230758", 16); //Input Yubico OTP Secret Key
   onlykey_eeset_aeskey(buffer, 16);
   Serial.println("Yubico OTP Public, Private, and Secret Written");
 }

@@ -13,7 +13,7 @@ In order to install the latest version of the OnlyKey firmware:
 - For Teensy users you will use the OnlyKey_Standalone_test.cpp.hex firmware included in the zip file.
 - For those lucky enough to have an OnlyKey (you know who you are) you will use the OnlyKey_Alpha.ino.cpp.hex firmware included in the zip file.
 - Ensure that your copy of the firmware has not been tampered with by checking to see if the SHA256 hash of the downloaded file matches these:
-- OnlyKey_Alpha.cpp.hex - e989081223b97af8a577d280ae2ea3037d38f0d390117893e742a8b27ef911c7
+- OnlyKey_Alpha.cpp.hex - 66346a68eda30b398c5860687c2abdd040f7340cb44abc05d242c4f7a608acef
 - OnlyKey_Standalone_test.cpp.hex - 0dfb334df3caa18103727b84b377e5f41d3eeee69d69034ac342c94ec33aa4ff
 - (To do this in Windows open a command prompt and type certUtil -hashfile pathToFileToCheck SHA256)
 - Load the firmware that you downloaded (OnlyKey_XXXXXXX.hex) using the instructional video here [![Load Firmware using Teensy Loader](http://img.youtube.com/vi/qJUjz0gFhqg/0.jpg)](http://www.youtube.com/watch?v=qJUjz0gFhqg)

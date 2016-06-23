@@ -103,6 +103,27 @@ extern uint8_t sdhash[32];
 extern uint8_t pdhash[32];
 extern uint8_t nonce[32];
 /*************************************/
+extern "C" {
+
+  static int RNG2(uint8_t *dest, unsigned size) {
+    uint8_t temp[32];
+    uint8_t *ptr;
+    ptr=temp;
+    rngloop();
+    Serial.println("Random number =");
+    getrng(ptr, 32); //Fill temp with random data
+    for (int i=0; i<=size; i++) {
+    *dest = temp[i];
+    Serial.print(*dest, HEX);
+    dest++;
+    }
+    return 1;
+  }
+
+}  // extern "C"
+
+
+
 
 //Arduino Setup 
 /*************************************/
@@ -184,7 +205,6 @@ void checkKey(Task* me) {
   if (unlocked) {
     recvmsg();
     if(initialized) {
-    uECC_set_rng(&RNG2); 
     yubikey_incr_timestamp(&ctx);
     if (idletimer >= (TIMEOUT[0]*900000)) unlocked = false; 
     }
@@ -699,22 +719,10 @@ index = 0;
         Serial.println("Starting U2F...");
         int timer = sincelast;
         while(sincelast < (timer+4000)) {
-          // fade in from min to max in increments of 5 points:
-          for (int fadeValue = 0 ; fadeValue <= 255; fadeValue += 5) {
-          // sets the value (range from 0 to 255):
-          analogWrite(BLINKPIN, fadeValue);
+          digitalWrite(BLINKPIN, LOW);
           u2f_button = 1;
+          uECC_set_rng(&RNG2);
           recvmsg();
-          delay(15);
-          }
-          // fade out from max to min in increments of 5 points:
-          for (int fadeValue = 255 ; fadeValue >= 0; fadeValue -= 5) {
-          // sets the value (range from 0 to 255):
-          analogWrite(BLINKPIN, fadeValue);
-          u2f_button = 1;
-          recvmsg();
-          delay(15);
-          }
           }
         digitalWrite(BLINKPIN, HIGH);
         u2f_button = 0;
@@ -751,4 +759,5 @@ void YubikeyEEInit() {
   onlykey_eeset_aeskey(buffer, 16);
   Serial.println("Yubico OTP Public, Private, and Secret Written");
 }
+
 

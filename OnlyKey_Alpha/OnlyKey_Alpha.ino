@@ -50,7 +50,7 @@
 #include <transistornoisesource.h>
 #include "T3MacLib.h"
 #define DEBUG
-/*************************************/
+
 //PIN assignments
 /*************************************/
 #define BLINKPIN   6
@@ -61,13 +61,16 @@
 #define TOUCHPIN5    15
 #define TOUCHPIN6    16
 /*************************************/
+
 //RNG assignments
 /*************************************/
 // Noise source to seed the random number generator.
 TransistorNoiseSource noise(A0);
 bool calibrating = false;
 /*************************************/
+
 //SoftTimer
+
 /*************************************/
 #define THRESHOLD   .5
 #define TIME_POLL 100 // poll "key" every 100 ms
@@ -77,6 +80,7 @@ Task taskKB (TIME_SEND, sendKey);
 char keybuffer[EElen_username+2+EElen_password+2+YUBIKEY_OTP_MAXSIZE];
 char *pos;
 /*************************************/
+
 //Keypad password set assignments
 /*************************************/
 static int button_selected = 0;    //Key selected 1-6
@@ -86,10 +90,12 @@ static bool firsttime = true;
 extern Password password;
 static uint8_t TIMEOUT[1] = {0x15};
 /*************************************/
+
 //yubikey
 /*************************************/
 yubikey_ctx_st ctx;
 /*************************************/
+
 //PIN HASH
 /*************************************/
 extern uint8_t phash[32];
@@ -97,12 +103,31 @@ extern uint8_t sdhash[32];
 extern uint8_t pdhash[32];
 extern uint8_t nonce[32];
 /*************************************/
+extern "C" {
+
+  static int RNG2(uint8_t *dest, unsigned size) {
+    uint8_t temp[32];
+    uint8_t *ptr;
+    ptr=temp;
+    Serial.println("Random number =");
+    getrng(ptr, 32); //Fill temp with random data
+    for (int i=0; i<=size; i++) {
+    *dest = temp[i];
+    Serial.print(*dest, HEX);
+    dest++;
+    }
+    return 1;
+  }
+
+}  // extern "C"
 //Arduino Setup 
 /*************************************/
 void setup() {
   Serial.begin(9600);
+  //while (!Serial) ; // wait for serial
   delay(1000);
   pinMode(BLINKPIN, OUTPUT);
+  delay(7000);
   uint8_t *ptr;
   ptr = phash;
   int isinit = onlykey_flashget_pinhash (ptr, 32);
@@ -147,11 +172,14 @@ void setup() {
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX); 
   rngloop(); //Start RNG
+  print_mac();
   SoftTimer.add(&taskKey);
 }
 /*************************************/
+
 elapsedMillis sincelast; 
 elapsedMillis idletimer; 
+
 //Main Loop, Read Key Press Using Capacitive Touch
 /*************************************/
 void checkKey(Task* me) {
@@ -159,7 +187,10 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
   static int count;
-  rngloop(); 
+
+    
+  rngloop(); //
+  
   if (unlocked) {
     recvmsg();
     if(initialized) {
@@ -174,6 +205,8 @@ void checkKey(Task* me) {
     Serial.println("INITIALIZED");
     sincelast = sincelast - 1000;
   }
+  
+  
   // Stir the touchread values into the entropy pool.
   unsigned int touchread1 = touchRead(TOUCHPIN1);
   RNG.stir((uint8_t *)touchread1, sizeof(touchread1), sizeof(touchread1) * 2);
@@ -230,6 +263,7 @@ void checkKey(Task* me) {
     button_selected = '6';
     //Serial.println(touchread6);
   } 
+
   else {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
@@ -237,13 +271,15 @@ void checkKey(Task* me) {
     if (!unlocked) digitalWrite(BLINKPIN, LOW); //LED OFF
     else digitalWrite(BLINKPIN, HIGH); //LED ON
   }
+
   if ((key_press > 0) && (key_off > THRESHOLD)) {
     payload(key_press);
     key_press = 0;
    }
 }
 /*************************************/
-//Type out on Keyboard the contents of Keybuffer
+
+//Type out on Keyboard
 /*************************************/
 void sendKey(Task* me) {
    if ((byte)*pos == 128) {
@@ -256,8 +292,22 @@ void sendKey(Task* me) {
         Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
-    else if ((byte)*pos > 129) {
-        delay((*pos - 129)*1000);   
+    else if ((byte)*pos == 130) {
+        Serial.println("Starting U2F...");
+        int timer = sincelast;
+        while(sincelast < (timer+8000)) {
+          digitalWrite(BLINKPIN, LOW);
+          u2f_button = 1;
+          rngloop();
+          uECC_set_rng(&RNG2);
+          recvmsg();
+          }
+        digitalWrite(BLINKPIN, HIGH);
+        u2f_button = 0;
+        pos++; 
+    }
+    else if ((byte)*pos >= 131) {
+        delay((*pos - 131)*1000);   
         pos++;  
     } 
     else if (*pos){
@@ -274,7 +324,7 @@ void sendKey(Task* me) {
     }
 }
 /*************************************/
-//Password Checking Loop
+//Keypad passcode checker
 /*************************************/
 void payload(int duration) {
    if (!unlocked) digitalWrite(BLINKPIN, HIGH); //LED ON
@@ -315,12 +365,9 @@ void payload(int duration) {
           password.reset(); //reset the guessed password to NULL
           hidprint("UNLOCKED"); 
           Serial.println("UNLOCKED");
-          if (!PDmode) {
-          yubikeyinit(); 
-          }
+          if (!PDmode) yubikeyinit(); 
           idletimer=0; 
           unlocked = true;
-          
           return;
         }
         else if (PINSET==0) { 
@@ -377,8 +424,7 @@ void payload(int duration) {
    }
 }
 /*************************************/
-//Trigger on short button press
-/*************************************/
+
 void gen_press(void) {
   if (!initialized) {
     Serial.println("UNINITIALIZED - You must set a password first");
@@ -395,9 +441,11 @@ void gen_press(void) {
   }
       process_slot(slot);   
 }
+
+
+
 /*************************************/
-//Trigger on long button press
-/*************************************/
+
 void gen_hold(void) {
   if (!initialized) {
     Serial.println("UNINITIALIZED - You must set a password first");
@@ -413,11 +461,12 @@ void gen_hold(void) {
     slot=button_selected-'0';
   }
       process_slot(slot+6);   
+     
 }
 /*************************************/
-//Initialize Yubico OTP
-/*************************************/
+
 void yubikeyinit() {
+  
   uint32_t seed;
   uint8_t *ptr = (uint8_t *)&seed;
   getrng(ptr, 32); //Seed the onlyKey with random data
@@ -488,9 +537,9 @@ void yubikeyinit() {
   ptr = (uint8_t*) &(ctx.counter);
   yubikey_eeset_counter(ptr);
 }
+
 /*************************************/
-//RNG Loop
-/*************************************/
+
 void rngloop() {
     // Track changes to the calibration state on the noise source.
     bool newCalibrating = noise.calibrating();
@@ -500,9 +549,7 @@ void rngloop() {
     // Perform regular housekeeping on the random number generator.
     RNG.loop();
 }
-/*************************************/
-//Load Set Values to Keybuffer
-/*************************************/
+
 void process_slot(int s) {
   long GMT;
   char* newcode;
@@ -516,7 +563,7 @@ void process_slot(int s) {
 index = 0;
       Serial.print("Slot Number ");
       Serial.println(button_selected-'0');
-      memset(keybuffer, 0, sizeof(keybuffer)); //Wipe all data from buffer
+      memset(temp, 0, 32); //Wipe all data from buffer
       ptr = temp;
       usernamelength = onlykey_eeget_username(ptr, slot);
       if(usernamelength > 0)
@@ -569,7 +616,7 @@ index = 0;
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering password");
-        keybuffer[index] = temp[0] + 129;
+        keybuffer[index] = temp[0] + 131;
         index++;
       }
       passwordlength = onlykey_eeget_password(ptr, slot);
@@ -623,7 +670,7 @@ index = 0;
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering 2FA");
-        keybuffer[index] = temp[0] + 129;
+        keybuffer[index] = temp[0] + 131;
         index++;
       }
       memset(temp, 0, 32); //Wipe all data from buffer 
@@ -672,18 +719,8 @@ index = 0;
         index=index+44;
         }
         if(temp[0] == 117) { //U2F
-        Serial.println("Starting U2F...");
-        int timer = sincelast;
-        while(sincelast < (timer+4000)) {
-          u2f_button = 1;
-          recvmsg();
-          fadein();
-          u2f_button = 1;
-          recvmsg();
-          fadeout();
-          }
-        digitalWrite(BLINKPIN, HIGH);
-        u2f_button = 0;
+        keybuffer[index] = 130;
+        index++;
         }
       }
           //TODO remove debug print full keybuffer
@@ -692,10 +729,9 @@ index = 0;
             Serial.print
             (keybuffer[i]);
           }
+
 }
-/*************************************/
-//Load Yubico AES, PUB, PRIV to EEPROM
-/*************************************/
+
 void YubikeyEEInit() {
   uint8_t *ptr;
   uint8_t buffer[20];
@@ -709,12 +745,12 @@ void YubikeyEEInit() {
   onlykey_eeset_public(buffer, 6);
   //ptr = buffer;
   memset (&buffer, 0, 20);
-  yubikey_hex_decode ((char *) &buffer, "47b3b9db8094", 6); //Input Yubico OTP Private Identity
+  yubikey_hex_decode ((char *) &buffer, "47b3b9db8094", 6); //Input Yubico OTP Public Identity
   //ptr = (uint8_t *)"47b3b9db8094"; //Input Yubico OTP Private Identity
   onlykey_eeset_private(buffer);
-  //ptr = (uint8_t *)"001768ad1525a6dce2730ab21a230758"; 
+  //ptr = (uint8_t *)"001768ad1525a6dce2730ab21a230758"; //Input Yubico OTP Secret Key
   memset (&buffer, 0, 20);
-  yubikey_hex_decode ((char *) &buffer, "001768ad1525a6dce2730ab21a230758", 16); //Input Yubico OTP Secret Key
+  yubikey_hex_decode ((char *) &buffer, "001768ad1525a6dce2730ab21a230758", 16); //Input Yubico OTP Public Identity
   onlykey_eeset_aeskey(buffer, 16);
   Serial.println("Yubico OTP Public, Private, and Secret Written");
 }

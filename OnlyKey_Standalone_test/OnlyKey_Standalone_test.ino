@@ -109,7 +109,6 @@ extern "C" {
     uint8_t temp[32];
     uint8_t *ptr;
     ptr=temp;
-    rngloop();
     Serial.println("Random number =");
     getrng(ptr, 32); //Fill temp with random data
     for (int i=0; i<=size; i++) {
@@ -302,8 +301,22 @@ void sendKey(Task* me) {
         Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
-    else if ((byte)*pos > 129) {
-        delay((*pos - 129)*1000);   
+    else if ((byte)*pos == 130) {
+        Serial.println("Starting U2F...");
+        int timer = sincelast;
+        while(sincelast < (timer+8000)) {
+          digitalWrite(BLINKPIN, LOW);
+          u2f_button = 1;
+          rngloop();
+          uECC_set_rng(&RNG2);
+          recvmsg();
+          }
+        digitalWrite(BLINKPIN, HIGH);
+        u2f_button = 0;
+        pos++; 
+    }
+    else if ((byte)*pos >= 131) {
+        delay((*pos - 131)*1000);   
         pos++;  
     } 
     else if (*pos){
@@ -613,7 +626,7 @@ index = 0;
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering password");
-        keybuffer[index] = temp[0] + 129;
+        keybuffer[index] = temp[0] + 131;
         index++;
       }
       passwordlength = onlykey_eeget_password(ptr, slot);
@@ -667,7 +680,7 @@ index = 0;
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering 2FA");
-        keybuffer[index] = temp[0] + 129;
+        keybuffer[index] = temp[0] + 131;
         index++;
       }
       memset(temp, 0, 32); //Wipe all data from buffer 
@@ -716,16 +729,8 @@ index = 0;
         index=index+44;
         }
         if(temp[0] == 117) { //U2F
-        Serial.println("Starting U2F...");
-        int timer = sincelast;
-        while(sincelast < (timer+4000)) {
-          digitalWrite(BLINKPIN, LOW);
-          u2f_button = 1;
-          uECC_set_rng(&RNG2);
-          recvmsg();
-          }
-        digitalWrite(BLINKPIN, HIGH);
-        u2f_button = 0;
+        keybuffer[index] = 130;
+        index++;
         }
       }
           //TODO remove debug print full keybuffer

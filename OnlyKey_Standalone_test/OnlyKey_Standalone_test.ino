@@ -113,18 +113,18 @@ void setup() {
   Serial.begin(9600);
   //while (!Serial) ; // wait for serial
   delay(1000);
+  BLINKPIN=13;
+  TOUCHPIN1=1;
+  TOUCHPIN2=15;
+  TOUCHPIN3=16;
+  TOUCHPIN4=17;
+  TOUCHPIN5=22;
+  TOUCHPIN6=23;
+  ANALOGPIN1=A0;
+  ANALOGPIN2=A7;
   pinMode(BLINKPIN, OUTPUT);
   uint8_t *ptr;
   ptr = phash;
-  BLINKPIN=6;
-  TOUCHPIN1=1;
-  TOUCHPIN2=22;
-  TOUCHPIN3=23;
-  TOUCHPIN4=17;
-  TOUCHPIN5=15;
-  TOUCHPIN6=16;
-  ANALOGPIN1=A0;
-  ANALOGPIN2=A7;
  int isinit = onlykey_flashget_pinhash (ptr, 32);
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 

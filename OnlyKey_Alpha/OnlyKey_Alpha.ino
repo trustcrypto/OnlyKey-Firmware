@@ -111,9 +111,6 @@ extern uint8_t nonce[32];
 void setup() {
   Serial.begin(9600);
   delay(1000);
-  pinMode(BLINKPIN, OUTPUT);
-  uint8_t *ptr;
-  ptr = phash;
   BLINKPIN=6;
   TOUCHPIN1=1;
   TOUCHPIN2=22;
@@ -121,8 +118,12 @@ void setup() {
   TOUCHPIN4=17;
   TOUCHPIN5=15;
   TOUCHPIN6=16;
-  //ANALOGPIN1=A7;
-  //ANALOGPIN2=A7;
+  ANALOGPIN1=A0;
+  ANALOGPIN2=A7;
+  pinMode(BLINKPIN, OUTPUT);
+  uint8_t *ptr;
+  ptr = phash;
+
   int isinit = onlykey_flashget_pinhash (ptr, 32);
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
@@ -160,10 +161,10 @@ void setup() {
   CHIP_ID();
   RNG.stir((byte*)ID, sizeof(ID)); //Stir in unique 128 bit Freescale chip ID
   RNG.stir((byte*)nonce, sizeof(nonce)); //Stir in unique nonce that is generated from user entropy when OK is first initialized
-  //unsigned int analog1 = analogRead(ANALOGPIN1);
-  //RNG.stir((uint8_t *)analog1, sizeof(analog1), sizeof(analog1 * 2));
-  //unsigned int analog2 = analogRead(ANALOGPIN2);
-  //RNG.stir((uint8_t *)analog2, sizeof(analog2), sizeof(analog2 * 2));
+  unsigned int analog1 = analogRead(ANALOGPIN1);
+  RNG.stir((uint8_t *)analog1, sizeof(analog1), sizeof(analog1 * 2));
+  unsigned int analog2 = analogRead(ANALOGPIN2);
+  RNG.stir((uint8_t *)analog2, sizeof(analog2), sizeof(analog2 * 2));
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX); 
@@ -200,42 +201,42 @@ void checkKey(Task* me) {
 
   rngloop(); //Perform regular housekeeping on the random number generator.
 
-  if (touchread1 > 1000) {
+  if (touchread1 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '5';
     //Serial.println(touchread1);
   }      
-    else if (touchread2 > 1000) {
+    else if (touchread2 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '2';
     //Serial.println(touchread2);
   } 
-    else if (touchread3 > 1000) {
+    else if (touchread3 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '1';
     //Serial.println(touchread3);
   } 
-   else if (touchread4 > 1000) {
+   else if (touchread4 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '3';
     //Serial.println(touchread4);
   } 
-   else if (touchread5 > 1000) {
+   else if (touchread5 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '4';
     //Serial.println(touchread5);
   } 
-   else if (touchread6 > 1000) {
+   else if (touchread6 > 1500) {
     key_off = 0;
     key_press = 0;
     key_on += 1;

@@ -1,11 +1,17 @@
-# OnlyKey-Firmware-US
+# OnlyKey-Firmware
 
 This is the official firmware for **OnlyKey** - The Two-factor Authentication & Password Solution. For general information on OnlyKey check out the Kickstarter page: [OnlyKey Kickstarter Page](http://www.crp.to/ok)
 
 OnlyKey pre-orders are available here: [OnlyKey Pre-order](http://www.crp.to/po)
  
 ## Introduction ##
-**OnlyKey Firmware US** is the U.S. version of the OnlyKey firmware that comes pre-installed on the OnlyKey (U.S. Customers). In order to configure an OnlyKey that already has firmware loaded install the [OnlyKey Chrome App](https://github.com/onlykey/OnlyKey-Chrome-App).
+There are two available version of the OnlyKey firmware: 
+
+**OnlyKey Firmware US** is the U.S. version of the OnlyKey firmware that comes pre-installed on the OnlyKey (U.S. Customers). 
+**OnlyKey Firmware IN** is the International version of the OnlyKey firmware that comes pre-installed on the OnlyKey (International Customers). 
+
+For more information on the difference between the two versions see the [OnlyKey FAQ App](https://github.com/onlykey/OnlyKey-Firmware/wiki/FAQs).
+In order to configure an OnlyKey that already has firmware loaded install the [OnlyKey Chrome App](https://github.com/onlykey/OnlyKey-Chrome-App).
 
 ## Installation ##
 In order to install the latest version of the OnlyKey firmware:  

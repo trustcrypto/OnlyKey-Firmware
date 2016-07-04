@@ -214,7 +214,7 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
   static int count;
-  Serial.println(PDmode);
+
   if (unlocked) {
     recvmsg();
     if(initialized) {

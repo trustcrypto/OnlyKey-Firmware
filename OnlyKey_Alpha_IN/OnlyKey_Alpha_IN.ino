@@ -307,23 +307,21 @@ void sendKey(Task* me) {
         Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
-    else if ((byte)*pos == 130) {
+    else if ((byte)*pos == 130 && !PDmode) {
         #ifdef DEBUG
         Serial.println("Starting U2F...");
         #endif
         int timer = sincelast;
         while(sincelast < (timer+8000)) {
           digitalWrite(BLINKPIN, LOW);
-          #ifdef US_VERSION
           u2f_button = 1;
+          #ifdef US_VERSION
           uECC_set_rng(&RNG2);
           #endif
           recvmsg();
           }
         digitalWrite(BLINKPIN, HIGH);
-        #ifdef US_VERSION
         u2f_button = 0;
-        #endif
         Keyboard.end();
         SoftTimer.remove(&taskKB);
         SoftTimer.add(&taskKey);
@@ -372,7 +370,7 @@ void payload(int duration) {
    onlykey_eeget_failedlogins (ptr);
    pass_attempts[0]++;
    //Serial.println(pass_attempts[0]);
-   if (pass_attempts[0] >= 10) {
+   if (pass_attempts[0] > 10) {
     Serial.println("Password attempts exhausted");
     Serial.println(pass_attempts[0]);
    factorydefault();
@@ -444,7 +442,7 @@ void payload(int duration) {
         blink(3);
         Serial.print("Login Failed, there are ");
         onlykey_eeget_failedlogins (ptr);
-        Serial.print(9 - pass_attempts[0]);
+        Serial.print(10 - pass_attempts[0]);
         Serial.println(" remaining attempts before a factory reset will occur");
         Serial.println("WARNING: This will render all device information unrecoverable");
         password.reset(); //reset the guessed password to NULL
@@ -574,7 +572,7 @@ void process_slot(int s) {
   long GMT;
   char* newcode;
   static uint8_t index;
-  uint8_t temp[32];
+  uint8_t temp[64];
   int usernamelength;
   int passwordlength;
   int otplength;
@@ -585,7 +583,7 @@ void process_slot(int s) {
 index = 0;
       Serial.print("Slot Number ");
       Serial.println(button_selected-'0');
-      memset(temp, 0, 32); //Wipe all data from buffer
+      memset(temp, 0, 64); //Wipe all data from buffer
       memset(keybuffer, 0, sizeof(keybuffer)); //Wipe all data from keybuffer
       ptr = temp;
       usernamelength = onlykey_eeget_username(ptr, slot);
@@ -597,7 +595,7 @@ index = 0;
         if (!PDmode) {
         #ifdef DEBUG
         Serial.println("Encrypted");
-            for (int z = 0; z < 32; z++) {
+            for (int z = 0; z < usernamelength; z++) {
             Serial.print(temp[z], HEX);
             }
             Serial.println();
@@ -609,14 +607,14 @@ index = 0;
         ByteToChar2(temp, keybuffer, usernamelength, index);
         #ifdef DEBUG
             Serial.println("Unencrypted");
-            for (int z = 0; z < 32; z++) {
+            for (int z = 0; z < usernamelength; z++) {
             Serial.print(temp[z], HEX);
             }
             Serial.println();
         #endif
         index=usernamelength;
       }
-      memset(temp, 0, 32); //Wipe all data from buffer
+      memset(temp, 0, 64); //Wipe all data from buffer
       onlykey_eeget_addchar1(ptr, slot);
       if(temp[0] > 0)
       {
@@ -633,7 +631,7 @@ index = 0;
         index++;
         }
       }
-      memset(temp, 0, 32); //Wipe all data from buffer
+      memset(temp, 0, 64); //Wipe all data from buffer
       onlykey_eeget_delay1(ptr, slot);
       if(temp[0] > 0)
       {
@@ -654,7 +652,7 @@ index = 0;
         if (!PDmode) {
         #ifdef DEBUG
         Serial.println("Encrypted");
-            for (int z = 0; z < 32; z++) {
+            for (int z = 0; z < passwordlength; z++) {
             Serial.print(temp[z], HEX);
             }
             Serial.println();
@@ -666,14 +664,14 @@ index = 0;
         ByteToChar2(temp, keybuffer, passwordlength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
-            for (int z = 0; z < 32; z++) {
+            for (int z = 0; z < passwordlength; z++) {
             Serial.print(temp[z], HEX);
             }
          Serial.println();
         #endif
         index=passwordlength+index;
       }
-      memset(temp, 0, 32); //Wipe all data from buffer    
+      memset(temp, 0, 64); //Wipe all data from buffer    
       onlykey_eeget_addchar2(ptr, slot);
       if(temp[0] > 0)
       {
@@ -690,7 +688,7 @@ index = 0;
         index++;
         }
       }
-      memset(temp, 0, 32); //Wipe all data from buffer    
+      memset(temp, 0, 64); //Wipe all data from buffer    
       onlykey_eeget_delay2(ptr, slot);
       if(temp[0] > 0)
       {
@@ -702,7 +700,7 @@ index = 0;
         keybuffer[index] = temp[0] + 131;
         index++;
       }
-      memset(temp, 0, 32); //Wipe all data from buffer 
+      memset(temp, 0, 64); //Wipe all data from buffer 
       otplength = onlykey_eeget_2FAtype(ptr, slot);
       if(temp[0] > 0)
       {
@@ -711,29 +709,26 @@ index = 0;
           otplength = onlykey_flashget_totpkey(ptr, slot);
         #ifdef DEBUG
         Serial.println("Encrypted");
-            for (int z = 0; z < 32; z++) {
+            for (int z = 0; z < otplength; z++) {
             Serial.print(temp[z], HEX);
             }
            Serial.println();
           #endif
         Serial.print("TOTP Key Length = ");
         Serial.println(otplength);
-        if (!PDmode) {
           #ifdef US_VERSION
           aes_gcm_decrypt(temp, (uint8_t*)('t'+ID[34]+slot), phash, otplength);
           #endif
-        }
         ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
-            for (int z = 0; z < 32; z++) {
+            for (int z = 0; z < otplength; z++) {
             Serial.print(temp[z], HEX);
             }
             Serial.println();
         #endif
           TOTP totp1 = TOTP(temp, otplength);
           GMT = now();
-          Serial.println(GMT);
           GMT = GMT + delay1 + delay2;
           Serial.println(GMT);
           newcode = totp1.getCode(GMT);

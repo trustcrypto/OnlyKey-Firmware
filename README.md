@@ -18,11 +18,11 @@ In order to configure an OnlyKey that already has firmware loaded install the [O
 ## Installation ##
 In order to install the latest version of the OnlyKey firmware:  
 - Download the zip [here](https://github.com/onlykey/OnlyKey-Firmware-US/archive/master.zip) and save it to a convenient location on your PC.
-- For Teensy users you will use the OnlyKey_Standalone_test.cpp.hex firmware included in the zip file.
-- For those lucky enough to have an OnlyKey (you know who you are) you will use the OnlyKey_Alpha.ino.cpp.hex firmware included in the zip file.
+- To load the US version you will use the OnlyKey_Alpha_US.cpp.hex firmware included in the zip file.
+- To load the International version you will use the OnlyKey_Alpha_IN.cpp.hex firmware included in the zip file.
 - Ensure that your copy of the firmware has not been tampered with by checking to see if the SHA256 hash of the downloaded file matches these:
-- OnlyKey_Alpha.cpp.hex - 66346a68eda30b398c5860687c2abdd040f7340cb44abc05d242c4f7a608acef
-- OnlyKey_Standalone_test.cpp.hex - 0dfb334df3caa18103727b84b377e5f41d3eeee69d69034ac342c94ec33aa4ff
+- OnlyKey_Alpha_US.cpp.hex -
+- OnlyKey_Alpha_IN.cpp.hex - 
 - (To do this in Windows open a command prompt and type certUtil -hashfile pathToFileToCheck SHA256)
 - Load the firmware that you downloaded (OnlyKey_XXXXXXX.hex) using the instructional video here [![Load Firmware using Teensy Loader](http://img.youtube.com/vi/qJUjz0gFhqg/0.jpg)](http://www.youtube.com/watch?v=qJUjz0gFhqg)
 
@@ -30,15 +30,8 @@ In order to install the latest version of the OnlyKey firmware:
 OnlyKey is currently in development **WARNING** The OnlyKey firmware alpha is available for testing purposes only and is not to be used to store any sensitive information. The following items are in progress:
 - U2F Certificate set/wipe - Receive U2F cerificate from chrome app and store to flash/ erase from flash (untested)
 - Yubikey Priv ID, Pub ID, Key set/wipe - Receive Yubikey values from chrome app and store to flash/ erase from flash (untested)
-- Plausible Deniability Mode - This feature is partially tested. Additional testing is needed here.
-- Self Destruct - This feature is partially tested. Currently it overwrites EEPROM with 0s when self destruct PIN is entered. TODO also overwrite flash variables.
-- U2F key generation
-- U2F - Investigate using deterministic signing - https://github.com/kmackay/micro-ecc/issues/37
-- Factory Default to wipe flash sectors used as well as EEPROM
-- U2F - Remove placeholder handlekey, generate from nonce.
-- U2F - Key wrapping (using RNG, hmac) follow Yubikey architecture - https://www.yubico.com/2014/11/yubicos-u2f-key-wrapping/
+- U2F - Use deterministic signing - https://github.com/kmackay/micro-ecc/issues/37
 - Ensure all license files are properly posted
-- Breaking okcore to multiple appropriately named libraries
 - General code cleanup
 - Remove debugging
 - Consider using different SHA256 library. Currently using library from Brad Conte, considering using  Southern Storm Software

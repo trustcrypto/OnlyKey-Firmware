@@ -30,11 +30,8 @@
  *
 */
 
-
-
 #include "sha256.h"
 #include <EEPROM.h>
-
 #include <softtimer.h>
 #include <password.h>
 #include "sha1.h"
@@ -46,19 +43,19 @@
 #include <transistornoisesource.h>
 #include "T3MacLib.h"
 /*************************************/
-//Firmware Version Selection
+//Additional Libraries to Load for US Version
+//These libraries will only be used if US_Version is defined
 /*************************************/
+#define US_VERSION //Define for US Version Firmare
 extern bool PDmode;
-#define US_VERSION
 #ifdef US_VERSION
 #include "yksim.h"
-#include "uecc.h"
+#include "uECC.h"
 #include "ykcore.h"
 #include <Crypto.h>
 #include <AES.h>
 #include <GCM.h>
 #endif
-#define DEBUG
 /*************************************/
 //RNG assignments
 /*************************************/
@@ -123,8 +120,8 @@ extern uint8_t nonce[32];
 /*************************************/
 void setup() {
   Serial.begin(9600);
-  //delay(1000); 
-  PDmode = false; //US Version Selection
+  //delay(7000); 
+  PDmode = false; ///Must be false for US Version
   /*************************************/
   //PIN Assigments
   /*************************************/
@@ -234,8 +231,8 @@ void checkKey(Task* me) {
   }
   
     //Uncomment to test RNG
-    RNG2(data, 32);
-    printHex(data, 32);
+    //RNG2(data, 32);
+    //printHex(data, 32);
 
   rngloop(); //Perform regular housekeeping on the random number generator.
 
@@ -310,9 +307,9 @@ void sendKey(Task* me) {
         pos++;  
     } 
     else if ((byte)*pos == 130 && !PDmode) {
-        #ifdef DEBUG
+        
         Serial.println("Starting U2F...");
-        #endif
+        
         int timer = sincelast;
         while(sincelast < (timer+8000)) {
           digitalWrite(BLINKPIN, LOW);

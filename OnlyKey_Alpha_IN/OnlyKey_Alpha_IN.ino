@@ -43,22 +43,18 @@
 #include <transistornoisesource.h>
 #include "T3MacLib.h"
 /*************************************/
-//Firmware Version Selection
+//Additional Libraries to Load for US Version
+//These libraries will only be used if US_Version is defined
 /*************************************/
 extern bool PDmode;
-//For US version uncomment below and change PDmode false
-/*
-#define US_VERSION
 #ifdef US_VERSION
 #include "yksim.h"
-#include "uecc.h"
+#include "uECC.h"
 #include "ykcore.h"
 #include <Crypto.h>
 #include <AES.h>
 #include <GCM.h>
 #endif
-*/
-#define DEBUG
 /*************************************/
 //RNG assignments
 /*************************************/
@@ -123,8 +119,8 @@ extern uint8_t nonce[32];
 /*************************************/
 void setup() {
   Serial.begin(9600);
-  //delay(1000); 
-  PDmode = true; //IN Version Selection
+  //delay(7000); 
+  PDmode = true; ///Must be true for IN Version
   /*************************************/
   //PIN Assigments
   /*************************************/

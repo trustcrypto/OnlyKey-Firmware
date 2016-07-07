@@ -120,7 +120,11 @@ extern uint8_t nonce[32];
 void setup() {
   Serial.begin(9600);
   //delay(7000); 
-  PDmode = true; ///Must be true for IN Version
+  #ifdef US_VERSION
+  PDmode = false;
+  #else
+  PDmode = true; 
+  #endif
   /*************************************/
   //PIN Assigments
   /*************************************/
@@ -728,7 +732,15 @@ index = 0;
           GMT = GMT + delay1 + delay2;
           Serial.println(GMT);
           newcode = totp1.getCode(GMT);
-          
+           if (timeStatus() == timeNotSet) {
+            keybuffer[index]='N';
+            keybuffer[index+1]='O';
+            keybuffer[index+2]='T';
+            keybuffer[index+3]='S';
+            keybuffer[index+4]='E';
+            keybuffer[index+5]='T';
+            keybuffer[index+6]=0x00;
+          } else {
             keybuffer[index]=*newcode;
             keybuffer[index+1]=*(newcode+1);
             keybuffer[index+2]=*(newcode+2);
@@ -736,7 +748,7 @@ index = 0;
             keybuffer[index+4]=*(newcode+4);
             keybuffer[index+5]=*(newcode+5);
             keybuffer[index+6]=0x00;
-          
+          }
           index=index+6;
         }
         if(temp[0] == 121 && !PDmode) { 

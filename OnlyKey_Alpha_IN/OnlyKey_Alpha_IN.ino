@@ -84,7 +84,7 @@ static uint8_t TIMEOUT[1] = {0x15};
 //yubikey
 /*************************************/
 #ifdef US_VERSION
-yubikey_ctx_st ctx;
+extern yubikey_ctx_st ctx;
 #endif
 /*************************************/
 //PIN Assigment Variables
@@ -153,9 +153,6 @@ void setup() {
       Serial.println("written successfully");
       #endif
       onlykey_flashget_pinhash (ptr, 32);
-      #ifdef US_VERSION
-      YubikeyEEInit();  //TODO remove once chrome app supports Yubico OTP SETSLOT
-      #endif
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       #ifdef DEBUG
@@ -489,82 +486,7 @@ void gen_hold(void) {
   }
       process_slot(slot+6);   
 }
-/*************************************/
-//Initialize Yubico OTP
-/*************************************/
-void yubikeyinit() {
-#ifdef US_VERSION
-  uint32_t seed;
-  uint8_t *ptr = (uint8_t *)&seed;
-  RNG2(ptr, 32); //Seed the onlyKey with random data
 
-  uint8_t temp[32];
-  uint8_t aeskey[16];
-  uint8_t privID[6];
-  uint8_t pubID[16];
-  uint16_t counter;
-  char public_id[32+1];
-  char private_id[12+1];
-
-  
-  Serial.println("Initializing onlyKey ...");
-  /*
-  memset(temp, 0, 32); //Clear temp buffer
-  
-  ptr = temp;
-  onlykey_eeget_aeskey(ptr);
-  
-  ptr = (temp+EElen_aeskey);
-  onlykey_eeget_private(ptr);
-
-  ptr = (temp+EElen_aeskey+EElen_private);
-  onlykey_eeget_public(ptr);
-
-  aes_gcm_decrypt(temp, (uint8_t*)('y'+ID[34]), phash, (EElen_aeskey+EElen_private+EElen_aeskey));
-
-  for (int i = 0; i <= EElen_aeskey; i++) {
-    aeskey[i] = temp[i];
-  }
-  for (int i = 0; i <= EElen_private; i++) {
-    privID[i] = temp[i+EElen_aeskey];
-  }
-  for (int i = 0; i <= EElen_public; i++) {
-    pubID[i] = temp[i+EElen_aeskey+EElen_private];
-  }
-  memset(temp, 0, 32); //Clear temp buffer
-  
-  ptr = (uint8_t*) &counter;
-  yubikey_eeget_counter(ptr);
-
-  yubikey_hex_encode(private_id, (char *)privID, 6);
-  yubikey_hex_encode(public_id, (char *)pubID, 6);
-
-    Serial.println("public_id");
-  Serial.println(public_id);
-    Serial.println("private_id");
-  Serial.println(private_id);
-    Serial.println("counter");
-  Serial.println(counter);
-  */ //TODO enable this once chrome app supports Yubi OTP key load
-  ptr = (uint8_t*) &counter;
-  yubikey_eeget_counter(ptr);
-  uint32_t time = 0x010203; //TODO why is time set to this?
-  ptr = aeskey;
-  onlykey_eeget_aeskey(ptr); 
-  ptr = privID;
-  onlykey_eeget_private(ptr);
-  yubikey_hex_encode(private_id, (char *)privID, 6);
-  ptr = pubID;
-  onlykey_eeget_public(ptr);
-  yubikey_hex_encode(public_id, (char *)pubID, 6);
-  yubikey_init1(&ctx, aeskey, public_id, private_id, counter, time, seed);
- 
-  yubikey_incr_counter(&ctx);
- 
-  ptr = (uint8_t*) &(ctx.counter);
-  yubikey_eeset_counter(ptr);
-#endif
-}
 /*************************************/
 //Load Set Values to Keybuffer
 /*************************************/
@@ -772,31 +694,5 @@ index = 0;
           }
 
 }
-/*************************************/
-//Load Yubico AES, PUB, PRIV to EEPROM
-/*************************************/
-void YubikeyEEInit() {
-  #ifdef US_VERSION
-  uint8_t *ptr;
-  uint8_t buffer[20];
-  uint16_t counter  = 0x0000;
 
-  ptr = (uint8_t *) &counter;
-  yubikey_eeset_counter(ptr);
-  
-  memset (&buffer, 0, 20);
-  yubikey_modhex_decode ((char *) &buffer, "vdhchdlbufru", 6); //Input Yubico OTP Public Identity
-  onlykey_eeset_public(buffer, 6);
-  //ptr = buffer;
-  memset (&buffer, 0, 20);
-  yubikey_hex_decode ((char *) &buffer, "47b3b9db8094", 6); //Input Yubico OTP Private Identity
-  //ptr = (uint8_t *)"47b3b9db8094"; //Input Yubico OTP Private Identity
-  onlykey_eeset_private(buffer);
-  //ptr = (uint8_t *)"001768ad1525a6dce2730ab21a230758"; 
-  memset (&buffer, 0, 20);
-  yubikey_hex_decode ((char *) &buffer, "001768ad1525a6dce2730ab21a230758", 16); //Input Yubico OTP Secret Key
-  onlykey_eeset_aeskey(buffer, 16);
-  Serial.println("Yubico OTP Public, Private, and Secret Written");
-  #endif
-}
 

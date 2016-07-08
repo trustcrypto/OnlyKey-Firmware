@@ -40,13 +40,13 @@
 #include "onlykey.h"
 #include "flashkinetis.h"
 #include <RNG.h>
-#include <transistornoisesource.h>
 #include "T3MacLib.h"
 /*************************************/
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
 #define US_VERSION //Define for US Version Firmare
+#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -56,13 +56,6 @@ extern bool PDmode;
 #include <AES.h>
 #include <GCM.h>
 #endif
-/*************************************/
-//yubikey
-/*************************************/
-#ifdef US_VERSION
-extern yubikey_ctx_st ctx;
-#endif
-/*************************************/
 /*************************************/
 //RNG assignments
 /*************************************/
@@ -120,7 +113,9 @@ extern uint8_t nonce[32];
 //Arduino Setup 
 /*************************************/
 void setup() {
+  #ifdef DEBUG
   Serial.begin(9600);
+  #endif
   //delay(7000); 
   #ifdef US_VERSION
   PDmode = false;
@@ -190,9 +185,9 @@ void setup() {
   RNG.stir((byte*)ID, sizeof(ID)); //Stir in unique 128 bit Freescale chip ID
   RNG.stir((byte*)nonce, sizeof(nonce)); //Stir in unique nonce that is generated from user entropy when OK is first initialized
   unsigned int analog1 = analogRead(ANALOGPIN1);
-  RNG.stir((uint8_t *)analog1, sizeof(analog1), sizeof(analog1 * 2));
+  RNG.stir((uint8_t *)analog1, sizeof(analog1), sizeof(analog1)*2);
   unsigned int analog2 = analogRead(ANALOGPIN2);
-  RNG.stir((uint8_t *)analog2, sizeof(analog2), sizeof(analog2 * 2));
+  RNG.stir((uint8_t *)analog2, sizeof(analog2), sizeof(analog2)*2);
   #ifdef DEBUG
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
@@ -218,7 +213,7 @@ void checkKey(Task* me) {
     recvmsg();
     if(initialized) {
     #ifdef US_VERSION
-    yubikey_incr_timestamp(&ctx);
+    yubikey_incr_time();
     #endif
     if (idletimer >= (TIMEOUT[0]*900000)) unlocked = false; 
     }
@@ -309,9 +304,9 @@ void sendKey(Task* me) {
         pos++;  
     } 
     else if ((byte)*pos == 130 && !PDmode) {
-        
+        #ifdef DEBUG
         Serial.println("Starting U2F...");
-        
+        #endif
         int timer = sincelast;
         while(sincelast < (timer+8000)) {
           digitalWrite(BLINKPIN, LOW);
@@ -357,7 +352,9 @@ void payload(int duration) {
    uint8_t *ptr;
    ptr = pass_attempts;
     if (session_attempts >= 3) { //Limit 3 password attempts per session to make sure that someone does not accidentally wipe device
+    #ifdef DEBUG
     Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
+    #endif
       while(1==1)
         {
         hidprint("Error password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
@@ -372,8 +369,10 @@ void payload(int duration) {
    pass_attempts[0]++;
    //Serial.println(pass_attempts[0]);
    if (pass_attempts[0] > 10) {
+    #ifdef DEBUG
     Serial.println("Password attempts exhausted");
     Serial.println(pass_attempts[0]);
+    #endif
    factorydefault();
    pass_attempts[0] = 0;
    return;
@@ -388,7 +387,9 @@ void payload(int duration) {
           onlykey_eeset_failedlogins(0); //Set failed login counter to 0
           password.reset(); //reset the guessed password to NULL
           hidprint("UNLOCKED"); 
+          #ifdef DEBUG
           Serial.println("UNLOCKED");
+          #endif
           if (!PDmode) {
           yubikeyinit(); 
           }
@@ -400,19 +401,25 @@ void payload(int duration) {
         else if (PINSET==0) { 
         }
         else if (PINSET<=3) { 
+            #ifdef DEBUG
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
+            #endif
             return;
         }
         else if (PINSET<=6) {
+            #ifdef DEBUG
             Serial.print("SD password appended with ");
             Serial.println(button_selected-'0');
+            #endif
             return;
         }
         else {
             if(!PDmode){
+            #ifdef DEBUG
             Serial.print("PD password appended with ");
             Serial.println(button_selected-'0');
+            #endif
             }
             return;
         }
@@ -426,26 +433,34 @@ void payload(int duration) {
       return;
   }
    else if (password.sdhashevaluate()) {
-    Serial.println("Self Destruct PIN entered"); //TODO remove debug
+    #ifdef DEBUG
+    Serial.println("Self Destruct PIN entered"); 
+    #endif
     factorydefault(); 
    }
    else {
     if (pass_keypress < 10) {
+        #ifdef DEBUG
         Serial.print("password appended with ");
         Serial.println(button_selected-'0');
         Serial.print("Number of keys entered for this passcode = ");
         Serial.println(pass_keypress);
+        #endif
         pass_keypress++; 
         return;  
       } else {
         firsttime = true;
         session_attempts++;
         blink(3);
+        #ifdef DEBUG
         Serial.print("Login Failed, there are ");
+        #endif
         onlykey_eeget_failedlogins (ptr);
+        #ifdef DEBUG
         Serial.print(10 - pass_attempts[0]);
         Serial.println(" remaining attempts before a factory reset will occur");
         Serial.println("WARNING: This will render all device information unrecoverable");
+        #endif
         password.reset(); //reset the guessed password to NULL
         pass_keypress=1;
         return;
@@ -457,7 +472,9 @@ void payload(int duration) {
 /*************************************/
 void gen_press(void) {
   if (!initialized) {
+    #ifdef DEBUG
     Serial.println("UNINITIALIZED - You must set a password first");
+    #endif
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
@@ -476,7 +493,9 @@ void gen_press(void) {
 /*************************************/
 void gen_hold(void) {
   if (!initialized) {
+    #ifdef DEBUG
     Serial.println("UNINITIALIZED - You must set a password first");
+    #endif
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
@@ -506,17 +525,21 @@ void process_slot(int s) {
   uint8_t *ptr;
   int slot=s;
 index = 0;
+      #ifdef DEBUG
       Serial.print("Slot Number ");
       Serial.println(button_selected-'0');
+      #endif
       memset(temp, 0, 64); //Wipe all data from buffer
       memset(keybuffer, 0, sizeof(keybuffer)); //Wipe all data from keybuffer
       ptr = temp;
       usernamelength = onlykey_eeget_username(ptr, slot);
       if(usernamelength > 0)
       {
+        #ifdef DEBUG
         Serial.println("Reading Username from EEPROM...");
         Serial.print("Username Length = ");
         Serial.println(usernamelength);
+        #endif
         if (!PDmode) {
         #ifdef DEBUG
         Serial.println("Encrypted");
@@ -524,7 +547,7 @@ index = 0;
             Serial.print(temp[z], HEX);
             }
             Serial.println();
-          #endif
+        #endif
         #ifdef US_VERSION
         aes_gcm_decrypt(temp, (uint8_t*)('u'+ID[34]+slot), phash, usernamelength);
         #endif
@@ -544,15 +567,23 @@ index = 0;
       if(temp[0] > 0)
       {
         if(temp[0] == 0x31) {
+        #ifdef DEBUG
         Serial.println("Reading addchar1 from EEPROM...");
+        #endif
         keybuffer[index] = 128;
+        #ifdef DEBUG
         Serial.println("TAB");
+        #endif
         index++;
         }
         else if(temp[0] == 0x32) {
+        #ifdef DEBUG
         Serial.println("Reading addchar1 from EEPROM...");
+        #endif
         keybuffer[index] = 129;
+        #ifdef DEBUG
         Serial.println("RETURN");
+        #endif
         index++;
         }
       }
@@ -560,10 +591,12 @@ index = 0;
       onlykey_eeget_delay1(ptr, slot);
       if(temp[0] > 0)
       {
+        #ifdef DEBUG
         Serial.println("Reading Delay from EEPROM...");
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering password");
+        #endif
         delay1=temp[0];
         keybuffer[index] = temp[0] + 131;
         index++;
@@ -571,9 +604,11 @@ index = 0;
       passwordlength = onlykey_eeget_password(ptr, slot);
       if(passwordlength > 0)
       {
+        #ifdef DEBUG
         Serial.println("Reading Password from EEPROM...");
         Serial.print("Password Length = ");
         Serial.println(passwordlength);
+        #endif
         if (!PDmode) {
         #ifdef DEBUG
         Serial.println("Encrypted");
@@ -601,15 +636,19 @@ index = 0;
       if(temp[0] > 0)
       {
         if(temp[0] == 0x31) {
+        #ifdef DEBUG
         Serial.println("Reading addchar2 from EEPROM...");
-        keybuffer[index] = 128;
         Serial.println("TAB");
+        #endif
+        keybuffer[index] = 128;
         index++;
         }
         else if(temp[0] == 0x32) {
-        Serial.println("Reading addchar2 from EEPROM...");
-        keybuffer[index] = 129;
+        #ifdef DEBUG
+        Serial.println("Reading addchar2 from EEPROM...");      
         Serial.println("Return");
+        #endif
+        keybuffer[index] = 129;
         index++;
         }
       }
@@ -617,10 +656,12 @@ index = 0;
       onlykey_eeget_delay2(ptr, slot);
       if(temp[0] > 0)
       {
+        #ifdef DEBUG
         Serial.println("Reading Delay2 from EEPROM...");
         Serial.print("Delay ");
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering 2FA");
+        #endif
         delay2=temp[0];
         keybuffer[index] = temp[0] + 131;
         index++;
@@ -630,7 +671,9 @@ index = 0;
       if(temp[0] > 0)
       {
         if(temp[0] == 103) { //Google Auth
+          #ifdef DEBUG
           Serial.println("Reading TOTP Key from EEPROM...");
+          #endif
           otplength = onlykey_flashget_totpkey(ptr, slot);
         #ifdef DEBUG
         Serial.println("Encrypted");
@@ -638,9 +681,10 @@ index = 0;
             Serial.print(temp[z], HEX);
             }
            Serial.println();
-          #endif
+          
         Serial.print("TOTP Key Length = ");
         Serial.println(otplength);
+        #endif
           #ifdef US_VERSION
           aes_gcm_decrypt(temp, (uint8_t*)('t'+ID[34]+slot), phash, otplength);
           #endif
@@ -655,7 +699,9 @@ index = 0;
           TOTP totp1 = TOTP(temp, otplength);
           GMT = now();
           GMT = GMT + delay1 + delay2;
+          #ifdef DEBUG
           Serial.println(GMT);
+          #endif
           newcode = totp1.getCode(GMT);
           if (timeStatus() == timeNotSet) {
             keybuffer[index]='N';
@@ -677,10 +723,11 @@ index = 0;
           index=index+6;
         }
         if(temp[0] == 121 && !PDmode) { 
+        #ifdef DEBUG
         Serial.println("Generating Yubico OTP...");
+        #endif
         #ifdef US_VERSION
-        yubikey_simulate1((keybuffer + index), &ctx);
-        yubikey_incr_usage(&ctx);
+        yubikeysim(keybuffer + index);
         index=index+44;
         #endif
         }
@@ -689,12 +736,14 @@ index = 0;
         index++;
         }
       }
-          //TODO remove debug print full keybuffer
+          
+          #ifdef DEBUG
           Serial.println("Displaying Full Keybuffer");
           for (int i=0; keybuffer[i]!=0x00; i++) {
             Serial.print
             (keybuffer[i]);
           }
+          #endif
 
 }
 

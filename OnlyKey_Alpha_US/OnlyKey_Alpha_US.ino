@@ -392,6 +392,7 @@ void payload(int duration) {
           #endif
           if (!PDmode) {
           yubikeyinit(); 
+          U2Finit();
           }
           idletimer=0; 
           unlocked = true;

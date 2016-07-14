@@ -1,4 +1,4 @@
-// OnlyKey Alpha US Version
+// OnlyKey Beta US Version
 /*
  * Tim Steiner
  * Copyright (c) 2016 , CryptoTrust LLC.
@@ -45,7 +45,8 @@
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-#define US_VERSION //Define for US Version Firmare
+#define US_VERSION
+//Define for US Version Firmare
 //#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
@@ -61,7 +62,7 @@ extern bool PDmode;
 /*************************************/
 bool calibrating = false;
 byte data[32];
-#define OKversion "v0.1-alpha.0"
+#define OKversion "v0.2-beta.0"
 /*************************************/
 //SoftTimer
 /*************************************/

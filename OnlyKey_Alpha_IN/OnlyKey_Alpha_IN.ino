@@ -1,4 +1,4 @@
-// OnlyKey Alpha International Version
+// OnlyKey Beta International Version
 /*
  * Tim Steiner
  * Copyright (c) 2016 , CryptoTrust LLC.
@@ -45,7 +45,9 @@
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-#define DEBUG
+//#define US_VERSION
+//Define for US Version Firmare
+//#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -60,7 +62,7 @@ extern bool PDmode;
 /*************************************/
 bool calibrating = false;
 byte data[32];
-#define OKversion "v0.1-alpha.0"
+#define OKversion "v0.2-beta.0"
 /*************************************/
 //SoftTimer
 /*************************************/
@@ -391,6 +393,7 @@ void payload(int duration) {
           #endif
           if (!PDmode) {
           yubikeyinit(); 
+          U2Finit();
           }
           idletimer=0; 
           unlocked = true;

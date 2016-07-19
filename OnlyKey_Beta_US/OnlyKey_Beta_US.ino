@@ -47,7 +47,7 @@
 /*************************************/
 #define US_VERSION
 //Define for US Version Firmare
-#define DEBUG
+//#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -61,6 +61,7 @@ extern bool PDmode;
 //RNG assignments
 /*************************************/
 bool calibrating = false;
+
 byte data[32];
 #define OKversion "v0.2-beta.0"
 /*************************************/

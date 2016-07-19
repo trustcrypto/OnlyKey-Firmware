@@ -688,7 +688,7 @@ index = 0;
         Serial.println(otplength);
         #endif
           #ifdef US_VERSION
-          aes_gcm_decrypt(temp, (uint8_t*)('t'+ID[34]+slot), phash, otplength);
+          if(!PDmode) aes_gcm_decrypt(temp, (uint8_t*)('t'+ID[34]+slot), phash, otplength);
           #endif
         ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG

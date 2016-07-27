@@ -15,7 +15,7 @@ There are two available version of the OnlyKey firmware:
 
 For more information on the difference between the two versions see the [OnlyKey FAQ](https://github.com/onlykey/OnlyKey-Firmware/wiki/FAQs).
 
-In order to configure an OnlyKey that already has firmware loaded install the [OnlyKey Chrome App](https://github.com/onlykey/OnlyKey-Chrome-App).
+In order to configure an OnlyKey that already has firmware loaded install the [OnlyKey Chrome App](https://chrome.google.com/webstore/detail/onlykey-configuration/adafilbceehejjehoccladhbkgbjmica).
 
 ## Installation ##
 In order to install the latest version of the OnlyKey firmware:  

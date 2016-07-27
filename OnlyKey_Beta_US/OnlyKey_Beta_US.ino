@@ -675,7 +675,7 @@ index = 0;
       {
         if(temp[0] == 103) { //Google Auth
           #ifdef DEBUG
-          Serial.println("Reading TOTP Key from EEPROM...");
+          Serial.println("Reading TOTP Key from Flash...");
           #endif
           otplength = onlykey_flashget_totpkey(ptr, slot);
         #ifdef DEBUG

@@ -18,34 +18,22 @@ In order to configure an OnlyKey that already has firmware loaded install the [O
 ## Installation ##
 In order to install the latest version of the OnlyKey firmware:  
 - Download the zip [here](https://github.com/onlykey/OnlyKey-Firmware-US/archive/master.zip) and save it to a convenient location on your PC.
-- To load the US version you will use the OnlyKey_Alpha_US.cpp.hex firmware included in the zip file.
-- To load the International version you will use the OnlyKey_Alpha_IN.cpp.hex firmware included in the zip file.
+- To load the US version you will use the OnlyKey_Alpha_US.cpp.hex firmware included in the zip file (OnlyKey-Firmware-master/OnlyKey_Beta_US/OnlyKey_Beta_US.cpp.hex).
+- To load the International version you will use the OnlyKey_Alpha_IN.cpp.hex firmware included in the zip file (OnlyKey-Firmware-master/OnlyKey_Beta_IN/OnlyKey_Beta_IN.cpp.hex).
 - Ensure that your copy of the firmware has not been tampered with by checking to see if the SHA256 hash of the downloaded file matches these:
-- OnlyKey_Alpha_US.cpp.hex -
-- OnlyKey_Alpha_IN.cpp.hex - 
+- OnlyKey_Alpha_US.cpp.hex - f1390f31fe426efc8979d5b8c59391957582de94d81ff5abfaab89bdc3710103
+- OnlyKey_Alpha_IN.cpp.hex - 54746d8c26a3e87e16139aed2889905f3f4b7269d866e2fefd79c2bb02ee12e5
 - (To do this in Windows open a command prompt and type certUtil -hashfile pathToFileToCheck SHA256)
 - Load the firmware that you downloaded (OnlyKey_XXXXXXX.hex) using the instructional video here [![Load Firmware using Teensy Loader](http://img.youtube.com/vi/qJUjz0gFhqg/0.jpg)](http://www.youtube.com/watch?v=qJUjz0gFhqg)
 
 ## Development ##
-OnlyKey is currently in development **WARNING** The OnlyKey firmware alpha is available for testing purposes only and is not to be used to store any sensitive information. The following items are in progress:
-- U2F Certificate set/wipe - Receive U2F cerificate from chrome app and store to flash/ erase from flash (untested)
-- Yubikey Priv ID, Pub ID, Key set/wipe - Receive Yubikey values from chrome app and store to flash/ erase from flash (untested)
-- U2F - Use deterministic signing - https://github.com/kmackay/micro-ecc/issues/37
-- Ensure all license files are properly posted
-- General code cleanup
-- Remove debugging
-- Consider using different SHA256 library. Currently using library from Brad Conte, considering using  Southern Storm Software
-
-## Testing ##
-The current publicly available test case document is [here] (https://docs.google.com/spreadsheets/d/1SEByiDpYqyAhNw-Xv2Eix7-MW8PP0Hj5bA2UC55slaI/edit)
-
-To suggest additional test cases or to report your findings email k@crp.to
+OnlyKey is currently released as a fully functional Beta. Development will be ongoing as additional features are added. To see a list of current and future features see [OnlyKey Features] (https://github.com/onlykey/OnlyKey-Firmware/wiki/OnlyKey-Features).
 
 ## Support ##
 
 Check out the [OnlyKey Support Forum](https://groups.google.com/forum/#!forum/onlykey).
 
-Check out the [OnlyKey Firmware FAQs](https://github.com/onlykey/OnlyKey-Firmware-US/wiki/FAQs)
+Check out the [OnlyKey Wiki](https://github.com/onlykey/OnlyKey-Firmware/wiki/Table-of-Contents)
 
 ## Libraries ##
 
@@ -74,5 +62,7 @@ Yohanes - https://github.com/yohanes/teensy-u2f
 Ken MacKay - https://github.com/kmackay/micro-ecc
 
 Rhys Weatherley - https://github.com/rweather/arduinolibs
+
+Defragster - https://forum.pjrc.com/threads/91-teensy-3-MAC-address/page2
 
 

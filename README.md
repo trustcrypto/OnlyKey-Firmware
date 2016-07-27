@@ -1,8 +1,10 @@
 # OnlyKey-Firmware
 
-This is the official firmware for **OnlyKey** - The Two-factor Authentication & Password Solution. For general information on OnlyKey check out the Kickstarter page: [OnlyKey Kickstarter Page](http://www.crp.to/ok)
+This is the official firmware for **OnlyKey** - The Two-factor Authentication & Password Solution. For general information on OnlyKey check out the Kickstarter page: [OnlyKey Kickstarter Page](https://www.kickstarter.com/projects/1048259057/openkey-the-two-factor-authentication-and-password/)
 
-OnlyKey pre-orders are available here: [OnlyKey Pre-order](http://www.crp.to/po)
+OnlyKey pre-orders are available here: [OnlyKey Pre-order](http://www.crp.to/ok)
+
+OnlyKey Quick Start Guide is available here: [OnlyKey Quick Start Guide](http://www.crp.to/okstart)
  
 ## Introduction ##
 There are two available version of the OnlyKey firmware: 

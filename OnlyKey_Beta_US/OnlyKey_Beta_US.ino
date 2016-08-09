@@ -217,7 +217,7 @@ void checkKey(Task* me) {
     #ifdef US_VERSION
     yubikey_incr_time();
     #endif
-    if (idletimer >= (TIMEOUT[0]*900000)) unlocked = false; 
+    if (idletimer >= (TIMEOUT[0]*60000)) unlocked = false; 
     }
   }
   else if (sincelast >= 1000 && initialized)

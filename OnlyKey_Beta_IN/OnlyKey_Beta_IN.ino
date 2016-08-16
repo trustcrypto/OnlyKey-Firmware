@@ -8,26 +8,45 @@
  * modification, are permitted provided that the following conditions are
  * met:
  *
- *    * Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
  *
- *    * Redistributions in binary form must reproduce the above
- *      copyright notice, this list of conditions and the following
- *      disclaimer in the documentation and/or other materials provided
- *      with the distribution.
+ * 2. Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *      
+ * 3. All advertising materials mentioning features or use of this
+ *    software must display the following acknowledgment:
+ *    "This product includes software developed by the OnlyKey Project
+ *    (http://www.crp.to/ok)"
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 4. The names "OnlyKey" and "OnlyKey Project" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. For written permission, please contact
+ *    admin@crp.to.
  *
+ * 5. Products derived from this software may not be called "OnlyKey"
+ *    nor may "OnlyKey" appear in their names without prior written
+ *    permission of the OnlyKey Project.
+ *
+ * 6. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by the OnlyKey Project
+ *    (http://www.crp.to/ok)"
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE OnlyKey PROJECT ``AS IS'' AND ANY
+ * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OnlyKey PROJECT OR
+ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "sha256.h"
@@ -165,7 +184,7 @@ void setup() {
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
         ptr = TIMEOUT;
         onlykey_eeget_timeout(ptr);
-        if (TIMEOUT[0]< 0x02) TIMEOUT[0] = 0x15; //Default 15 min idle timeout
+        if (TIMEOUT[0]< 2) TIMEOUT[0] = 30; //Default 30 min idle timeout
         unlocked = false;
         initialized = true;
         #ifdef DEBUG
@@ -197,6 +216,11 @@ void setup() {
   Serial.println(PDmode); 
   #endif
   rngloop(); //Start RNG
+  fadein();
+  fadeout();
+  fadein();
+  fadeout();
+  //Additional delay to make sure button is not pressed during plug into USB
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -216,7 +240,10 @@ void checkKey(Task* me) {
     #ifdef US_VERSION
     yubikey_incr_time();
     #endif
-    if (idletimer >= (TIMEOUT[0]*60000)) unlocked = false; 
+    if (idletimer >= (TIMEOUT[0]*60000)) {
+      unlocked = false; 
+      pass_keypress = 0;
+    }
     }
   }
   else if (sincelast >= 1000 && initialized)
@@ -281,8 +308,8 @@ void checkKey(Task* me) {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
-    if (!unlocked) digitalWrite(BLINKPIN, LOW); //LED OFF
-    else digitalWrite(BLINKPIN, HIGH); //LED ON
+    if (!unlocked) analogWrite(BLINKPIN, 0); //LED OFF
+    else analogWrite(BLINKPIN, 255); //LED ON
   }
 
   if ((key_press > 0) && (key_off > THRESHOLD)) {
@@ -310,14 +337,14 @@ void sendKey(Task* me) {
         #endif
         int timer = sincelast;
         while(sincelast < (timer+8000)) {
-          digitalWrite(BLINKPIN, LOW);
+          analogWrite(BLINKPIN, 0);
           u2f_button = 1;
           #ifdef US_VERSION
           uECC_set_rng(&RNG2);
           #endif
           recvmsg();
           }
-        digitalWrite(BLINKPIN, HIGH);
+        analogWrite(BLINKPIN, 255);
         u2f_button = 0;
         Keyboard.end();
         SoftTimer.remove(&taskKB);
@@ -347,8 +374,8 @@ void sendKey(Task* me) {
 //Password Checking Loop
 /*************************************/
 void payload(int duration) {
-   if (!unlocked) digitalWrite(BLINKPIN, HIGH); //LED ON
-   else digitalWrite(BLINKPIN, LOW); //LED OFF
+   if (!unlocked) analogWrite(BLINKPIN, 255); //LED ON
+   else analogWrite(BLINKPIN, 0); //LED OFF
    uint8_t pass_attempts[1];
    uint8_t *ptr;
    ptr = pass_attempts;
@@ -480,7 +507,7 @@ void gen_press(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
-  digitalWrite(BLINKPIN, LOW); //LED OFF
+  analogWrite(BLINKPIN, 0); //LED OFF
   idletimer=0; 
   int slot;
   if (PDmode) {
@@ -501,7 +528,7 @@ void gen_hold(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
-  digitalWrite(BLINKPIN, LOW); //LED OFF
+  analogWrite(BLINKPIN, 0); //LED OFF
   idletimer=0; 
   int slot;
   if (PDmode) {

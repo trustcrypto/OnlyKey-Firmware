@@ -750,6 +750,7 @@ index = 0;
             keybuffer[index+6]=0x00;
           }
           index=index+6;
+          memset(temp, 0, 64); //Wipe all data from buffer 
         }
         if(temp[0] == 121 && !PDmode) { 
         #ifdef DEBUG

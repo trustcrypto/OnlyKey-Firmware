@@ -51,6 +51,7 @@
 
 #include "sha256.h"
 #include <EEPROM.h>
+#include "T3MacLib.h"
 #include <softtimer.h>
 #include <password.h>
 #include "sha1.h"
@@ -59,7 +60,7 @@
 #include "onlykey.h"
 #include "flashkinetis.h"
 #include <RNG.h>
-#include "T3MacLib.h"
+
 /*************************************/
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined

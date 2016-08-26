@@ -52,7 +52,7 @@
 #include "sha256.h"
 #include <EEPROM.h>
 #include "T3MacLib.h"
-#include <softtimer.h>
+#include <SoftTimer.h>
 #include <password.h>
 #include "sha1.h"
 #include "totp.h"
@@ -67,7 +67,7 @@
 /*************************************/
 #define US_VERSION
 //Define for US Version Firmare
-//#define DEBUG
+#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -85,25 +85,6 @@ bool calibrating = false;
 byte data[32];
 #define OKversion "v0.2-beta.0"
 /*************************************/
-//SoftTimer
-/*************************************/
-#define THRESHOLD   .5
-#define TIME_POLL 100 // poll "key" every 100 ms
-#define TIME_SEND  50 // send kb codes every 50 ms
-Task taskKey(TIME_POLL, checkKey);
-Task taskKB (TIME_SEND, sendKey);
-char keybuffer[EElen_username+2+EElen_password+2+64]; //Buffer to hold all keystrokes
-char *pos;
-/*************************************/
-//Keypad / password assignments
-/*************************************/
-static int button_selected = 0;    //Key selected 1-6
-static int pass_keypress = 1;  //The number key presses in current password attempt
-static int session_attempts = 0; //The number of password attempts this session
-static bool firsttime = true;
-extern Password password;
-static uint8_t TIMEOUT[1] = {0x15};
-/*************************************/
 //PIN Assigment Variables
 /*************************************/
 extern uint8_t BLINKPIN;
@@ -115,6 +96,26 @@ extern uint8_t TOUCHPIN5;
 extern uint8_t TOUCHPIN6;
 extern uint8_t ANALOGPIN1;
 extern uint8_t ANALOGPIN2;
+/*************************************/
+//SoftTimer
+/*************************************/
+#define THRESHOLD   .5
+#define TIME_POLL 100 // poll "key" every 100 ms
+#define TIME_SEND  50 // send kb codes every 50 ms
+Task taskKey(TIME_POLL, checkKey);
+Task taskKB (TIME_SEND, sendKey);
+char keybuffer[EElen_username+2+EElen_password+2+64]; //Buffer to hold all keystrokes
+char *pos;
+extern uint8_t fade;
+/*************************************/
+//Keypad / password assignments
+/*************************************/
+static int button_selected = 0;    //Key selected 1-6
+static int pass_keypress = 1;  //The number key presses in current password attempt
+static int session_attempts = 0; //The number of password attempts this session
+static bool firsttime = true;
+extern Password password;
+static uint8_t TIMEOUT[1] = {0x15};
 /*************************************/
 //Capacitive Touch Variables
 /*************************************/
@@ -310,8 +311,9 @@ void checkKey(Task* me) {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
-    if (!unlocked) analogWrite(BLINKPIN, 0); //LED OFF
-    else analogWrite(BLINKPIN, 255); //LED ON
+    if (!unlocked){
+      analogWrite(BLINKPIN, 0); //LED OFF
+    } else if (!fade) analogWrite(BLINKPIN, 255); //LED ON
   }
 
   if ((key_press > 0) && (key_off > THRESHOLD)) {
@@ -339,14 +341,12 @@ void sendKey(Task* me) {
         #endif
         int timer = sincelast;
         while(sincelast < (timer+8000)) {
-          analogWrite(BLINKPIN, 0);
           u2f_button = 1;
           #ifdef US_VERSION
           uECC_set_rng(&RNG2);
           #endif
           recvmsg();
           }
-        analogWrite(BLINKPIN, 255);
         u2f_button = 0;
         Keyboard.end();
         SoftTimer.remove(&taskKB);
@@ -516,6 +516,7 @@ void gen_press(void) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
+    fadeoff();
   }
       process_slot(slot);   
 }
@@ -537,6 +538,7 @@ void gen_hold(void) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
+    fadeoff();
   }
       process_slot(slot+6);   
 }
@@ -778,4 +780,6 @@ index = 0;
           #endif
 
 }
+
+
 

@@ -82,7 +82,7 @@ extern bool PDmode;
 /*************************************/
 bool calibrating = false;
 
-byte data[32];
+uint8_t data[32];
 #define OKversion "v0.2-beta.0"
 /*************************************/
 //PIN Assigment Variables
@@ -115,7 +115,7 @@ static int pass_keypress = 1;  //The number key presses in current password atte
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
 extern Password password;
-static uint8_t TIMEOUT[1] = {0x15};
+extern uint8_t TIMEOUT[1];
 /*************************************/
 //Capacitive Touch Variables
 /*************************************/
@@ -175,6 +175,8 @@ void setup() {
       onlykey_flashget_pinhash (ptr, 32);
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
+      ptr = TIMEOUT;
+      onlykey_eeset_timeout(ptr);
       #ifdef DEBUG
       Serial.println("UNLOCKED, FIRST TIME USE");
       #endif
@@ -187,7 +189,6 @@ void setup() {
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
         ptr = TIMEOUT;
         onlykey_eeget_timeout(ptr);
-        if (TIMEOUT[0]< 2) TIMEOUT[0] = 30; //Default 30 min idle timeout
         unlocked = false;
         initialized = true;
         #ifdef DEBUG
@@ -205,8 +206,8 @@ void setup() {
   /*************************************/
   RNG.begin(OKversion, 2045); //Start RNG with the device version
   CHIP_ID();
-  RNG.stir((byte*)ID, sizeof(ID)); //Stir in unique 128 bit Freescale chip ID
-  RNG.stir((byte*)nonce, sizeof(nonce)); //Stir in unique nonce that is generated from user entropy when OK is first initialized
+  RNG.stir((uint8_t*)ID, sizeof(ID)); //Stir in unique 128 bit Freescale chip ID
+  RNG.stir((uint8_t*)nonce, sizeof(nonce)); //Stir in unique nonce that is generated from user entropy when OK is first initialized
   unsigned int analog1 = analogRead(ANALOGPIN1);
   RNG.stir((uint8_t *)analog1, sizeof(analog1), sizeof(analog1)*2);
   unsigned int analog2 = analogRead(ANALOGPIN2);
@@ -243,10 +244,10 @@ void checkKey(Task* me) {
     #ifdef US_VERSION
     yubikey_incr_time();
     #endif
-    if (idletimer >= (TIMEOUT[0]*60000)) {
+    if (TIMEOUT[0] && idletimer >= (TIMEOUT[0]*60000)) {
       unlocked = false; 
       pass_keypress = 0;
-    }
+    } 
     }
   }
   else if (sincelast >= 1000 && initialized)
@@ -325,17 +326,17 @@ void checkKey(Task* me) {
 //Type out on Keyboard the contents of Keybuffer
 /*************************************/
 void sendKey(Task* me) {
-   if ((byte)*pos == 128) {
+   if ((uint8_t)*pos == 128) {
         Keyboard.press(KEY_TAB); 
         Keyboard.release(KEY_TAB); 
         pos++;  
     } 
-    else if ((byte)*pos == 129) {
+    else if ((uint8_t)*pos == 129) {
         Keyboard.press(KEY_RETURN); 
         Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
-    else if ((byte)*pos == 130 && !PDmode) {
+    else if ((uint8_t)*pos == 130 && !PDmode) {
         #ifdef DEBUG
         Serial.println("Starting U2F...");
         #endif
@@ -353,7 +354,7 @@ void sendKey(Task* me) {
         SoftTimer.add(&taskKey);
         return;
     }
-    else if ((byte)*pos >= 131) {
+    else if ((uint8_t)*pos >= 131) {
         delay((*pos - 131)*1000);   
         pos++;  
     } 
@@ -634,6 +635,7 @@ index = 0;
         keybuffer[index] = temp[0] + 131;
         index++;
       }
+      memset(temp, 0, 64); //Wipe all data from buffer
       passwordlength = onlykey_eeget_password(ptr, slot);
       if(passwordlength > 0)
       {

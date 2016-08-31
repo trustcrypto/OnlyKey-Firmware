@@ -1,4 +1,4 @@
-// OnlyKey Beta US Version
+// OnlyKey Beta 
 /*
  * Tim Steiner
  * Copyright (c) 2016 , CryptoTrust LLC.
@@ -83,7 +83,7 @@ extern bool PDmode;
 bool calibrating = false;
 
 uint8_t data[32];
-#define OKversion "v0.2-beta.0"
+#define OKversion "v0.2-beta.3"
 /*************************************/
 //PIN Assigment Variables
 /*************************************/
@@ -101,9 +101,8 @@ extern uint8_t ANALOGPIN2;
 /*************************************/
 #define THRESHOLD   .5
 #define TIME_POLL 100 // poll "key" every 100 ms
-#define TIME_SEND  50 // send kb codes every 50 ms
 Task taskKey(TIME_POLL, checkKey);
-Task taskKB (TIME_SEND, sendKey);
+Task taskKB(0x50, sendKey); // Default send kb codes every 50 ms
 char keybuffer[EElen_username+2+EElen_password+2+64]; //Buffer to hold all keystrokes
 char *pos;
 extern uint8_t fade;
@@ -115,7 +114,7 @@ static int pass_keypress = 1;  //The number key presses in current password atte
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
 extern Password password;
-extern uint8_t TIMEOUT[1];
+static uint8_t TIMEOUT[1] = {0x15};
 /*************************************/
 //Capacitive Touch Variables
 /*************************************/
@@ -175,8 +174,6 @@ void setup() {
       onlykey_flashget_pinhash (ptr, 32);
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
-      ptr = TIMEOUT;
-      onlykey_eeset_timeout(ptr);
       #ifdef DEBUG
       Serial.println("UNLOCKED, FIRST TIME USE");
       #endif
@@ -187,8 +184,17 @@ void setup() {
         onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
-        ptr = TIMEOUT;
+        ptr = TIMEOUT;  //Use to get preferences  
+        onlykey_eeget_typespeed(ptr);
+        if (*ptr  == 0) {
+          Task taskKB(0x50, sendKey); // Default send kb codes every 50 ms
+         } else if (*ptr  <= 10) {
+            Task taskKB(((*ptr)*10), sendKey); 
+         }   
+        onlykey_eeget_keyboardlayout(ptr);
+        update_keyboard_layout(ptr);
         onlykey_eeget_timeout(ptr);
+        if (TIMEOUT[0]< 2) TIMEOUT[0] = 30; //Default 30 min idle timeout
         unlocked = false;
         initialized = true;
         #ifdef DEBUG
@@ -220,11 +226,10 @@ void setup() {
   Serial.println(PDmode); 
   #endif
   rngloop(); //Start RNG
-  fadein();
+  fadein();//Additional delay to make sure button is not pressed during plug into USB
   fadeout();
   fadein();
   fadeout();
-  //Additional delay to make sure button is not pressed during plug into USB
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -244,10 +249,10 @@ void checkKey(Task* me) {
     #ifdef US_VERSION
     yubikey_incr_time();
     #endif
-    if (TIMEOUT[0] && idletimer >= (TIMEOUT[0]*60000)) {
+    if (idletimer >= (TIMEOUT[0]*60000)) {
       unlocked = false; 
       pass_keypress = 0;
-    } 
+    }
     }
   }
   else if (sincelast >= 1000 && initialized)
@@ -635,7 +640,6 @@ index = 0;
         keybuffer[index] = temp[0] + 131;
         index++;
       }
-      memset(temp, 0, 64); //Wipe all data from buffer
       passwordlength = onlykey_eeget_password(ptr, slot);
       if(passwordlength > 0)
       {

@@ -114,7 +114,8 @@ static int pass_keypress = 1;  //The number key presses in current password atte
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
 extern Password password;
-static uint8_t TIMEOUT[1] = {0x15};
+extern uint8_t TIMEOUT[1];
+extern uint8_t KeyboardLayout[1];
 /*************************************/
 //Capacitive Touch Variables
 /*************************************/
@@ -138,7 +139,7 @@ void setup() {
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
-  //delay(7000); 
+  //delay(7000); //Enable to see starup serial messages
   #ifdef US_VERSION
   PDmode = false;
   #else
@@ -184,17 +185,23 @@ void setup() {
         onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
-        ptr = TIMEOUT;  //Use to get preferences  
+        ptr = TIMEOUT;  
         onlykey_eeget_typespeed(ptr);
+        Serial.println("typespeed = ");
+        Serial.println(*ptr);
         if (*ptr  == 0) {
-          Task taskKB(0x50, sendKey); // Default send kb codes every 50 ms
+           Task taskKB(0x50, sendKey); // Default send kb codes every 50 ms
          } else if (*ptr  <= 10) {
-            Task taskKB(((*ptr)*10), sendKey); 
+           Task taskKB(((*ptr)*10), sendKey); 
          }   
-        onlykey_eeget_keyboardlayout(ptr);
-        update_keyboard_layout(ptr);
         onlykey_eeget_timeout(ptr);
         if (TIMEOUT[0]< 2) TIMEOUT[0] = 30; //Default 30 min idle timeout
+        //ptr = KeyboardLayout;
+        //onlykey_eeget_keyboardlayout(ptr);
+        KeyboardLayout[1] = 0x17;
+        Serial.println("keyboardlayout = ");
+        //Serial.println(*ptr);
+        update_keyboard_layout();
         unlocked = false;
         initialized = true;
         #ifdef DEBUG

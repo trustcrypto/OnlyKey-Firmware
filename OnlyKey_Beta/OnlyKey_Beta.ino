@@ -241,7 +241,7 @@ void setup() {
 }
 /*************************************/
 elapsedMillis sincelast; 
-elapsedMillis idletimer; 
+extern elapsedMillis idletimer; 
 //Main Loop, Read Key Press Using Capacitive Touch
 /*************************************/
 void checkKey(Task* me) {
@@ -429,6 +429,7 @@ void payload(int duration) {
         {
           onlykey_eeset_failedlogins(0); //Set failed login counter to 0
           password.reset(); //reset the guessed password to NULL
+          session_attempts=0;
           hidprint("UNLOCKED"); 
           #ifdef DEBUG
           Serial.println("UNLOCKED");

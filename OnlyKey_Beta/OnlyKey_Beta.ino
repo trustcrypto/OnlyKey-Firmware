@@ -97,16 +97,6 @@ extern uint8_t TOUCHPIN6;
 extern uint8_t ANALOGPIN1;
 extern uint8_t ANALOGPIN2;
 /*************************************/
-//SoftTimer
-/*************************************/
-#define THRESHOLD   .5
-#define TIME_POLL 100 // poll "key" every 100 ms
-Task taskKey(TIME_POLL, checkKey);
-Task taskKB(0x50, sendKey); // Default send kb codes every 50 ms
-char keybuffer[EElen_username+2+EElen_password+2+64]; //Buffer to hold all keystrokes
-char *pos;
-extern uint8_t fade;
-/*************************************/
 //Keypad / password assignments
 /*************************************/
 static int button_selected = 0;    //Key selected 1-6
@@ -132,6 +122,16 @@ extern uint8_t phash[32];
 extern uint8_t sdhash[32];
 extern uint8_t pdhash[32];
 extern uint8_t nonce[32];
+/*************************************/
+//SoftTimer
+/*************************************/
+#define THRESHOLD   .5
+#define TIME_POLL 100 // poll "key" every 100 ms
+Task taskKey(TIME_POLL, checkKey);
+Task taskKB(100, sendKey); // Default send kb codes every 100 ms
+char keybuffer[EElen_username+2+EElen_password+2+64]; //Buffer to hold all keystrokes
+char *pos;
+extern uint8_t fade;
 /*************************************/
 //Arduino Setup 
 /*************************************/
@@ -160,8 +160,8 @@ void setup() {
   /*************************************/
   pinMode(BLINKPIN, OUTPUT);
   uint8_t *ptr;
-  ptr = phash;
-  int isinit = onlykey_flashget_pinhash (ptr, 32);
+  ptr = nonce;
+  int isinit = onlykey_flashget_noncehash (ptr, 32);
   //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
       int nn;
@@ -172,15 +172,14 @@ void setup() {
       if(nn) Serial.print("not ");
       Serial.println("written successfully");
       #endif
-      onlykey_flashget_pinhash (ptr, 32);
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       #ifdef DEBUG
       Serial.println("UNLOCKED, FIRST TIME USE");
       #endif
   } else if(FTFL_FSEC==0x44 && isinit>=1) { 
-        ptr = nonce;
-        onlykey_flashget_noncehash (ptr, 32); //Get nonce from EEPROM
+        ptr = phash;
+        onlykey_flashget_pinhash (ptr, 32); //store PIN hash
         ptr = sdhash;
         onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
@@ -190,17 +189,16 @@ void setup() {
         Serial.println("typespeed = ");
         Serial.println(*ptr);
         if (*ptr  == 0) {
-           Task taskKB(0x50, sendKey); // Default send kb codes every 50 ms
+           Task taskKB(100, sendKey); // Default send kb codes every 100 ms
          } else if (*ptr  <= 10) {
-           Task taskKB(((*ptr)*10), sendKey); 
+           *ptr=(*ptr*40);
+           Task taskKB(*ptr, sendKey); 
          }   
         onlykey_eeget_timeout(ptr);
-        if (TIMEOUT[0]< 2) TIMEOUT[0] = 30; //Default 30 min idle timeout
-        //ptr = KeyboardLayout;
-        //onlykey_eeget_keyboardlayout(ptr);
-        KeyboardLayout[1] = 0x17;
+        ptr = KeyboardLayout;
+        onlykey_eeget_keyboardlayout(ptr);
         Serial.println("keyboardlayout = ");
-        //Serial.println(*ptr);
+        Serial.println(*ptr);
         update_keyboard_layout();
         unlocked = false;
         initialized = true;
@@ -256,7 +254,7 @@ void checkKey(Task* me) {
     #ifdef US_VERSION
     yubikey_incr_time();
     #endif
-    if (idletimer >= (TIMEOUT[0]*60000)) {
+    if (TIMEOUT[0] && idletimer >= (TIMEOUT[0]*60000)) {
       unlocked = false; 
       pass_keypress = 0;
     }

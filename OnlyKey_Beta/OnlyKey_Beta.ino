@@ -133,6 +133,11 @@ char keybuffer[EElen_username+2+EElen_password+2+64]; //Buffer to hold all keyst
 char *pos;
 extern uint8_t fade;
 /*************************************/
+//SSH
+/*************************************/
+extern uint8_t SSH_AUTH;
+extern uint8_t SSH_button;
+/*************************************/
 //Arduino Setup 
 /*************************************/
 void setup() {
@@ -558,6 +563,10 @@ void gen_hold(void) {
 //Load Set Values to Keybuffer
 /*************************************/
 void process_slot(int s) {
+  if(SSH_AUTH) {
+    SSH_button = 1;
+    return;
+  }
   long GMT;
   char* newcode;
   static uint8_t index;

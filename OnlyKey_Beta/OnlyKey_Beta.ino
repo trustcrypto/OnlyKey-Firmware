@@ -440,6 +440,7 @@ void payload(int duration) {
           if (!PDmode) {
           yubikeyinit(); 
           U2Finit();
+          SSHinit();
           }
           idletimer=0; 
           unlocked = true;

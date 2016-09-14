@@ -105,6 +105,7 @@ static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
 extern Password password;
 extern uint8_t TIMEOUT[1];
+extern uint8_t TYPESPEED[1];
 extern uint8_t KeyboardLayout[1];
 /*************************************/
 //Capacitive Touch Variables
@@ -189,20 +190,20 @@ void setup() {
         onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
-        ptr = TIMEOUT;  
+        ptr = TYPESPEED;  
         onlykey_eeget_typespeed(ptr);
         Serial.println("typespeed = ");
         Serial.println(*ptr);
         if (*ptr  == 0) {
-           Task taskKB(100, sendKey); // Default send kb codes every 100 ms
+          TYPESPEED[0] = 4;
          } else if (*ptr  <= 10) {
-           *ptr=(*ptr*40);
-           Task taskKB(*ptr, sendKey); 
+          TYPESPEED[0]=*ptr;
          }   
+        ptr = TIMEOUT; 
         onlykey_eeget_timeout(ptr);
         ptr = KeyboardLayout;
         onlykey_eeget_keyboardlayout(ptr);
-        Serial.println("keyboardlayout = ");
+        Serial.println("KeyboardLayout = ");
         Serial.println(*ptr);
         update_keyboard_layout();
         unlocked = false;
@@ -395,6 +396,7 @@ void payload(int duration) {
    if (!unlocked) analogWrite(BLINKPIN, 255); //LED ON
    else analogWrite(BLINKPIN, 0); //LED OFF
    uint8_t pass_attempts[1];
+   uint8_t sincelastregularlogin[1];
    uint8_t *ptr;
    ptr = pass_attempts;
     if (session_attempts >= 3) { //Limit 3 password attempts per session to make sure that someone does not accidentally wipe device
@@ -412,8 +414,25 @@ void payload(int duration) {
    if (firsttime) //Get failed login counter from eeprom and increment for new login attempt
    {
    onlykey_eeget_failedlogins (ptr);
+   if (pass_attempts[0]) {
+    ptr = sincelastregularlogin;
+    onlykey_eeget_sincelastregularlogin (ptr);
+    #ifdef DEBUG
+    Serial.println("Failed PIN attempts since last successful regular PIN entry");
+    Serial.println(sincelastregularlogin[0]);
+    #endif
+    if (sincelastregularlogin[0] >= 20) {
+    memset(phash, 255, 32); //Wipe all data from buffer
+    ptr = phash;
+    onlykey_flashset_pinhash (ptr); //permanently wipe pinhash
+    onlykey_eeset_sincelastregularlogin (0);
+   } else {
+    sincelastregularlogin[0]++;
+    onlykey_eeset_sincelastregularlogin (ptr);
+   }
+   }
+   ptr = pass_attempts;
    pass_attempts[0]++;
-   //Serial.println(pass_attempts[0]);
    if (pass_attempts[0] > 10) {
     #ifdef DEBUG
     Serial.println("Password attempts exhausted");
@@ -440,6 +459,8 @@ void payload(int duration) {
           if (!PDmode) {
           yubikeyinit(); 
           U2Finit();
+          SSHinit();
+          onlykey_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
           }
           idletimer=0; 
           unlocked = true;
@@ -477,7 +498,7 @@ void payload(int duration) {
       if (duration >= 11) gen_hold();
       pos = keybuffer;
       SoftTimer.remove(&taskKey);
-      SoftTimer.add(&taskKB);
+      SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
       return;
   }
    else if (password.sdhashevaluate()) {

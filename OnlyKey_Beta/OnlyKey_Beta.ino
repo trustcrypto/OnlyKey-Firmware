@@ -130,6 +130,7 @@ extern uint8_t nonce[32];
 #define TIME_POLL 100 // poll "key" every 100 ms
 Task taskKey(TIME_POLL, checkKey);
 Task taskKB(100, sendKey); // Default send kb codes every 100 ms
+Task taskInitialized(1000, sendInitialized);
 char keybuffer[EElen_username+2+EElen_password+2+64]; //Buffer to hold all keystrokes
 char *pos;
 extern uint8_t fade;
@@ -211,6 +212,7 @@ void setup() {
         #ifdef DEBUG
         Serial.println("INITIALIZED");
         #endif
+        SoftTimer.add(&taskInitialized);
   } else {
         unlocked = true;
         initialized = false;
@@ -244,7 +246,7 @@ void setup() {
   SoftTimer.add(&taskKey);
 }
 /*************************************/
-elapsedMillis sincelast; 
+
 extern elapsedMillis idletimer; 
 //Main Loop, Read Key Press Using Capacitive Touch
 /*************************************/
@@ -265,14 +267,6 @@ void checkKey(Task* me) {
       pass_keypress = 0;
     }
     }
-  }
-  else if (sincelast >= 1000 && initialized)
-  {
-    hidprint("INITIALIZED");
-    #ifdef DEBUG
-    Serial.println("INITIALIZED");
-    #endif
-    sincelast = sincelast - 1000;
   }
   
     //Uncomment to test RNG
@@ -356,15 +350,14 @@ void sendKey(Task* me) {
         #ifdef DEBUG
         Serial.println("Starting U2F...");
         #endif
-        int timer = sincelast;
-        while(sincelast < (timer+8000)) {
-          u2f_button = 1;
+        u2f_button = 1;
           #ifdef US_VERSION
           uECC_set_rng(&RNG2);
           #endif
-          recvmsg();
-          }
-        u2f_button = 0;
+        unsigned long u2fwait = millis() + 4000;
+        while(u2f_button && millis() < u2fwait) {
+        recvmsg();
+        }
         Keyboard.end();
         SoftTimer.remove(&taskKB);
         SoftTimer.add(&taskKey);
@@ -422,7 +415,9 @@ void payload(int duration) {
     Serial.println(sincelastregularlogin[0]);
     #endif
     if (sincelastregularlogin[0] >= 20) {
-    memset(phash, 255, 32); //Wipe all data from buffer
+    for (int i =0; i<33; i++) {
+      phash[i] = 0xFF;
+    }
     ptr = phash;
     onlykey_flashset_pinhash (ptr); //permanently wipe pinhash
     onlykey_eeset_sincelastregularlogin (0);
@@ -453,6 +448,7 @@ void payload(int duration) {
           password.reset(); //reset the guessed password to NULL
           session_attempts=0;
           hidprint("UNLOCKED"); 
+          SoftTimer.remove(&taskInitialized);
           #ifdef DEBUG
           Serial.println("UNLOCKED");
           #endif
@@ -822,6 +818,14 @@ index = 0;
           #endif
 
 }
+
+void sendInitialized(Task* me) {
+    hidprint("INITIALIZED");
+    #ifdef DEBUG
+    Serial.println("INITIALIZED");
+    #endif
+}
+
 
 
 

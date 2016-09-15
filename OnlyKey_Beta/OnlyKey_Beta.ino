@@ -65,9 +65,9 @@
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-//#define US_VERSION
+#define US_VERSION
 //Define for US Version Firmare
-#define DEBUG
+//#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -195,8 +195,10 @@ void setup() {
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
         ptr = TYPESPEED;  
         onlykey_eeget_typespeed(ptr);
+        #ifdef DEBUG
         Serial.println("typespeed = ");
         Serial.println(*ptr);
+        #endif
         if (*ptr  == 0) {
           TYPESPEED[0] = 4;
          } else if (*ptr  <= 10) {
@@ -206,8 +208,10 @@ void setup() {
         onlykey_eeget_timeout(ptr);
         ptr = KeyboardLayout;
         onlykey_eeget_keyboardlayout(ptr);
+        #ifdef DEBUG
         Serial.println("KeyboardLayout = ");
         Serial.println(*ptr);
+        #endif
         update_keyboard_layout();
         unlocked = false;
         initialized = true;

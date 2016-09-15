@@ -65,7 +65,7 @@
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-#define US_VERSION
+//#define US_VERSION
 //Define for US Version Firmare
 #define DEBUG
 extern bool PDmode;
@@ -137,8 +137,10 @@ extern uint8_t fade;
 /*************************************/
 //SSH
 /*************************************/
+#ifdef US_VERSION
 extern uint8_t SSH_AUTH;
 extern uint8_t SSH_button;
+#endif
 /*************************************/
 //Arduino Setup 
 /*************************************/
@@ -350,14 +352,15 @@ void sendKey(Task* me) {
         #ifdef DEBUG
         Serial.println("Starting U2F...");
         #endif
-        u2f_button = 1;
-          #ifdef US_VERSION
-          uECC_set_rng(&RNG2);
-          #endif
+        #ifdef US_VERSION
+        u2f_button = 1;         
+        uECC_set_rng(&RNG2); 
         unsigned long u2fwait = millis() + 4000;
         while(u2f_button && millis() < u2fwait) {
         recvmsg();
         }
+        u2f_button = 0;
+        #endif
         Keyboard.end();
         SoftTimer.remove(&taskKB);
         SoftTimer.add(&taskKey);
@@ -453,10 +456,12 @@ void payload(int duration) {
           Serial.println("UNLOCKED");
           #endif
           if (!PDmode) {
+#ifdef US_VERSION
           yubikeyinit(); 
           U2Finit();
           SSHinit();
           onlykey_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
+#endif
           }
           idletimer=0; 
           unlocked = true;
@@ -580,10 +585,12 @@ void gen_hold(void) {
 //Load Set Values to Keybuffer
 /*************************************/
 void process_slot(int s) {
+#ifdef US_VERSION
   if(SSH_AUTH) {
     SSH_button = 1;
     return;
   }
+#endif
   long GMT;
   char* newcode;
   static uint8_t index;

@@ -65,7 +65,7 @@
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-//#define US_VERSION
+#define US_VERSION
 //Define for US Version Firmare
 #define DEBUG
 extern bool PDmode;

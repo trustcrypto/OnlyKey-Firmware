@@ -65,9 +65,9 @@
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-//#define US_VERSION
+#define US_VERSION
 //Define for US Version Firmare
-//#define DEBUG
+#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -171,7 +171,7 @@ void setup() {
   uint8_t *ptr;
   ptr = nonce;
   int isinit = onlykey_flashget_noncehash (ptr, 32);
-  //TODO consider changing flow, set FSEC to 0x64 https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
+  //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
       int nn;
       wipeEEPROM();

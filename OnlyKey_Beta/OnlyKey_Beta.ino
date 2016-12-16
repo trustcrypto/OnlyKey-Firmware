@@ -60,6 +60,7 @@
 #include "onlykey.h"
 #include "flashkinetis.h"
 #include <RNG.h>
+//#include "usb_dev.h"
 
 /*************************************/
 //Additional Libraries to Load for US Version
@@ -278,7 +279,12 @@ void checkKey(Task* me) {
     //Uncomment to test RNG
     //RNG2(data, 32);
     //printHex(data, 32);
+    extern uint8_t getBuffer[64];
+    for(int i=0; i<64; i++){
+    getBuffer[i] = (uint8_t)touchread1;
+    }
 
+    
   rngloop(); //Perform regular housekeeping on the random number generator.
 
   if (touchread1 > 1500) {

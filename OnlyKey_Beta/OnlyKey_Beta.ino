@@ -67,7 +67,7 @@
 /*************************************/
 #define US_VERSION
 //Define for US Version Firmare
-#define DEBUG
+//#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -83,7 +83,7 @@ extern bool PDmode;
 bool calibrating = false;
 
 uint8_t data[32];
-#define OKversion "v0.2-beta.3"
+#define OKversion "v0.2-beta.4"
 /*************************************/
 //PIN Assigment Variables
 /*************************************/
@@ -171,7 +171,7 @@ void setup() {
   uint8_t *ptr;
   ptr = nonce;
   int isinit = onlykey_flashget_noncehash (ptr, 32);
-  //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
+  //FSEC currently set to 0x54, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
       int nn;
       wipeEEPROM();
@@ -260,7 +260,6 @@ void checkKey(Task* me) {
   static int key_press = 0;
   static int key_on = 0;
   static int key_off = 0;
-  static int count;
 
   if (unlocked) {
     recvmsg();
@@ -344,11 +343,13 @@ void checkKey(Task* me) {
 void sendKey(Task* me) {
    if ((uint8_t)*pos == 128) {
         Keyboard.press(KEY_TAB); 
+        delay(10); 
         Keyboard.release(KEY_TAB); 
         pos++;  
     } 
     else if ((uint8_t)*pos == 129) {
-        Keyboard.press(KEY_RETURN); 
+        Keyboard.press(KEY_RETURN);
+        delay(10); 
         Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
@@ -383,6 +384,7 @@ void sendKey(Task* me) {
     Serial.print(pos);
     #endif
     Keyboard.press(KEY_RETURN); 
+    delay(10);
     Keyboard.release(KEY_RETURN);  
     Keyboard.end();
     SoftTimer.remove(&taskKB);

@@ -135,11 +135,11 @@ char keybuffer[EElen_url+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EE
 char *pos;
 extern uint8_t fade;
 /*************************************/
-//SSH
+//ECC
 /*************************************/
 #ifdef US_VERSION
-extern uint8_t SSH_AUTH;
-extern uint8_t SSH_button;
+extern uint8_t ECC_AUTH;
+extern uint8_t ECC_button;
 #endif
 /*************************************/
 //Arduino Setup 
@@ -463,7 +463,6 @@ void payload(int duration) {
 #ifdef US_VERSION
           yubikeyinit(); 
           U2Finit();
-          SSHinit();
           onlykey_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
 #endif
           }
@@ -590,8 +589,8 @@ void gen_hold(void) {
 /*************************************/
 void process_slot(int s) {
 #ifdef US_VERSION
-  if(SSH_AUTH) {
-    SSH_button = 1;
+  if(ECC_AUTH) {
+    ECC_button = 1;
     return;
   }
 #endif
@@ -620,7 +619,7 @@ index = 0;
       if(urllength > 0)
       {
         #ifdef DEBUG
-        Serial.println("Reading URL from EEPROM...");
+        Serial.println("Reading URL from Flash...");
         Serial.print("URL Length = ");
         Serial.println(urllength);
         #endif
@@ -633,7 +632,7 @@ index = 0;
             Serial.println();
         #endif
         #ifdef US_VERSION
-        aes_gcm_decrypt(temp, (uint8_t*)('u'+ID[34]+slot), phash, urllength);
+        aes_gcm_decrypt(temp, (uint8_t*)('r'+ID[34]+slot), phash, urllength);
         #endif
         }
         ByteToChar2(temp, keybuffer, urllength, index);
@@ -689,7 +688,7 @@ index = 0;
       if(usernamelength > 0)
       {
         #ifdef DEBUG
-        Serial.println("Reading Username from EEPROM...");
+        Serial.println("Reading Username from Flash...");
         Serial.print("Username Length = ");
         Serial.println(usernamelength);
         #endif
@@ -909,6 +908,7 @@ index = 0;
         index++;
         }
       }  
+      keybuffer[index] = 0;
           #ifdef DEBUG
           Serial.println("Displaying Full Keybuffer");
           for (int i=0; keybuffer[i]!=0x00; i++) {

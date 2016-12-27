@@ -70,6 +70,7 @@
 #define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
+#include "Base64.h"
 #include "yksim.h"
 #include "uECC.h"
 #include "ykcore.h"
@@ -148,7 +149,7 @@ void setup() {
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
-  delay(7000); //Enable to see starup serial messages
+  //delay(7000); //Enable to see starup serial messages
   #ifdef US_VERSION
   PDmode = false;
   #else
@@ -498,11 +499,19 @@ void payload(int duration) {
         }
       Keyboard.begin();
       *keybuffer = '\0';
+      if (duration >= 50 && button_selected=='1') {
+        SoftTimer.remove(&taskKey);
+        backupkeys();
+        backupslots();
+        SoftTimer.add(&taskKey);
+      } else {
       if (duration <= 10) gen_press();
       if (duration >= 11) gen_hold();
       pos = keybuffer;
       SoftTimer.remove(&taskKey);
       SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
+      }
+
       return;
   }
    else if (password.sdhashevaluate()) {

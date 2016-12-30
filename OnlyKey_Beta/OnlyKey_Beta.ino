@@ -60,6 +60,7 @@
 #include "onlykey.h"
 #include "flashkinetis.h"
 #include <RNG.h>
+#include "base64.h"
 
 /*************************************/
 //Additional Libraries to Load for US Version
@@ -70,7 +71,6 @@
 #define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
-#include "Base64.h"
 #include "yksim.h"
 #include "uECC.h"
 #include "ykcore.h"
@@ -501,8 +501,11 @@ void payload(int duration) {
       *keybuffer = '\0';
       if (duration >= 50 && button_selected=='1') {
         SoftTimer.remove(&taskKey);
-        backupkeys();
         backupslots();
+        SoftTimer.add(&taskKey);
+      } else if (duration >= 50 && button_selected=='2') {
+        SoftTimer.remove(&taskKey);
+        backupkeys();
         SoftTimer.add(&taskKey);
       } else {
       if (duration <= 10) gen_press();
@@ -654,31 +657,11 @@ index = 0;
         #endif
         index=urllength;
       }
-      memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_addchar1(ptr, slot);
-      if(temp[0] > 0)
-      {
-        if(temp[0] == 0x31) {
-        #ifdef DEBUG
-        Serial.println("Reading addchar1 from EEPROM...");
-        #endif
-        keybuffer[index] = 1;
-        #ifdef DEBUG
-        Serial.println("TAB");
-        #endif
-        index++;
-        }
-        else if(temp[0] == 0x32) {
-        #ifdef DEBUG
-        Serial.println("Reading addchar1 from EEPROM...");
-        #endif
-        keybuffer[index] = 2;
-        #ifdef DEBUG
-        Serial.println("RETURN");
-        #endif
-        index++;
-        }
-      }
+      #ifdef DEBUG
+      Serial.println("Setting RETURN after URL");
+      #endif
+      keybuffer[index] = 2;
+      index++;
       memset(temp, 0, 64); //Wipe all data from buffer
       onlykey_eeget_delay1(ptr, slot);
       if(temp[0] > 0)
@@ -724,12 +707,12 @@ index = 0;
         index=usernamelength+index;
       }
       memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_addchar2(ptr, slot);
+      onlykey_eeget_addchar1(ptr, slot);
       if(temp[0] > 0)
       {
         if(temp[0] == 0x31) {
         #ifdef DEBUG
-        Serial.println("Reading addchar2 from EEPROM...");
+        Serial.println("Reading addchar1 from EEPROM...");
         #endif
         keybuffer[index] = 1;
         #ifdef DEBUG
@@ -739,7 +722,7 @@ index = 0;
         }
         else if(temp[0] == 0x32) {
         #ifdef DEBUG
-        Serial.println("Reading addchar2 from EEPROM...");
+        Serial.println("Reading addchar1 from EEPROM...");
         #endif
         keybuffer[index] = 2;
         #ifdef DEBUG
@@ -793,12 +776,12 @@ index = 0;
         index=passwordlength+index;
       }
       memset(temp, 0, 64); //Wipe all data from buffer    
-      onlykey_eeget_addchar3(ptr, slot);
+      onlykey_eeget_addchar2(ptr, slot);
       if(temp[0] > 0)
       {
         if(temp[0] == 0x31) {
         #ifdef DEBUG
-        Serial.println("Reading addchar3 from EEPROM...");
+        Serial.println("Reading addchar2 from EEPROM...");
         Serial.println("TAB");
         #endif
         keybuffer[index] = 1;
@@ -806,7 +789,7 @@ index = 0;
         }
         else if(temp[0] == 0x32) {
         #ifdef DEBUG
-        Serial.println("Reading addchar3 from EEPROM...");      
+        Serial.println("Reading addchar2 from EEPROM...");      
         Serial.println("Return");
         #endif
         keybuffer[index] = 2;
@@ -880,7 +863,27 @@ index = 0;
             keybuffer[index+5]=*(newcode+5);
           }
           index=index+6;
-          memset(temp, 0, 64); //Wipe all data from buffer 
+          memset(temp, 0, 64); //Wipe all data from buffer
+          onlykey_eeget_addchar3(ptr, slot);
+          if(temp[0] > 0)
+          {
+            if(temp[0] == 0x31) {
+            #ifdef DEBUG
+            Serial.println("Reading addchar3 from EEPROM...");
+            Serial.println("TAB");
+            #endif
+            keybuffer[index] = 1;
+            index++;
+            }
+            else if(temp[0] == 0x32) {
+            #ifdef DEBUG
+            Serial.println("Reading addchar3 from EEPROM...");      
+            Serial.println("Return");
+            #endif
+            keybuffer[index] = 2;
+            index++;
+            }
+          } 
         }
         if(temp[0] == 121 && !PDmode) { 
         #ifdef DEBUG
@@ -889,6 +892,26 @@ index = 0;
         #ifdef US_VERSION
         yubikeysim(keybuffer + index);
         index=index+44;
+        onlykey_eeget_addchar3(ptr, slot);
+        if(temp[0] > 0)
+        {
+          if(temp[0] == 0x31) {
+          #ifdef DEBUG
+          Serial.println("Reading addchar3 from EEPROM...");
+          Serial.println("TAB");
+          #endif
+          keybuffer[index] = 1;
+          index++;
+          }
+          else if(temp[0] == 0x32) {
+          #ifdef DEBUG
+          Serial.println("Reading addchar3 from EEPROM...");      
+          Serial.println("Return");
+          #endif
+          keybuffer[index] = 2;
+          index++;
+          }
+        } 
         #endif
         }
         if(temp[0] == 117 && !PDmode) { //U2F
@@ -896,27 +919,6 @@ index = 0;
         index++;
         }
       }
-      memset(temp, 0, 64); //Wipe all data from buffer    
-      onlykey_eeget_addchar4(ptr, slot);
-      if(temp[0] > 0)
-      {
-        if(temp[0] == 0x31) {
-        #ifdef DEBUG
-        Serial.println("Reading addchar4 from EEPROM...");
-        Serial.println("TAB");
-        #endif
-        keybuffer[index] = 1;
-        index++;
-        }
-        else if(temp[0] == 0x32) {
-        #ifdef DEBUG
-        Serial.println("Reading addchar4 from EEPROM...");      
-        Serial.println("Return");
-        #endif
-        keybuffer[index] = 2;
-        index++;
-        }
-      }  
       keybuffer[index] = 0;
           #ifdef DEBUG
           Serial.println("Displaying Full Keybuffer");

@@ -502,9 +502,6 @@ void payload(int duration) {
       if (duration >= 50 && button_selected=='1') {
         SoftTimer.remove(&taskKey);
         backupslots();
-        SoftTimer.add(&taskKey);
-      } else if (duration >= 50 && button_selected=='2') {
-        SoftTimer.remove(&taskKey);
         backupkeys();
         SoftTimer.add(&taskKey);
       } else {

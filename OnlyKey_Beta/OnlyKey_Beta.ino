@@ -136,11 +136,10 @@ char keybuffer[EElen_url+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EE
 char *pos;
 extern uint8_t fade;
 /*************************************/
-//ECC
+//SSH
 /*************************************/
 #ifdef US_VERSION
-extern uint8_t ECC_AUTH;
-extern uint8_t ECC_button;
+extern uint8_t CRYPTO_AUTH;
 #endif
 /*************************************/
 //Arduino Setup 
@@ -328,7 +327,7 @@ void checkKey(Task* me) {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
-    if (!unlocked){
+    if (!unlocked && initialized){
       analogWrite(BLINKPIN, 0); //LED OFF
     } else if (!fade) analogWrite(BLINKPIN, 255); //LED ON
   }
@@ -499,11 +498,23 @@ void payload(int duration) {
         }
       Keyboard.begin();
       *keybuffer = '\0';
-      if (duration >= 50 && button_selected=='1') {
+      if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1) {
+        CRYPTO_AUTH++; 
+        return;
+      } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2) {
+        CRYPTO_AUTH++; 
+        return;
+      } else if (CRYPTO_AUTH == 3 && button_selected==Challenge_button3) {
+        CRYPTO_AUTH++; 
+        return;
+      } else if (duration >= 50 && button_selected=='1') {
         SoftTimer.remove(&taskKey);
         backupslots();
         backupkeys();
         SoftTimer.add(&taskKey);
+      } else if (duration >= 50 && button_selected=='6') {
+        configmode=true;
+        unlocked=false;
       } else {
       if (duration <= 10) gen_press();
       if (duration >= 11) gen_hold();
@@ -598,8 +609,12 @@ void gen_hold(void) {
 /*************************************/
 void process_slot(int s) {
 #ifdef US_VERSION
-  if(ECC_AUTH) {
-    ECC_button = 1;
+  if(CRYPTO_AUTH) {
+    CRYPTO_AUTH = 0;
+    // Reset the large buffer offset
+    large_data_offset = 0;
+    // Stop the fade in
+    fadeoff();
     return;
   }
 #endif

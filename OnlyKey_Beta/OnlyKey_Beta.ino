@@ -514,6 +514,7 @@ void payload(int duration) {
         SoftTimer.add(&taskKey);
       } else if (duration >= 50 && button_selected=='6') {
         configmode=true;
+        pass_keypress = 0;
         unlocked=false;
       } else {
       if (duration <= 10) gen_press();

@@ -269,7 +269,9 @@ void checkKey(Task* me) {
     #endif
     if (TIMEOUT[0] && idletimer >= (TIMEOUT[0]*60000)) {
       unlocked = false; 
-      pass_keypress = 0;
+      firsttime = true;
+      password.reset(); //reset the guessed password to NULL
+      pass_keypress=1;
     }
     }
   }
@@ -327,7 +329,7 @@ void checkKey(Task* me) {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
-    if (!unlocked && initialized){
+    if (!unlocked){
       analogWrite(BLINKPIN, 0); //LED OFF
     } else if (!fade) analogWrite(BLINKPIN, 255); //LED ON
   }
@@ -471,9 +473,13 @@ void payload(int duration) {
           
           return;
         }
+        else if (PINSET==0 && !initialized) { 
+        return;
+        }
         else if (PINSET==0) { 
         }
         else if (PINSET<=3) { 
+          
             #ifdef DEBUG
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
@@ -499,12 +505,24 @@ void payload(int duration) {
       Keyboard.begin();
       *keybuffer = '\0';
       if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1) {
+        #ifdef DEBUG
+        Serial.print("Challenge1 entered");
+        Serial.println(button_selected-'0');
+        #endif
         CRYPTO_AUTH++; 
         return;
       } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2) {
+        #ifdef DEBUG
+        Serial.print("Challenge2 entered");
+        Serial.println(button_selected-'0');
+        #endif
         CRYPTO_AUTH++; 
         return;
       } else if (CRYPTO_AUTH == 3 && button_selected==Challenge_button3) {
+        #ifdef DEBUG
+        Serial.print("Challenge3 entered");
+        Serial.println(button_selected-'0');
+        #endif
         CRYPTO_AUTH++; 
         return;
       } else if (duration >= 50 && button_selected=='1') {
@@ -512,10 +530,14 @@ void payload(int duration) {
         backupslots();
         backupkeys();
         SoftTimer.add(&taskKey);
+        return;
       } else if (duration >= 50 && button_selected=='6') {
         configmode=true;
-        pass_keypress = 0;
-        unlocked=false;
+        unlocked = false; 
+        firsttime = true;
+        password.reset(); //reset the guessed password to NULL
+        pass_keypress=1;
+        return;
       } else {
       if (duration <= 10) gen_press();
       if (duration >= 11) gen_hold();
@@ -669,12 +691,12 @@ index = 0;
             Serial.println();
         #endif
         index=urllength;
+        #ifdef DEBUG
+        Serial.println("Setting RETURN after URL");
+        #endif
+        keybuffer[index] = 2;
+        index++;
       }
-      #ifdef DEBUG
-      Serial.println("Setting RETURN after URL");
-      #endif
-      keybuffer[index] = 2;
-      index++;
       memset(temp, 0, 64); //Wipe all data from buffer
       onlykey_eeget_delay1(ptr, slot);
       if(temp[0] > 0)

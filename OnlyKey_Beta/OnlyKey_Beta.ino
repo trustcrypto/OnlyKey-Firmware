@@ -77,6 +77,7 @@ extern bool PDmode;
 #include <Crypto.h>
 #include <AES.h>
 #include <GCM.h>
+#include "rsa.h"
 #endif
 /*************************************/
 //RNG assignments

@@ -525,6 +525,10 @@ void payload(int duration) {
         Serial.println(button_selected-'0');
         #endif
         CRYPTO_AUTH++; 
+        fadeoff();
+         Keyboard.press(KEY_RETURN);
+        delay(10); 
+        Keyboard.release(KEY_RETURN); 
         return;
       } else if (duration >= 50 && button_selected=='1') {
         SoftTimer.remove(&taskKey);
@@ -639,6 +643,9 @@ void process_slot(int s) {
     large_data_offset = 0;
     // Stop the fade in
     fadeoff();
+    Keyboard.press(KEY_RETURN);
+    delay(10); 
+    Keyboard.release(KEY_RETURN); 
     return;
   }
 #endif

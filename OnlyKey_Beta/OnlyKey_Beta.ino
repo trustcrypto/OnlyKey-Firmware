@@ -544,8 +544,8 @@ void payload(int duration) {
         pass_keypress=1;
         return;
       } else {
-      if (duration <= 10) gen_press();
-      if (duration >= 11) gen_hold();
+      if (duration <= 10 && !configmode) gen_press();
+      if (duration >= 11 && !configmode) gen_hold();
       pos = keybuffer;
       SoftTimer.remove(&taskKey);
       SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);

@@ -83,9 +83,9 @@ extern bool PDmode;
 //RNG assignments
 /*************************************/
 bool calibrating = false;
-
 uint8_t data[32];
 #define OKversion "v0.2-beta.4"
+extern uint8_t recv_buffer[64];
 /*************************************/
 //PIN Assigment Variables
 /*************************************/
@@ -250,6 +250,20 @@ void setup() {
   fadeout();
   fadein();
   fadeout();
+/* For debuging to display flash sector contents
+  uintptr_t rsaadr = 0x2E000;
+  for(int i =0; i<2048; i=i+4){
+  Serial.printf("From 0x%X", rsaadr);
+  Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)rsaadr));
+  rsaadr = rsaadr + 4;
+  delay(10);
+  }
+*/
+//For testing disable PIN
+unlocked=true;
+configmode=true;
+initialized=true;
+
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -262,7 +276,7 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
 
-  if (unlocked) {
+  if (unlocked && !CRYPTO_AUTH) {
     recvmsg();
     if(initialized) {
     #ifdef US_VERSION
@@ -525,11 +539,21 @@ void payload(int duration) {
         Serial.println(button_selected-'0');
         #endif
         CRYPTO_AUTH++; 
-        fadeoff();
-         Keyboard.press(KEY_RETURN);
+        Keyboard.press(KEY_RETURN);
         delay(10); 
         Keyboard.release(KEY_RETURN); 
+        if(recv_buffer[4] == 0xED) SIGN(recv_buffer);
+        if(recv_buffer[4] == 0xF0) DECRYPT(recv_buffer);
         return;
+      } else if (CRYPTO_AUTH) { //Wrong challenge was entered
+        CRYPTO_AUTH=0;
+        fadeoff();
+        Keyboard.press(KEY_RETURN);
+        delay(10); 
+        Keyboard.release(KEY_RETURN); 
+        hidprint("Error incorrect challenge was entered");
+        large_data_offset = 0;
+        analogWrite(BLINKPIN, 255); //LED ON
       } else if (duration >= 50 && button_selected=='1') {
         SoftTimer.remove(&taskKey);
         backupslots();
@@ -636,19 +660,6 @@ void gen_hold(void) {
 //Load Set Values to Keybuffer
 /*************************************/
 void process_slot(int s) {
-#ifdef US_VERSION
-  if(CRYPTO_AUTH) {
-    CRYPTO_AUTH = 0;
-    // Reset the large buffer offset
-    large_data_offset = 0;
-    // Stop the fade in
-    fadeoff();
-    Keyboard.press(KEY_RETURN);
-    delay(10); 
-    Keyboard.release(KEY_RETURN); 
-    return;
-  }
-#endif
   long GMT;
   char* newcode;
   static uint8_t index;

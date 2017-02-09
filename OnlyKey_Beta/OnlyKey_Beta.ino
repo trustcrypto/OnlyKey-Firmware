@@ -259,11 +259,11 @@ void setup() {
   delay(10);
   }
 */
-//For testing disable PIN
+/*For testing to disable PIN
 unlocked=true;
 configmode=true;
 initialized=true;
-
+*/
   SoftTimer.add(&taskKey);
 }
 /*************************************/

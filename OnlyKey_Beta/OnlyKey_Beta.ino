@@ -478,7 +478,7 @@ void payload(int duration) {
           #endif
           if (!PDmode) {
 #ifdef US_VERSION
-          yubikeyinit(); 
+        yubikeyinit(); 
           U2Finit();
           onlykey_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
 #endif

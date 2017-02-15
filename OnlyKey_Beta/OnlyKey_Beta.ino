@@ -485,7 +485,7 @@ void payload(int duration) {
           }
           idletimer=0; 
           unlocked = true;
-          
+          if (configmode) fadeon();
           return;
         }
         else if (PINSET==0 && !initialized) { 

@@ -1,7 +1,7 @@
 // OnlyKey Beta 
 /*
  * Tim Steiner
- * Copyright (c) 2016 , CryptoTrust LLC.
+ * Copyright (c) 2017 , CryptoTrust LLC.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -726,9 +726,12 @@ index = 0;
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering username");
         #endif
+        if (temp[0] <= 30)
+        {
         delay1=temp[0];
         keybuffer[index] = temp[0] + 10;
         index++;
+        }
       }
       usernamelength = onlykey_flashget_username(ptr, slot);
       if(usernamelength > 0)
@@ -795,9 +798,12 @@ index = 0;
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering password");
         #endif
+        if (temp[0] <= 30)
+        {
         delay2=temp[0];
         keybuffer[index] = temp[0] + 10;
         index++;
+        }
       }
       passwordlength = onlykey_eeget_password(ptr, slot);
       if(passwordlength > 0)
@@ -860,9 +866,12 @@ index = 0;
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering 2FA");
         #endif
+        if (temp[0] <= 30)
+        {
         delay3=temp[0];
         keybuffer[index] = temp[0] + 10;
         index++;
+        }
       }
       memset(temp, 0, 64); //Wipe all data from buffer 
       otplength = onlykey_eeget_2FAtype(ptr, slot);

@@ -49,6 +49,10 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define DEBUG //Enable Serial Monitor 
+#define US_VERSION //Define for US Version Firmare
+#define OK_Color //Color Version 
+
 #include "sha256.h"
 #include <EEPROM.h>
 #include "T3MacLib.h"
@@ -62,13 +66,15 @@
 #include <RNG.h>
 #include "base64.h"
 
+#ifdef OK_Color
+#include "Adafruit_NeoPixel.h"
+extern uint8_t NEO_Color;
+#endif
+
 /*************************************/
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-#define US_VERSION
-//Define for US Version Firmare
-#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -168,7 +174,11 @@ void setup() {
   ANALOGPIN1=A0;
   ANALOGPIN2=A7;
   /*************************************/
+  #ifdef OK_Color
+  initColor();
+  #else
   pinMode(BLINKPIN, OUTPUT);
+  #endif
   uint8_t *ptr;
   ptr = nonce;
   int isinit = onlykey_flashget_noncehash (ptr, 32);
@@ -246,10 +256,14 @@ void setup() {
   Serial.println(PDmode); 
   #endif
   rngloop(); //Start RNG
+  #ifdef OK_Color
+  rainbowCycle(4, 2);
+  #else
   fadein();//Additional delay to make sure button is not pressed during plug into USB
   fadeout();
   fadein();
   fadeout();
+  #endif
 /* For debuging to display flash sector contents
   uintptr_t rsaadr = 0x2E000;
   for(int i =0; i<2048; i=i+4){
@@ -290,13 +304,20 @@ void checkKey(Task* me) {
     }
     }
   }
+
+  if(configmode && unlocked && !fade) {
+      #ifdef OK_Color
+      NEO_Color = 1; //Red
+      #endif
+      fadeon();
+  }
   
     //Uncomment to test RNG
     //RNG2(data, 32);
     //printHex(data, 32);
 
   rngloop(); //Perform regular housekeeping on the random number generator.
-
+  
   if (touchread1 > 1500) {
     key_off = 0;
     key_press = 0;
@@ -340,13 +361,24 @@ void checkKey(Task* me) {
     //Serial.println(touchread6);
   } 
 
+
   else {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
     if (!unlocked){
+      #ifdef OK_Color
+      setcolor(0); // NEO Pixel OFF
+      #else
       analogWrite(BLINKPIN, 0); //LED OFF
-    } else if (!fade) analogWrite(BLINKPIN, 255); //LED ON
+      #endif
+    } else if (!fade) {
+      #ifdef OK_Color
+      setcolor(85); // NEO Pixel ON Green
+      #else
+      analogWrite(BLINKPIN, 255); //LED ON
+      #endif
+    }
   }
 
   if ((key_press > 0) && (key_off > THRESHOLD)) {
@@ -410,8 +442,20 @@ void sendKey(Task* me) {
 //Password Checking Loop
 /*************************************/
 void payload(int duration) {
-   if (!unlocked) analogWrite(BLINKPIN, 255); //LED ON
-   else analogWrite(BLINKPIN, 0); //LED OFF
+   if (!unlocked) {
+      #ifdef OK_Color
+      setcolor(45); // NEO Pixel ON Yellow
+      #else
+      analogWrite(BLINKPIN, 255); //LED ON
+      #endif
+   }
+   else {
+      #ifdef OK_Color
+      setcolor(0); // NEO Pixel OFF
+      #else
+      analogWrite(BLINKPIN, 0); //LED OFF
+      #endif
+   }
    uint8_t pass_attempts[1];
    uint8_t sincelastregularlogin[1];
    uint8_t *ptr;
@@ -423,6 +467,9 @@ void payload(int duration) {
       while(1==1)
         {
         hidprint("Error password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
+        #ifdef OK_Color
+        NEO_Color = 1; //Red
+        #endif
         blink(5);
         }
     return;
@@ -485,7 +532,12 @@ void payload(int duration) {
           }
           idletimer=0; 
           unlocked = true;
-          if (configmode) fadeon();
+          if (configmode) {
+            #ifdef OK_Color
+            NEO_Color = 1; //Red
+            #endif
+            fadeon();
+          }
           return;
         }
         else if (PINSET==0 && !initialized) { 
@@ -553,7 +605,11 @@ void payload(int duration) {
         Keyboard.release(KEY_RETURN); 
         hidprint("Error incorrect challenge was entered");
         large_data_offset = 0;
+        #ifdef OK_Color
+        setcolor(85); // NEO Pixel ON Green
+        #else
         analogWrite(BLINKPIN, 255); //LED ON
+        #endif
       } else if (duration >= 50 && button_selected=='1') {
         SoftTimer.remove(&taskKey);
         backupslots();
@@ -596,6 +652,9 @@ void payload(int duration) {
       } else {
         firsttime = true;
         session_attempts++;
+        #ifdef OK_Color
+        NEO_Color = 1;
+        #endif
         blink(3);
         #ifdef DEBUG
         Serial.print("Login Failed, there are ");
@@ -623,7 +682,11 @@ void gen_press(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
+  #ifdef OK_Color
+  setcolor(0); // NEO Pixel OFF
+  #else
   analogWrite(BLINKPIN, 0); //LED OFF
+  #endif
   idletimer=0; 
   int slot;
   if (PDmode) {
@@ -645,7 +708,11 @@ void gen_hold(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
+  #ifdef OK_Color
+  setcolor(85); // NEO Pixel OFF
+  #else
   analogWrite(BLINKPIN, 0); //LED OFF
+  #endif
   idletimer=0; 
   int slot;
   if (PDmode) {

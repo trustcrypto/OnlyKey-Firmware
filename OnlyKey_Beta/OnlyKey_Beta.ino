@@ -273,11 +273,13 @@ void setup() {
   delay(10);
   }
 */
-/*For testing to disable PIN
+/*For testing with python-onlykey to disable PIN
+ * 
+ */
 unlocked=true;
 configmode=true;
 initialized=true;
-*/
+
   SoftTimer.add(&taskKey);
 }
 /*************************************/

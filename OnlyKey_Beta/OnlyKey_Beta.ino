@@ -51,7 +51,7 @@
 
 #define DEBUG //Enable Serial Monitor 
 #define US_VERSION //Define for US Version Firmare
-#define OK_Color //Color Version 
+//#define OK_Color //Color Version 
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -68,7 +68,6 @@
 
 #ifdef OK_Color
 #include "Adafruit_NeoPixel.h"
-extern uint8_t NEO_Color;
 #endif
 
 /*************************************/
@@ -84,6 +83,9 @@ extern bool PDmode;
 #include <AES.h>
 #include <GCM.h>
 #include "rsa.h"
+#endif
+#ifdef OK_Color
+extern uint8_t NEO_Color;
 #endif
 /*************************************/
 //RNG assignments
@@ -274,10 +276,10 @@ void setup() {
   }
 */
 /*For testing with python-onlykey to disable PIN
- * unlocked=true;
- * configmode=true;
- * initialized=true;
- */
+ unlocked=true;
+ configmode=true;
+ initialized=true;
+*/
 
 
   SoftTimer.add(&taskKey);
@@ -614,8 +616,7 @@ void payload(int duration) {
         #endif
       } else if (duration >= 50 && button_selected=='1') {
         SoftTimer.remove(&taskKey);
-        backupslots();
-        backupkeys();
+        backup();
         SoftTimer.add(&taskKey);
         return;
       } else if (duration >= 50 && button_selected=='6') {

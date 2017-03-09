@@ -51,7 +51,7 @@
 
 #define DEBUG //Enable Serial Monitor 
 #define US_VERSION //Define for US Version Firmare
-//#define OK_Color //Color Version 
+#define OK_Color //Color Version 
 
 #include "sha256.h"
 #include <EEPROM.h>

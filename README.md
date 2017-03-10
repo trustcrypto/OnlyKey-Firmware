@@ -1,8 +1,12 @@
 # OnlyKey-Firmware
 
-This is the official firmware for **OnlyKey** - The Two-factor Authentication & Password Solution. For general information on OnlyKey check out the Kickstarter page: [OnlyKey Kickstarter Page](https://www.kickstarter.com/projects/1048259057/openkey-the-two-factor-authentication-and-password/)
+This is the official firmware for **OnlyKey** - The Two-factor Authentication & Password Solution. 
 
 OnlyKey can be purchased here: [OnlyKey order](http://www.crp.to/p/)
+
+## Background ##
+
+OnlyKey started out with a successful Kickstarter in 2016: [OnlyKey Kickstarter Page](https://www.kickstarter.com/projects/1048259057/openkey-the-two-factor-authentication-and-password/)
  
 ## Introduction ##
 There are two available version of the OnlyKey firmware: 
@@ -11,7 +15,7 @@ There are two available version of the OnlyKey firmware:
 
 **OnlyKey Firmware IN** is the International version of the OnlyKey firmware that comes pre-installed on the OnlyKey (International Customers). 
 
-For more information on the difference between the two versions see the [OnlyKey FAQ](https://github.com/onlykey/OnlyKey-Firmware/wiki/FAQs).
+For more information on the difference between the two versions see the [OnlyKey FAQ](https://docs.crp.to/faq.html).
 
 ## Geting Started ##
 Step by step setup instructions are provided in the [OnlyKey Quick Start Guide] (http://www.crp.to/okstart)
@@ -23,7 +27,7 @@ OnlyKey is currently released as a fully functional Beta. Development will be on
 
 Check out the [OnlyKey Support Forum](https://groups.google.com/forum/#!forum/onlykey).
 
-Check out the [OnlyKey Wiki](https://github.com/onlykey/OnlyKey-Firmware/wiki/Table-of-Contents)
+Check out the [OnlyKey Wiki](https://docs.crp.to)
 
 ## Libraries ##
 
@@ -52,6 +56,8 @@ Yohanes - https://github.com/yohanes/teensy-u2f
 Ken MacKay - https://github.com/kmackay/micro-ecc
 
 Rhys Weatherley - https://github.com/rweather/arduinolibs
+
+Mbedtls - https://github.com/ARMmbed/mbedtls
 
 Defragster - https://forum.pjrc.com/threads/91-teensy-3-MAC-address/page2
 

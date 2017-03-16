@@ -50,7 +50,7 @@
 */
 
 #define DEBUG //Enable Serial Monitor 
-#define US_VERSION //Define for US Version Firmare
+//#define US_VERSION //Define for US Version Firmare
 //#define OK_Color //Color Version 
 
 #include "sha256.h"
@@ -147,9 +147,10 @@ extern uint8_t fade;
 /*************************************/
 //SSH
 /*************************************/
-#ifdef US_VERSION
+extern uint8_t Challenge_button1;
+extern uint8_t Challenge_button2;
+extern uint8_t Challenge_button3;
 extern uint8_t CRYPTO_AUTH;
-#endif
 /*************************************/
 //Arduino Setup 
 /*************************************/

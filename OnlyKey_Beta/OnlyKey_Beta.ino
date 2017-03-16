@@ -1,7 +1,7 @@
 // OnlyKey Beta 
 /*
  * Tim Steiner
- * Copyright (c) 2016 , CryptoTrust LLC.
+ * Copyright (c) 2017 , CryptoTrust LLC.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,10 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#define DEBUG //Enable Serial Monitor 
+#define US_VERSION //Define for US Version Firmare
+//#define OK_Color //Color Version 
+
 #include "sha256.h"
 #include <EEPROM.h>
 #include "T3MacLib.h"
@@ -60,14 +64,16 @@
 #include "onlykey.h"
 #include "flashkinetis.h"
 #include <RNG.h>
+#include "base64.h"
+
+#ifdef OK_Color
+#include "Adafruit_NeoPixel.h"
+#endif
 
 /*************************************/
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-#define US_VERSION
-//Define for US Version Firmare
-#define DEBUG
 extern bool PDmode;
 #ifdef US_VERSION
 #include "yksim.h"
@@ -76,14 +82,18 @@ extern bool PDmode;
 #include <Crypto.h>
 #include <AES.h>
 #include <GCM.h>
+#include "rsa.h"
+#endif
+#ifdef OK_Color
+extern uint8_t NEO_Color;
 #endif
 /*************************************/
 //RNG assignments
 /*************************************/
 bool calibrating = false;
-
 uint8_t data[32];
 #define OKversion "v0.2-beta.4"
+extern uint8_t recv_buffer[64];
 /*************************************/
 //PIN Assigment Variables
 /*************************************/
@@ -138,8 +148,7 @@ extern uint8_t fade;
 //SSH
 /*************************************/
 #ifdef US_VERSION
-extern uint8_t SSH_AUTH;
-extern uint8_t SSH_button;
+extern uint8_t CRYPTO_AUTH;
 #endif
 /*************************************/
 //Arduino Setup 
@@ -148,7 +157,7 @@ void setup() {
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
-  delay(7000); //Enable to see starup serial messages
+  //delay(7000); //Enable to see starup serial messages
   #ifdef US_VERSION
   PDmode = false;
   #else
@@ -167,7 +176,11 @@ void setup() {
   ANALOGPIN1=A0;
   ANALOGPIN2=A7;
   /*************************************/
+  #ifdef OK_Color
+  initColor();
+  #else
   pinMode(BLINKPIN, OUTPUT);
+  #endif
   uint8_t *ptr;
   ptr = nonce;
   int isinit = onlykey_flashget_noncehash (ptr, 32);
@@ -245,10 +258,31 @@ void setup() {
   Serial.println(PDmode); 
   #endif
   rngloop(); //Start RNG
+  #ifdef OK_Color
+  rainbowCycle(4, 2);
+  #else
   fadein();//Additional delay to make sure button is not pressed during plug into USB
   fadeout();
   fadein();
   fadeout();
+  #endif
+/* For debuging to display flash sector contents
+  uintptr_t rsaadr = 0x2E000;
+  for(int i =0; i<2048; i=i+4){
+  Serial.printf("From 0x%X", rsaadr);
+  Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)rsaadr));
+  rsaadr = rsaadr + 4;
+  delay(10);
+  }
+*/
+/*For testing with python-onlykey to disable PIN
+ unlocked=true;
+ configmode=true;
+ initialized=true;
+*/
+
+
+
   SoftTimer.add(&taskKey);
 }
 /*************************************/
@@ -261,7 +295,7 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
 
-  if (unlocked) {
+  if (unlocked && !CRYPTO_AUTH) {
     recvmsg();
     if(initialized) {
     #ifdef US_VERSION
@@ -269,9 +303,18 @@ void checkKey(Task* me) {
     #endif
     if (TIMEOUT[0] && idletimer >= (TIMEOUT[0]*60000)) {
       unlocked = false; 
-      pass_keypress = 0;
+      firsttime = true;
+      password.reset(); //reset the guessed password to NULL
+      pass_keypress=1;
     }
     }
+  }
+
+  if(configmode && unlocked && !fade) {
+      #ifdef OK_Color
+      NEO_Color = 1; //Red
+      #endif
+      fadeon();
   }
   
     //Uncomment to test RNG
@@ -279,7 +322,7 @@ void checkKey(Task* me) {
     //printHex(data, 32);
 
   rngloop(); //Perform regular housekeeping on the random number generator.
-
+  
   if (touchread1 > 1500) {
     key_off = 0;
     key_press = 0;
@@ -323,13 +366,24 @@ void checkKey(Task* me) {
     //Serial.println(touchread6);
   } 
 
+
   else {
     if (key_on > THRESHOLD) key_press = key_on;
     key_on = 0;
     key_off += 1;
     if (!unlocked){
+      #ifdef OK_Color
+      setcolor(0); // NEO Pixel OFF
+      #else
       analogWrite(BLINKPIN, 0); //LED OFF
-    } else if (!fade) analogWrite(BLINKPIN, 255); //LED ON
+      #endif
+    } else if (!fade) {
+      #ifdef OK_Color
+      setcolor(85); // NEO Pixel ON Green
+      #else
+      analogWrite(BLINKPIN, 255); //LED ON
+      #endif
+    }
   }
 
   if ((key_press > 0) && (key_off > THRESHOLD)) {
@@ -393,8 +447,20 @@ void sendKey(Task* me) {
 //Password Checking Loop
 /*************************************/
 void payload(int duration) {
-   if (!unlocked) analogWrite(BLINKPIN, 255); //LED ON
-   else analogWrite(BLINKPIN, 0); //LED OFF
+   if (!unlocked) {
+      #ifdef OK_Color
+      setcolor(45); // NEO Pixel ON Yellow
+      #else
+      analogWrite(BLINKPIN, 255); //LED ON
+      #endif
+   }
+   else {
+      #ifdef OK_Color
+      setcolor(0); // NEO Pixel OFF
+      #else
+      analogWrite(BLINKPIN, 0); //LED OFF
+      #endif
+   }
    uint8_t pass_attempts[1];
    uint8_t sincelastregularlogin[1];
    uint8_t *ptr;
@@ -406,6 +472,9 @@ void payload(int duration) {
       while(1==1)
         {
         hidprint("Error password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
+        #ifdef OK_Color
+        NEO_Color = 1; //Red
+        #endif
         blink(5);
         }
     return;
@@ -461,20 +530,28 @@ void payload(int duration) {
           #endif
           if (!PDmode) {
 #ifdef US_VERSION
-          yubikeyinit(); 
+        yubikeyinit(); 
           U2Finit();
-          SSHinit();
           onlykey_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
 #endif
           }
           idletimer=0; 
           unlocked = true;
-          
+          if (configmode) {
+            #ifdef OK_Color
+            NEO_Color = 1; //Red
+            #endif
+            fadeon();
+          }
           return;
+        }
+        else if (PINSET==0 && !initialized) { 
+        return;
         }
         else if (PINSET==0) { 
         }
         else if (PINSET<=3) { 
+          
             #ifdef DEBUG
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
@@ -499,11 +576,65 @@ void payload(int duration) {
         }
       Keyboard.begin();
       *keybuffer = '\0';
-      if (duration <= 10) gen_press();
-      if (duration >= 11) gen_hold();
+      if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1) {
+        #ifdef DEBUG
+        Serial.print("Challenge1 entered");
+        Serial.println(button_selected-'0');
+        #endif
+        CRYPTO_AUTH++; 
+        return;
+      } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2) {
+        #ifdef DEBUG
+        Serial.print("Challenge2 entered");
+        Serial.println(button_selected-'0');
+        #endif
+        CRYPTO_AUTH++; 
+        return;
+      } else if (CRYPTO_AUTH == 3 && button_selected==Challenge_button3) {
+        #ifdef DEBUG
+        Serial.print("Challenge3 entered");
+        Serial.println(button_selected-'0');
+        #endif
+        CRYPTO_AUTH++; 
+        Keyboard.press(KEY_RETURN);
+        delay(10); 
+        Keyboard.release(KEY_RETURN); 
+        if(recv_buffer[4] == 0xED) SIGN(recv_buffer);
+        if(recv_buffer[4] == 0xF0) DECRYPT(recv_buffer);
+        return;
+      } else if (CRYPTO_AUTH) { //Wrong challenge was entered
+        CRYPTO_AUTH=0;
+        fadeoff();
+        Keyboard.press(KEY_RETURN);
+        delay(10); 
+        Keyboard.release(KEY_RETURN); 
+        hidprint("Error incorrect challenge was entered");
+        large_data_offset = 0;
+        #ifdef OK_Color
+        setcolor(85); // NEO Pixel ON Green
+        #else
+        analogWrite(BLINKPIN, 255); //LED ON
+        #endif
+      } else if (duration >= 50 && button_selected=='1') {
+        SoftTimer.remove(&taskKey);
+        backup();
+        SoftTimer.add(&taskKey);
+        return;
+      } else if (duration >= 50 && button_selected=='6') {
+        configmode=true;
+        unlocked = false; 
+        firsttime = true;
+        password.reset(); //reset the guessed password to NULL
+        pass_keypress=1;
+        return;
+      } else {
+      if (duration <= 10 && !configmode) gen_press();
+      if (duration >= 11 && !configmode) gen_hold();
       pos = keybuffer;
       SoftTimer.remove(&taskKey);
       SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
+      }
+
       return;
   }
    else if (password.sdhashevaluate()) {
@@ -525,6 +656,9 @@ void payload(int duration) {
       } else {
         firsttime = true;
         session_attempts++;
+        #ifdef OK_Color
+        NEO_Color = 1;
+        #endif
         blink(3);
         #ifdef DEBUG
         Serial.print("Login Failed, there are ");
@@ -552,7 +686,11 @@ void gen_press(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
+  #ifdef OK_Color
+  setcolor(0); // NEO Pixel OFF
+  #else
   analogWrite(BLINKPIN, 0); //LED OFF
+  #endif
   idletimer=0; 
   int slot;
   if (PDmode) {
@@ -574,7 +712,11 @@ void gen_hold(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
+  #ifdef OK_Color
+  setcolor(85); // NEO Pixel OFF
+  #else
   analogWrite(BLINKPIN, 0); //LED OFF
+  #endif
   idletimer=0; 
   int slot;
   if (PDmode) {
@@ -589,12 +731,6 @@ void gen_hold(void) {
 //Load Set Values to Keybuffer
 /*************************************/
 void process_slot(int s) {
-#ifdef US_VERSION
-  if(SSH_AUTH) {
-    SSH_button = 1;
-    return;
-  }
-#endif
   long GMT;
   char* newcode;
   static uint8_t index;
@@ -620,7 +756,7 @@ index = 0;
       if(urllength > 0)
       {
         #ifdef DEBUG
-        Serial.println("Reading URL from EEPROM...");
+        Serial.println("Reading URL from Flash...");
         Serial.print("URL Length = ");
         Serial.println(urllength);
         #endif
@@ -633,7 +769,7 @@ index = 0;
             Serial.println();
         #endif
         #ifdef US_VERSION
-        aes_gcm_decrypt(temp, (uint8_t*)('u'+ID[34]+slot), phash, urllength);
+        aes_gcm_decrypt(temp, (uint8_t*)('r'+ID[34]+slot), phash, urllength);
         #endif
         }
         ByteToChar2(temp, keybuffer, urllength, index);
@@ -645,6 +781,58 @@ index = 0;
             Serial.println();
         #endif
         index=urllength;
+        #ifdef DEBUG
+        Serial.println("Setting RETURN after URL");
+        #endif
+        keybuffer[index] = 2;
+        index++;
+      }
+      memset(temp, 0, 64); //Wipe all data from buffer
+      onlykey_eeget_delay1(ptr, slot);
+      if(temp[0] > 0)
+      {
+        #ifdef DEBUG
+        Serial.println("Reading Delay1 from EEPROM...");
+        Serial.print("Delay ");
+        Serial.print(temp[0]);
+        Serial.println(" Seconds before entering username");
+        #endif
+        if (temp[0] <= 30)
+        {
+        delay1=temp[0];
+        keybuffer[index] = temp[0] + 10;
+        index++;
+        }
+      }
+      usernamelength = onlykey_flashget_username(ptr, slot);
+      if(usernamelength > 0)
+      {
+        #ifdef DEBUG
+        Serial.println("Reading Username from Flash...");
+        Serial.print("Username Length = ");
+        Serial.println(usernamelength);
+        #endif
+        if (!PDmode) {
+        #ifdef DEBUG
+        Serial.println("Encrypted");
+            for (int z = 0; z < usernamelength; z++) {
+            Serial.print(temp[z], HEX);
+            }
+            Serial.println();
+        #endif
+        #ifdef US_VERSION
+        aes_gcm_decrypt(temp, (uint8_t*)('u'+ID[34]+slot), phash, usernamelength);
+        #endif
+        }
+        ByteToChar2(temp, keybuffer, usernamelength, index);
+        #ifdef DEBUG
+            Serial.println("Unencrypted");
+            for (int z = 0; z < usernamelength; z++) {
+            Serial.print(temp[z], HEX);
+            }
+            Serial.println();
+        #endif
+        index=usernamelength+index;
       }
       memset(temp, 0, 64); //Wipe all data from buffer
       onlykey_eeget_addchar1(ptr, slot);
@@ -672,75 +860,6 @@ index = 0;
         }
       }
       memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_delay1(ptr, slot);
-      if(temp[0] > 0)
-      {
-        #ifdef DEBUG
-        Serial.println("Reading Delay1 from EEPROM...");
-        Serial.print("Delay ");
-        Serial.print(temp[0]);
-        Serial.println(" Seconds before entering username");
-        #endif
-        delay1=temp[0];
-        keybuffer[index] = temp[0] + 10;
-        index++;
-      }
-      usernamelength = onlykey_flashget_username(ptr, slot);
-      if(usernamelength > 0)
-      {
-        #ifdef DEBUG
-        Serial.println("Reading Username from EEPROM...");
-        Serial.print("Username Length = ");
-        Serial.println(usernamelength);
-        #endif
-        if (!PDmode) {
-        #ifdef DEBUG
-        Serial.println("Encrypted");
-            for (int z = 0; z < usernamelength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-            Serial.println();
-        #endif
-        #ifdef US_VERSION
-        aes_gcm_decrypt(temp, (uint8_t*)('u'+ID[34]+slot), phash, usernamelength);
-        #endif
-        }
-        ByteToChar2(temp, keybuffer, usernamelength, index);
-        #ifdef DEBUG
-            Serial.println("Unencrypted");
-            for (int z = 0; z < usernamelength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-            Serial.println();
-        #endif
-        index=usernamelength+index;
-      }
-      memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_addchar2(ptr, slot);
-      if(temp[0] > 0)
-      {
-        if(temp[0] == 0x31) {
-        #ifdef DEBUG
-        Serial.println("Reading addchar2 from EEPROM...");
-        #endif
-        keybuffer[index] = 1;
-        #ifdef DEBUG
-        Serial.println("TAB");
-        #endif
-        index++;
-        }
-        else if(temp[0] == 0x32) {
-        #ifdef DEBUG
-        Serial.println("Reading addchar2 from EEPROM...");
-        #endif
-        keybuffer[index] = 2;
-        #ifdef DEBUG
-        Serial.println("RETURN");
-        #endif
-        index++;
-        }
-      }
-      memset(temp, 0, 64); //Wipe all data from buffer
       onlykey_eeget_delay2(ptr, slot);
       if(temp[0] > 0)
       {
@@ -750,9 +869,12 @@ index = 0;
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering password");
         #endif
+        if (temp[0] <= 30)
+        {
         delay2=temp[0];
         keybuffer[index] = temp[0] + 10;
         index++;
+        }
       }
       passwordlength = onlykey_eeget_password(ptr, slot);
       if(passwordlength > 0)
@@ -785,12 +907,12 @@ index = 0;
         index=passwordlength+index;
       }
       memset(temp, 0, 64); //Wipe all data from buffer    
-      onlykey_eeget_addchar3(ptr, slot);
+      onlykey_eeget_addchar2(ptr, slot);
       if(temp[0] > 0)
       {
         if(temp[0] == 0x31) {
         #ifdef DEBUG
-        Serial.println("Reading addchar3 from EEPROM...");
+        Serial.println("Reading addchar2 from EEPROM...");
         Serial.println("TAB");
         #endif
         keybuffer[index] = 1;
@@ -798,7 +920,7 @@ index = 0;
         }
         else if(temp[0] == 0x32) {
         #ifdef DEBUG
-        Serial.println("Reading addchar3 from EEPROM...");      
+        Serial.println("Reading addchar2 from EEPROM...");      
         Serial.println("Return");
         #endif
         keybuffer[index] = 2;
@@ -815,9 +937,12 @@ index = 0;
         Serial.print(temp[0]);
         Serial.println(" Seconds before entering 2FA");
         #endif
+        if (temp[0] <= 30)
+        {
         delay3=temp[0];
         keybuffer[index] = temp[0] + 10;
         index++;
+        }
       }
       memset(temp, 0, 64); //Wipe all data from buffer 
       otplength = onlykey_eeget_2FAtype(ptr, slot);
@@ -872,7 +997,27 @@ index = 0;
             keybuffer[index+5]=*(newcode+5);
           }
           index=index+6;
-          memset(temp, 0, 64); //Wipe all data from buffer 
+          memset(temp, 0, 64); //Wipe all data from buffer
+          onlykey_eeget_addchar3(ptr, slot);
+          if(temp[0] > 0)
+          {
+            if(temp[0] == 0x31) {
+            #ifdef DEBUG
+            Serial.println("Reading addchar3 from EEPROM...");
+            Serial.println("TAB");
+            #endif
+            keybuffer[index] = 1;
+            index++;
+            }
+            else if(temp[0] == 0x32) {
+            #ifdef DEBUG
+            Serial.println("Reading addchar3 from EEPROM...");      
+            Serial.println("Return");
+            #endif
+            keybuffer[index] = 2;
+            index++;
+            }
+          } 
         }
         if(temp[0] == 121 && !PDmode) { 
         #ifdef DEBUG
@@ -881,6 +1026,26 @@ index = 0;
         #ifdef US_VERSION
         yubikeysim(keybuffer + index);
         index=index+44;
+        onlykey_eeget_addchar3(ptr, slot);
+        if(temp[0] > 0)
+        {
+          if(temp[0] == 0x31) {
+          #ifdef DEBUG
+          Serial.println("Reading addchar3 from EEPROM...");
+          Serial.println("TAB");
+          #endif
+          keybuffer[index] = 1;
+          index++;
+          }
+          else if(temp[0] == 0x32) {
+          #ifdef DEBUG
+          Serial.println("Reading addchar3 from EEPROM...");      
+          Serial.println("Return");
+          #endif
+          keybuffer[index] = 2;
+          index++;
+          }
+        } 
         #endif
         }
         if(temp[0] == 117 && !PDmode) { //U2F
@@ -888,27 +1053,7 @@ index = 0;
         index++;
         }
       }
-      memset(temp, 0, 64); //Wipe all data from buffer    
-      onlykey_eeget_addchar4(ptr, slot);
-      if(temp[0] > 0)
-      {
-        if(temp[0] == 0x31) {
-        #ifdef DEBUG
-        Serial.println("Reading addchar4 from EEPROM...");
-        Serial.println("TAB");
-        #endif
-        keybuffer[index] = 1;
-        index++;
-        }
-        else if(temp[0] == 0x32) {
-        #ifdef DEBUG
-        Serial.println("Reading addchar4 from EEPROM...");      
-        Serial.println("Return");
-        #endif
-        keybuffer[index] = 2;
-        index++;
-        }
-      }  
+      keybuffer[index] = 0;
           #ifdef DEBUG
           Serial.println("Displaying Full Keybuffer");
           for (int i=0; keybuffer[i]!=0x00; i++) {

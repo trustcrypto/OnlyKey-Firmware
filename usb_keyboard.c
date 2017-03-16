@@ -274,8 +274,8 @@ static KEYCODE_TYPE deadkey_to_keycode(KEYCODE_TYPE keycode)
 	if(OGONEK_BITS) if (keycode == OGONEK_BITS) return DEADKEY_OGONEK;
 	if(DOT_ABOVE_BITS) if (keycode == DOT_ABOVE_BITS) return DEADKEY_DOT_ABOVE;
 	if(DOUBLE_ACUTE_BITS) if (keycode == DOUBLE_ACUTE_BITS) return DEADKEY_DOUBLE_ACUTE;
-	return 0;
 }
+	return 0;
 }
 
 

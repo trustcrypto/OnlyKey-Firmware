@@ -186,7 +186,7 @@ void setup() {
   int isinit = onlykey_flashget_noncehash (ptr, 32);
   //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if(FTFL_FSEC==0xDE) { 
-      int nn;
+      int nn = 0;
       wipeEEPROM();
       nn=flashSecurityLockBits();
       #ifdef DEBUG

@@ -484,7 +484,7 @@ uint16_t KEYCODE_EXTRA49 = 0;
 uint16_t KEYCODE_EXTRA50 = 0;
 uint16_t KEYCODE_EXTRA51 = 0;
 
-if (KeyboardLayout[0] == LAYOUT_US_ENGLISH || KeyboardLayout[0] == 0x00) {
+if (KeyboardLayout[0] == LAYOUT_USA_ENGLISH || KeyboardLayout[0] == 0x00) {
 SHIFT_MASK=0x0040;
 //KEYCODE_TYPE=uint8_t
 
@@ -585,7 +585,7 @@ ASCII_7D=KEY_RIGHT_BRACE + SHIFT_MASK;// 125 }
 ASCII_7E=KEY_TILDE + SHIFT_MASK;// 126 ~
 ASCII_7F=KEY_BACKSPACE;// 127
 
-// LAYOUT_US_ENGLISH
+// LAYOUT_USA_ENGLISH
 }
 
 else if (KeyboardLayout[0] == LAYOUT_US_INTERNATIONAL) {

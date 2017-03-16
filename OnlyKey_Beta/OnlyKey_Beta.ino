@@ -416,11 +416,12 @@ void sendKey(Task* me) {
         Keyboard.release(KEY_RETURN); 
         pos++;  
     } 
-    else if ((uint8_t)*pos == 9 && !PDmode) {
+    else if ((uint8_t)*pos == 9) {
+        if(PDmode) return;
+        #ifdef US_VERSION
         #ifdef DEBUG
         Serial.println("Starting U2F...");
         #endif
-        #ifdef US_VERSION
         u2f_button = 1;         
         uECC_set_rng(&RNG2); 
         unsigned long u2fwait = millis() + 4000;
@@ -428,10 +429,10 @@ void sendKey(Task* me) {
         recvmsg();
         }
         u2f_button = 0;
-        #endif
         Keyboard.end();
         SoftTimer.remove(&taskKB);
         SoftTimer.add(&taskKey);
+        #endif
         return;
     }
     else if ((uint8_t)*pos >= 10 && (uint8_t)*pos <= 31) {
@@ -567,9 +568,11 @@ void payload(int duration) {
         }
         else {
             if(!PDmode){
+            #ifdef US_VERSION
             #ifdef DEBUG
             Serial.print("PD password appended with ");
             Serial.println(button_selected-'0');
+            #endif
             #endif
             }
             return;
@@ -577,11 +580,14 @@ void payload(int duration) {
       Keyboard.begin();
       *keybuffer = '\0';
       if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1) {
+        if (PDmode) return;
+        #ifdef US_VERSION
         #ifdef DEBUG
         Serial.print("Challenge1 entered");
         Serial.println(button_selected-'0');
         #endif
         CRYPTO_AUTH++; 
+        #endif
         return;
       } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2) {
         #ifdef DEBUG
@@ -591,6 +597,8 @@ void payload(int duration) {
         CRYPTO_AUTH++; 
         return;
       } else if (CRYPTO_AUTH == 3 && button_selected==Challenge_button3) {
+        if (PDmode) return;
+        #ifdef US_VERSION
         #ifdef DEBUG
         Serial.print("Challenge3 entered");
         Serial.println(button_selected-'0');
@@ -601,8 +609,11 @@ void payload(int duration) {
         Keyboard.release(KEY_RETURN); 
         if(recv_buffer[4] == 0xED) SIGN(recv_buffer);
         if(recv_buffer[4] == 0xF0) DECRYPT(recv_buffer);
+        #endif
         return;
       } else if (CRYPTO_AUTH) { //Wrong challenge was entered
+        if (PDmode) return;
+        #ifdef US_VERSION
         CRYPTO_AUTH=0;
         fadeoff();
         Keyboard.press(KEY_RETURN);
@@ -615,17 +626,25 @@ void payload(int duration) {
         #else
         analogWrite(BLINKPIN, 255); //LED ON
         #endif
+        return;
+        #endif
       } else if (duration >= 50 && button_selected=='1') {
+        if (PDmode) return;
+        #ifdef US_VERSION
         SoftTimer.remove(&taskKey);
         backup();
         SoftTimer.add(&taskKey);
+        #endif
         return;
       } else if (duration >= 50 && button_selected=='6') {
+        if (PDmode) return;
+        #ifdef US_VERSION
         configmode=true;
         unlocked = false; 
         firsttime = true;
         password.reset(); //reset the guessed password to NULL
         pass_keypress=1;
+        #endif
         return;
       } else {
       if (duration <= 10 && !configmode) gen_press();

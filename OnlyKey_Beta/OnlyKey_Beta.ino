@@ -51,7 +51,7 @@
 
 #define DEBUG //Enable Serial Monitor 
 #define US_VERSION //Define for US Version Firmare
-//#define OK_Color //Color Version 
+#define OK_Color //Color Version 
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -143,7 +143,7 @@ Task taskKB(100, sendKey); // Default send kb codes every 100 ms
 Task taskInitialized(1000, sendInitialized);
 char keybuffer[EElen_url+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64]; //Buffer to hold all keystrokes
 char *pos;
-extern uint8_t fade;
+extern uint8_t isfade;
 /*************************************/
 //SSH
 /*************************************/
@@ -311,7 +311,7 @@ void checkKey(Task* me) {
     }
   }
 
-  if(configmode && unlocked && !fade) {
+  if(configmode && unlocked && !isfade) {
       #ifdef OK_Color
       NEO_Color = 1; //Red
       #endif
@@ -378,7 +378,7 @@ void checkKey(Task* me) {
       #else
       analogWrite(BLINKPIN, 0); //LED OFF
       #endif
-    } else if (!fade) {
+    } else if (!isfade) {
       #ifdef OK_Color
       setcolor(85); // NEO Pixel ON Green
       #else
@@ -733,7 +733,7 @@ void gen_hold(void) {
     return;
   }
   #ifdef OK_Color
-  setcolor(85); // NEO Pixel OFF
+  setcolor(0); // NEO Pixel OFF
   #else
   analogWrite(BLINKPIN, 0); //LED OFF
   #endif

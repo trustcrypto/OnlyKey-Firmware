@@ -92,7 +92,7 @@ extern uint8_t NEO_Color;
 /*************************************/
 bool calibrating = false;
 uint8_t data[32];
-#define OKversion "v0.2-beta.4"
+#define OKversion "v0.2-beta.5"
 extern uint8_t recv_buffer[64];
 /*************************************/
 //PIN Assigment Variables

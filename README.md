@@ -21,13 +21,13 @@ For more information on the difference between the two versions see the [OnlyKey
 Step by step setup instructions are provided in the [OnlyKey Quick Start Guide] (http://www.crp.to/okstart)
 
 ## Development ##
-OnlyKey is currently released as a fully functional Beta. Development will be ongoing as additional features are added. To see a list of current and future features see [OnlyKey Features] (https://github.com/onlykey/OnlyKey-Firmware/wiki/OnlyKey-Features).
+OnlyKey is currently released as a fully functional Beta. Development will be ongoing as additional features are added. To see a list of current and future features see OnlyKey Features section of the [OnlyKey User's Guide] (https://docs.google.com/document/d/196ZUQQA0P9QKROT6K6pCtvPV55M9XRLXppPgEe_5JvI/pub)
 
 ## Support ##
 
 Check out the [OnlyKey Support Forum](https://groups.google.com/forum/#!forum/onlykey).
 
-Check out the [OnlyKey Wiki](https://docs.crp.to)
+Check out the [OnlyKey Documentation](https://docs.crp.to)
 
 ## Libraries ##
 

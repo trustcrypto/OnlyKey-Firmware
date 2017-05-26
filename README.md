@@ -11,11 +11,15 @@ OnlyKey started out with a successful Kickstarter in 2016: [OnlyKey Kickstarter 
 ## Introduction ##
 There are two available version of the OnlyKey firmware: 
 
-**OnlyKey Firmware US** is the U.S. version of the OnlyKey firmware that comes pre-installed on the OnlyKey (U.S. Customers). 
+**OnlyKey Standard Edition** The full featured OnlyKey firmware comes pre-installed on the OnlyKey (Ships to US). 
 
-**OnlyKey Firmware IN** is the International version of the OnlyKey firmware that comes pre-installed on the OnlyKey (International Customers). 
+**OnlyKey International Travel Edition** The encryption free OnlyKey firmware comes pre-installed on the OnlyKey (Ships Internationally). 
 
 For more information on the difference between the two versions see the [OnlyKey FAQ](https://docs.crp.to/faq.html).
+
+Note: User’s can change the edition of their OnlyKey anytime by loading open source firmware using instructions in Quick Start Guide.
+ 
+Find out more about Plausible Deniability and how to travel internationally with digital privacy intact [here!] (https://crp.to/2017/04/plausible-deniability-onlykey/)
 
 ## Geting Started ##
 Step by step setup instructions are provided in the [OnlyKey Quick Start Guide] (http://www.crp.to/okstart)

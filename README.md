@@ -25,7 +25,7 @@ Find out more about Plausible Deniability and how to travel internationally with
 Step by step setup instructions are provided in the [OnlyKey Quick Start Guide](http://www.crp.to/okstart)
 
 ## Development ##
-OnlyKey is currently released as a fully functional Beta. Development will be ongoing as additional features are added. To see a list of current and future features see OnlyKey Features section of the [OnlyKey User's Guide] (https://docs.google.com/document/d/196ZUQQA0P9QKROT6K6pCtvPV55M9XRLXppPgEe_5JvI/pub)
+OnlyKey is currently released as a fully functional Beta. Development will be ongoing as additional features are added. To see a list of current and future features see OnlyKey Features section of the [OnlyKey User's Guide](https://docs.google.com/document/d/196ZUQQA0P9QKROT6K6pCtvPV55M9XRLXppPgEe_5JvI/pub)
 
 ## Support ##
 

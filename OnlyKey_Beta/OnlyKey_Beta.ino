@@ -145,12 +145,13 @@ char keybuffer[EElen_url+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EE
 char *pos;
 extern uint8_t isfade;
 /*************************************/
-//SSH
+//CRYPTO
 /*************************************/
 extern uint8_t Challenge_button1;
 extern uint8_t Challenge_button2;
 extern uint8_t Challenge_button3;
 extern uint8_t CRYPTO_AUTH;
+extern int packet_buffer_offset;
 /*************************************/
 //Arduino Setup 
 /*************************************/
@@ -296,7 +297,7 @@ void checkKey(Task* me) {
   static int key_on = 0;
   static int key_off = 0;
 
-  if (unlocked && !CRYPTO_AUTH) {
+  if (unlocked) {
     recvmsg();
     if(initialized) {
     #ifdef US_VERSION
@@ -621,7 +622,7 @@ void payload(int duration) {
         delay(10); 
         Keyboard.release(KEY_RETURN); 
         hidprint("Error incorrect challenge was entered");
-        large_data_offset = 0;
+        packet_buffer_offset = 0;
         #ifdef OK_Color
         setcolor(85); // NEO Pixel ON Green
         #else

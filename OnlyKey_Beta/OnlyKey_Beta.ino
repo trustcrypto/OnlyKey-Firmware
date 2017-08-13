@@ -618,9 +618,6 @@ void payload(int duration) {
         #ifdef US_VERSION
         CRYPTO_AUTH=0;
         fadeoff();
-        Keyboard.press(KEY_RETURN);
-        delay(10); 
-        Keyboard.release(KEY_RETURN); 
         hidprint("Error incorrect challenge was entered");
         packet_buffer_offset = 0;
         #ifdef OK_Color

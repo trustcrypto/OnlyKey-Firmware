@@ -85,14 +85,16 @@ extern bool PDmode;
 #include "rsa.h"
 #endif
 #ifdef OK_Color
+#define OKversion "v0.2-beta.6c"
 extern uint8_t NEO_Color;
+#else
+#define OKversion "v0.2-beta.6o"
 #endif
 /*************************************/
 //RNG assignments
 /*************************************/
 bool calibrating = false;
 uint8_t data[32];
-#define OKversion "v0.2-beta.6"
 extern uint8_t recv_buffer[64];
 /*************************************/
 //PIN Assigment Variables
@@ -1088,7 +1090,6 @@ void sendInitialized(Task* me) {
     Serial.println("INITIALIZED");
     #endif
 }
-
 
 
 

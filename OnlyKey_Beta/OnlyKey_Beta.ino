@@ -141,7 +141,7 @@ extern uint8_t nonce[32];
 #define THRESHOLD   .5
 #define TIME_POLL 100 // poll "key" every 100 ms
 Task taskKey(TIME_POLL, checkKey);
-Task taskKB(100, sendKey); // Default send kb codes every 100 ms
+Task taskKB(50, sendKey); // Default send kb codes every 50 ms
 Task taskInitialized(1000, sendInitialized);
 char keybuffer[EElen_url+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64]; //Buffer to hold all keystrokes
 char *pos;
@@ -414,16 +414,18 @@ void sendKey(Task* me) {
     else if ((uint8_t)*pos == 1) {
         if (!isfade) {
           Keyboard.press(KEY_TAB); 
-          delay(10); 
-          Keyboard.release(KEY_TAB); 
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);  
+          Keyboard.releaseAll(); 
+          delay(((TYPESPEED[0]*TYPESPEED[0])*2)); 
         }
         pos++;  
     } 
     else if ((uint8_t)*pos == 2) {
         if (!isfade) {
           Keyboard.press(KEY_RETURN);
-          delay(10); 
-          Keyboard.release(KEY_RETURN); 
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
+          Keyboard.releaseAll(); 
+          delay(((TYPESPEED[0]*TYPESPEED[0])*2)); 
         }
         pos++;  
     } 
@@ -451,7 +453,12 @@ void sendKey(Task* me) {
         pos++;  
     } 
     else if (*pos){
-        if (!isfade) Keyboard.write(*pos);
+        if (!isfade) {
+          Keyboard.press(*pos);
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
+          Keyboard.releaseAll(); 
+          delay(((TYPESPEED[0]*TYPESPEED[0])*2)); 
+        }
         pos++;
     }
 }
@@ -616,8 +623,9 @@ void payload(int duration) {
         #endif
         CRYPTO_AUTH++; 
         Keyboard.press(KEY_RETURN);
-        delay(10); 
-        Keyboard.release(KEY_RETURN); 
+        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
+        Keyboard.releaseAll(); 
+        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
         if(recv_buffer[4] == 0xED) SIGN(recv_buffer);
         if(recv_buffer[4] == 0xF0) DECRYPT(recv_buffer);
         #endif
@@ -629,8 +637,9 @@ void payload(int duration) {
         hidprint("Error incorrect challenge was entered");
         analogWrite(BLINKPIN, 255); //LED ON
         Keyboard.press(KEY_RETURN);
-        delay(10); 
-        Keyboard.release(KEY_RETURN); 
+        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);  
+        Keyboard.releaseAll(); 
+        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
         return;
         #endif
       } else if (duration >= 50 && button_selected=='1' && !isfade) {

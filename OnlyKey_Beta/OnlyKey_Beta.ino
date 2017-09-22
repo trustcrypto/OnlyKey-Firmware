@@ -399,6 +399,9 @@ void checkKey(Task* me) {
 //Type out on Keyboard the contents of Keybuffer
 /*************************************/
 void sendKey(Task* me) {
+    while ( isfade && NEO_Color == 170 && (uint8_t)*pos != 00 && (uint8_t)*pos != 9 ) {
+       pos++;
+    }
     if ((uint8_t)*pos == 00){
     #ifdef DEBUG
     Serial.print(pos);
@@ -409,15 +412,19 @@ void sendKey(Task* me) {
     return;
     }
     else if ((uint8_t)*pos == 1) {
-        Keyboard.press(KEY_TAB); 
-        delay(10); 
-        Keyboard.release(KEY_TAB); 
+        if (!isfade) {
+          Keyboard.press(KEY_TAB); 
+          delay(10); 
+          Keyboard.release(KEY_TAB); 
+        }
         pos++;  
     } 
     else if ((uint8_t)*pos == 2) {
-        Keyboard.press(KEY_RETURN);
-        delay(10); 
-        Keyboard.release(KEY_RETURN); 
+        if (!isfade) {
+          Keyboard.press(KEY_RETURN);
+          delay(10); 
+          Keyboard.release(KEY_RETURN); 
+        }
         pos++;  
     } 
     else if ((uint8_t)*pos == 9) {
@@ -440,11 +447,11 @@ void sendKey(Task* me) {
         return;
     }
     else if ((uint8_t)*pos >= 10 && (uint8_t)*pos <= 31) {
-        delay((*pos - 10)*1000);   
+        if (!isfade) delay((*pos - 10)*1000);   
         pos++;  
     } 
     else if (*pos){
-        Keyboard.write(*pos);
+        if (!isfade) Keyboard.write(*pos);
         pos++;
     }
 }
@@ -583,7 +590,7 @@ void payload(int duration) {
         }
       Keyboard.begin();
       *keybuffer = '\0';
-      if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1) {
+      if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
         if (PDmode) return;
         #ifdef US_VERSION
         #ifdef DEBUG
@@ -593,14 +600,14 @@ void payload(int duration) {
         CRYPTO_AUTH++; 
         #endif
         return;
-      } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2) {
+      } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2 && isfade) {
         #ifdef DEBUG
         Serial.print("Challenge2 entered");
         Serial.println(button_selected-'0');
         #endif
         CRYPTO_AUTH++; 
         return;
-      } else if (CRYPTO_AUTH == 3 && button_selected==Challenge_button3) {
+      } else if (CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade) {
         if (PDmode) return;
         #ifdef US_VERSION
         #ifdef DEBUG
@@ -618,18 +625,15 @@ void payload(int duration) {
       } else if (CRYPTO_AUTH) { //Wrong challenge was entered
         if (PDmode) return;
         #ifdef US_VERSION
-        CRYPTO_AUTH=0;
-        fadeoff();
+        fadeoff(1);
         hidprint("Error incorrect challenge was entered");
-        packet_buffer_offset = 0;
-        #ifdef OK_Color
-        setcolor(85); // NEO Pixel ON Green
-        #else
         analogWrite(BLINKPIN, 255); //LED ON
-        #endif
+        Keyboard.press(KEY_RETURN);
+        delay(10); 
+        Keyboard.release(KEY_RETURN); 
         return;
         #endif
-      } else if (duration >= 50 && button_selected=='1') {
+      } else if (duration >= 50 && button_selected=='1' && !isfade) {
         if (PDmode) return;
         #ifdef US_VERSION
         SoftTimer.remove(&taskKey);
@@ -637,7 +641,7 @@ void payload(int duration) {
         SoftTimer.add(&taskKey);
         #endif
         return;
-      } else if (duration >= 50 && button_selected=='6') {
+      } else if (duration >= 50 && button_selected=='6' && !isfade) {
         if (PDmode) return;
         #ifdef US_VERSION
         configmode=true;
@@ -648,13 +652,17 @@ void payload(int duration) {
         #endif
         return;
       } else {
-      if (duration <= 10 && !configmode) gen_press();
-      if (duration >= 11 && !configmode) gen_hold();
-      pos = keybuffer;
-      SoftTimer.remove(&taskKey);
-      SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
-      }
-
+        #ifdef OK_Color
+        setcolor(0); // NEO Pixel OFF
+        #else
+        analogWrite(BLINKPIN, 0); //LED OFF
+        #endif
+        if (duration <= 10 && !configmode) gen_press();
+        if (duration >= 11 && !configmode) gen_hold();
+        pos = keybuffer;
+        SoftTimer.remove(&taskKey);
+        SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
+      } 
       return;
   }
    else if (password.sdhashevaluate()) {
@@ -706,18 +714,12 @@ void gen_press(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
-  #ifdef OK_Color
-  setcolor(0); // NEO Pixel OFF
-  #else
-  analogWrite(BLINKPIN, 0); //LED OFF
-  #endif
   idletimer=0; 
   int slot;
   if (PDmode) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
-    fadeoff();
   }
       process_slot(slot);   
 }
@@ -732,18 +734,12 @@ void gen_hold(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
-  #ifdef OK_Color
-  setcolor(0); // NEO Pixel OFF
-  #else
-  analogWrite(BLINKPIN, 0); //LED OFF
-  #endif
   idletimer=0; 
   int slot;
   if (PDmode) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
-    fadeoff();
   }
       process_slot(slot+6);   
 }
@@ -764,7 +760,8 @@ void process_slot(int s) {
   int delay3 = 0;
   uint8_t *ptr;
   int slot=s;
-index = 0;
+  index = 0;
+      if (isfade && NEO_Color != 170) return; //Only U2F Button
       #ifdef DEBUG
       Serial.print("Slot Number ");
       Serial.println(button_selected-'0');
@@ -1081,7 +1078,6 @@ index = 0;
             (keybuffer[i]);
           }
           #endif
-
 }
 
 void sendInitialized(Task* me) {

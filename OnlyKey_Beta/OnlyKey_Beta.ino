@@ -154,6 +154,7 @@ extern uint8_t Challenge_button2;
 extern uint8_t Challenge_button3;
 extern uint8_t CRYPTO_AUTH;
 extern int packet_buffer_offset;
+extern uint8_t packet_buffer_details[2];
 /*************************************/
 //Arduino Setup 
 /*************************************/
@@ -626,8 +627,16 @@ void payload(int duration) {
         delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
         Keyboard.releaseAll(); 
         delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
-        if(recv_buffer[4] == 0xED) SIGN(recv_buffer);
-        if(recv_buffer[4] == 0xF0) DECRYPT(recv_buffer);
+        if(packet_buffer_details[0] == 0xED) {
+          recv_buffer[4] = packet_buffer_details[0];
+          recv_buffer[5] = packet_buffer_details[1];
+          SIGN(recv_buffer);
+        }
+        if(packet_buffer_details[0] == 0xF0) {
+          recv_buffer[4] = packet_buffer_details[0];
+          recv_buffer[5] = packet_buffer_details[1];
+          DECRYPT(recv_buffer);
+        }
         #endif
         return;
       } else if (CRYPTO_AUTH) { //Wrong challenge was entered

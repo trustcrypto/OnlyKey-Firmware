@@ -155,6 +155,7 @@ extern uint8_t Challenge_button3;
 extern uint8_t CRYPTO_AUTH;
 extern int packet_buffer_offset;
 extern uint8_t packet_buffer_details[2];
+extern uint8_t outputU2F;
 /*************************************/
 //Arduino Setup 
 /*************************************/
@@ -642,13 +643,19 @@ void payload(int duration) {
       } else if (CRYPTO_AUTH) { //Wrong challenge was entered
         if (PDmode) return;
         #ifdef US_VERSION
+        CRYPTO_AUTH = 0;
+        Challenge_button1 = 0;
+        Challenge_button2 = 0;
+        Challenge_button3 = 0;
         fadeoff(1);
-        hidprint("Error incorrect challenge was entered");
-        analogWrite(BLINKPIN, 255); //LED ON
-        Keyboard.press(KEY_RETURN);
-        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);  
-        Keyboard.releaseAll(); 
-        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
+        if (!outputU2F) {
+          hidprint("Error incorrect challenge was entered");
+          analogWrite(BLINKPIN, 255); //LED ON
+          Keyboard.press(KEY_RETURN);
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);  
+          Keyboard.releaseAll(); 
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
+        }
         return;
         #endif
       } else if (duration >= 50 && button_selected=='1' && !isfade) {

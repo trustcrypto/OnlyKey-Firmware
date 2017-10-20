@@ -624,10 +624,12 @@ void payload(int duration) {
         Serial.println(button_selected-'0');
         #endif
         CRYPTO_AUTH++; 
+        if (!outputU2F) {
         Keyboard.press(KEY_RETURN);
         delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
         Keyboard.releaseAll(); 
         delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
+        }
         if(packet_buffer_details[0] == 0xED) {
           recv_buffer[4] = packet_buffer_details[0];
           recv_buffer[5] = packet_buffer_details[1];

@@ -65,6 +65,7 @@
 #include "flashkinetis.h"
 #include <RNG.h>
 #include "base64.h"
+#include <ADC.h>
 
 #ifdef OK_Color
 #include "Adafruit_NeoPixel.h"
@@ -83,6 +84,7 @@ extern bool PDmode;
 #include <AES.h>
 #include <GCM.h>
 #include "rsa.h"
+#include <newhope.h>
 #endif
 #ifdef OK_Color
 #define OKversion "v0.2-beta.6c"
@@ -160,6 +162,7 @@ extern uint8_t outputU2F;
 //Arduino Setup 
 /*************************************/
 void setup() {
+  delay(200);
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
@@ -182,11 +185,6 @@ void setup() {
   ANALOGPIN1=A0;
   ANALOGPIN2=A7;
   /*************************************/
-  #ifdef OK_Color
-  initColor();
-  #else
-  pinMode(BLINKPIN, OUTPUT);
-  #endif
   uint8_t *ptr;
   ptr = nonce;
   int isinit = onlykey_flashget_noncehash (ptr, 32);
@@ -204,6 +202,22 @@ void setup() {
       initialized = false;
       #ifdef DEBUG
       Serial.println("UNLOCKED, FIRST TIME USE");
+      // For debuging to display flash sector contents
+      // Compare to intel HEX parsed with http://www.dlwrr.com/electronics/tools/hexview/hexview.html
+      //  uintptr_t readadr = 0x0;
+       // int j = 0;
+       // for(int i =0; i<256000; i=i+4){
+        //Serial.printf("From 0x%X", readadr);
+        //Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)readadr));
+       // Serial.printf("%X\r", *((unsigned int*)readadr));
+       // readadr = readadr + 4;
+       // j++;
+       // delay(2);
+       // if (j>=4) {
+       //   Serial.println();
+       //   j=0;
+       // }
+       // }
       #endif
   } else if(FTFL_FSEC==0x44 && isinit>=1) { 
         ptr = phash;
@@ -265,22 +279,15 @@ void setup() {
   #endif
   rngloop(); //Start RNG
   #ifdef OK_Color
+  initColor();
   rainbowCycle(4, 2);
   #else
+  pinMode(BLINKPIN, OUTPUT);
   fadein();//Additional delay to make sure button is not pressed during plug into USB
   fadeout();
   fadein();
   fadeout();
   #endif
-/* For debuging to display flash sector contents
-  uintptr_t rsaadr = 0x2E000;
-  for(int i =0; i<2048; i=i+4){
-  Serial.printf("From 0x%X", rsaadr);
-  Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)rsaadr));
-  rsaadr = rsaadr + 4;
-  delay(10);
-  }
-*/
 /*For testing with python-onlykey to disable PIN
  unlocked=true;
  configmode=true;
@@ -329,35 +336,35 @@ void checkKey(Task* me) {
 
   rngloop(); //Perform regular housekeeping on the random number generator.
   
-  if (touchread1 > 1500) {
+  if (touchread1 > 1400) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '5';
     //Serial.println(touchread1);
   }      
-    else if (touchread2 > 1500) {
+    else if (touchread2 > 1400) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '2';
     //Serial.println(touchread2);
   } 
-    else if (touchread3 > 1500) {
+    else if (touchread3 > 1400) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '1';
     //Serial.println(touchread3);
   } 
-   else if (touchread4 > 1500) {
+   else if (touchread4 > 1400) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '3';
     //Serial.println(touchread4);
   } 
-   else if (touchread5 > 1500) {
+   else if (touchread5 > 1400) {
     key_off = 0;
     key_press = 0;
     key_on += 1;

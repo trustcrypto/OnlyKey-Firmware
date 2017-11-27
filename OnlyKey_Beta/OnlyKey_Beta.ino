@@ -166,7 +166,6 @@ void setup() {
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
-  //delay(7000); //Enable to see starup serial messages
   #ifdef US_VERSION
   PDmode = false;
   #else

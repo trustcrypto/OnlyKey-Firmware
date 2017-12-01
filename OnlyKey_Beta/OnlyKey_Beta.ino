@@ -812,11 +812,6 @@ void process_slot(int s) {
       addchar3 = (addchar5 >> 6) & 0x1; //After OTP
       addchar4 = (addchar5 >> 2) & 0x1; //Before Username
       addchar5 = (addchar5 >> 3) & 0x1; //Before OTP
-      Serial.println(addchar1);
-      Serial.println(addchar2);
-      Serial.println(addchar3);
-      Serial.println(addchar4);
-      Serial.println(addchar5);
       if (isfade && NEO_Color != 170) return; //Only U2F Button
       #ifdef DEBUG
       Serial.print("Slot Number ");

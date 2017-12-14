@@ -85,6 +85,7 @@ extern bool PDmode;
 #include <GCM.h>
 #include "rsa.h"
 #include <newhope.h>
+#include "tweetnacl.h"
 #endif
 #ifdef OK_Color
 #define OKversion "v0.2-beta.6c"

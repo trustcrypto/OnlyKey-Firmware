@@ -556,6 +556,8 @@ void payload(int duration) {
           #ifdef DEBUG
           Serial.println("UNLOCKED");
           #endif
+          fadeon();
+          fadeoff(85);
           if (!PDmode) {
 #ifdef US_VERSION
         yubikeyinit(); 
@@ -647,6 +649,7 @@ void payload(int duration) {
           recv_buffer[5] = packet_buffer_details[1];
           DECRYPT(recv_buffer);
         }
+        fadeoff(0);
         #endif
         return;
       } else if (CRYPTO_AUTH) { //Wrong challenge was entered

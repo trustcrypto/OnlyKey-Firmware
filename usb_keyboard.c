@@ -1,4 +1,4 @@
-/* 
+/* Tim Steiner
  * Copyright (c) 2018 , CryptoTrust LLC.
  * All rights reserved.
  *

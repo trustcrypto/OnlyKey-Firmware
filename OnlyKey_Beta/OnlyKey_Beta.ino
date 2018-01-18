@@ -811,6 +811,10 @@ void process_slot(int s) {
   index = 0;
 
       onlykey_eeget_addchar(&addchar5, slot);
+      #ifdef DEBUG
+      Serial.println("Additional Character");
+      Serial.println(addchar5);
+      #endif
       addchar1 = addchar5 & 0x3; //After Username
       addchar2 = (addchar5 >> 4) & 0x3; //After Password
       addchar3 = (addchar5 >> 6) & 0x1; //After OTP
@@ -991,10 +995,10 @@ void process_slot(int s) {
       memset(temp, 0, 64); //Wipe all data from buffer    
       if(addchar2)
       {
-        if(addchar2 == 1) {
         #ifdef DEBUG
         Serial.println("Reading after password addchar...");
         #endif
+        if(addchar2 == 1) {
         keybuffer[index] = 1;
         #ifdef DEBUG
         Serial.println("TAB");
@@ -1002,9 +1006,6 @@ void process_slot(int s) {
         index++;
         }
         else if(addchar2 == 2) {
-        #ifdef DEBUG
-        Serial.println("Reading after password addchar...");
-        #endif
         keybuffer[index] = 2;
         #ifdef DEBUG
         Serial.println("RETURN");

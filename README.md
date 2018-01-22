@@ -1,31 +1,30 @@
-# OnlyKey-Firmware
+# OnlyKey Firmware
 
-This is the official firmware for **OnlyKey** - The Two-factor Authentication & Password Solution. 
+This is the official firmware for **OnlyKey**
 
 OnlyKey can be purchased here: [OnlyKey order](http://www.crp.to/p/)
 
-## Background ##
+## Geting Started
 
-OnlyKey started out with a successful Kickstarter in 2016: [OnlyKey Kickstarter Page](https://www.kickstarter.com/projects/1048259057/openkey-the-two-factor-authentication-and-password/)
- 
-## Introduction ##
-There are two available version of the OnlyKey firmware: 
+Just getting started with OnlyKey?
 
-**OnlyKey Standard Edition** The full featured OnlyKey firmware comes pre-installed on the OnlyKey (Ships to US). 
+[Start here](http://www.crp.to/okstart)
 
-**OnlyKey International Travel Edition** The encryption free OnlyKey firmware comes pre-installed on the OnlyKey (Ships Internationally). 
+## About
 
-For more information on the difference between the two versions see the [OnlyKey FAQ](https://docs.crp.to/faq.html).
+The firmware is the software that runs on the OnlyKey itself. In order to load firmware follow the instructions in the [User's Guide here](https://docs.crp.to/usersguide.html#loading-onlykey-firmware)
 
-Note: User’s can change the edition of their OnlyKey anytime by loading open source firmware using instructions in Quick Start Guide.
- 
-Find out more about Plausible Deniability and how to travel internationally with digital privacy intact [here!](https://crp.to/2017/04/plausible-deniability-onlykey/)
+There are two available editions of the OnlyKey firmware:
 
-## Geting Started ##
-[Get started here](http://www.crp.to/okstart)
+**OnlyKey Standard Edition** The full featured OnlyKey firmware.
 
-## Development ##
-OnlyKey is currently released as a fully functional Beta. Development will be ongoing as additional features are added. To see a list of current and future features see OnlyKey Features section of the [OnlyKey User's Guide](https://docs.google.com/document/d/196ZUQQA0P9QKROT6K6pCtvPV55M9XRLXppPgEe_5JvI/pub)
+**OnlyKey International Travel Edition** The encryption free OnlyKey firmware (ships globally).
+
+More information on the difference between the two editions is available [here](https://docs.crp.to/features.html#plausible-deniability-international-travel-edition-and-standard-edition-of-firmware)
+
+## Development
+
+OnlyKey firmware is open source and new features are added with each firmware release. A list of of supported features are available [here](https://docs.crp.to/features.html)
 
 ## Support ##
 
@@ -35,37 +34,7 @@ Check out the [OnlyKey Documentation](https://docs.crp.to)
 
 ## Libraries ##
 
-Check out the [OnlyKey Libraries Here](https://github.com/onlykey/libraries).
-
-A special thanks to those who made this project possible:
-
-PJRC - https://www.pjrc.com/teensy/td_libs.html
-
-Arduino - http://playground.arduino.cc/Main/LibraryList
-
-Yubico - https://github.com/Yubico/
-
-pagong/arduino-yksim - https://github.com/pagong/arduino-yksim 
-
-lucadentella/ArduinoLib_TOTP - https://github.com/lucadentella/ArduinoLib_TOTP
-
-damico/ARDUINO-OATH-TOKEN - https://github.com/damico/ARDUINO-OATH-TOKEN
-
-Cathedrow/Cryptosuite - https://github.com/Cathedrow/Cryptosuite 
-
-Frank Boesing - https://github.com/FrankBoesing/Arduino-Teensy3-Flash 
-
-Yohanes - https://github.com/yohanes/teensy-u2f 
-
-Ken MacKay - https://github.com/kmackay/micro-ecc
-
-Rhys Weatherley - https://github.com/rweather/arduinolibs
-
-Mbedtls - https://github.com/ARMmbed/mbedtls
-
-Defragster - https://forum.pjrc.com/threads/91-teensy-3-MAC-address/page2
-
-For information on installing libraries, see: http://www.arduino.cc/en/Guide/Libraries
+OnlyKey firmware uses additional libraries that are available [here](https://github.com/trustcrypto/libraries).
 
 # Legal things
 ## Cryptography Notice
@@ -86,5 +55,6 @@ The following cryptographic software is included in this distribution:
 
 For more information on export restrictions see: http://www.apache.org/licenses/exports/
 
+## Source
 
-
+[OnlyKey Firmware on Github](https://github.com/trustcrypto/OnlyKey-Firmware)

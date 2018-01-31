@@ -51,7 +51,7 @@
 
 #define DEBUG //Enable Serial Monitor 
 #define US_VERSION //Define for US Version Firmare
-#define OK_Color //Color Version 
+//#define OK_Color //Color Version 
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -89,10 +89,10 @@ extern bool PDmode;
 #endif
 #ifdef OK_Color
 #define OKversion "v0.2-beta.6c"
-extern uint8_t NEO_Color;
 #else
 #define OKversion "v0.2-beta.6o"
 #endif
+extern uint8_t NEO_Color;
 /*************************************/
 //RNG assignments
 /*************************************/

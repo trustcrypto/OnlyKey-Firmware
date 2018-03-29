@@ -50,8 +50,8 @@
 */
 
 #define DEBUG //Enable Serial Monitor 
-//#define US_VERSION //Define for US Version Firmare
-//#define OK_Color //Color Version 
+#define US_VERSION //Define for US Version Firmare
+#define OK_Color //Color Version 
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -131,6 +131,12 @@ extern unsigned int touchread3;
 extern unsigned int touchread4;
 extern unsigned int touchread5;
 extern unsigned int touchread6;
+extern unsigned int touchread1ref;
+extern unsigned int touchread2ref;
+extern unsigned int touchread3ref;
+extern unsigned int touchread4ref;
+extern unsigned int touchread5ref;
+extern unsigned int touchread6ref;
 /*************************************/
 //PIN HASH
 /*************************************/
@@ -336,42 +342,42 @@ void checkKey(Task* me) {
 
   rngloop(); //Perform regular housekeeping on the random number generator.
   
-  if (touchread1 > 1400) {
+  if (touchread1 > (touchread1ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '5';
     //Serial.println(touchread1);
   }      
-    else if (touchread2 > 1400) {
+    else if (touchread2 > (touchread2ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '2';
     //Serial.println(touchread2);
   } 
-    else if (touchread3 > 1400) {
+    else if (touchread3 > (touchread3ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '1';
     //Serial.println(touchread3);
   } 
-   else if (touchread4 > 1400) {
+   else if (touchread4 > (touchread4ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '3';
     //Serial.println(touchread4);
   } 
-   else if (touchread5 > 1400) {
+   else if (touchread5 > (touchread5ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '4';
     //Serial.println(touchread5);
   } 
-   else if (touchread6 > 1500) {
+   else if (touchread6 > (touchread6ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;

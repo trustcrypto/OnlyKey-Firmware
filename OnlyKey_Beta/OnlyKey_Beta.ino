@@ -851,7 +851,7 @@ void process_slot(int s) {
             Serial.println();
         #endif
         #ifdef US_VERSION
-        aes_gcm_decrypt(temp, (uint8_t*)('r'+ID[34]+slot), phash, urllength);
+        aes_gcm_decrypt(temp, slot, 15, phash, urllength);
         #endif
         }
         ByteToChar2(temp, keybuffer, urllength, index);
@@ -914,7 +914,7 @@ void process_slot(int s) {
             Serial.println();
         #endif
         #ifdef US_VERSION
-        aes_gcm_decrypt(temp, (uint8_t*)('u'+ID[34]+slot), phash, usernamelength);
+        aes_gcm_decrypt(temp, slot, 2, phash, usernamelength);
         #endif
         }
         ByteToChar2(temp, keybuffer, usernamelength, index);
@@ -985,7 +985,7 @@ void process_slot(int s) {
             Serial.println();
           #endif
         #ifdef US_VERSION
-        aes_gcm_decrypt(temp, (uint8_t*)('p'+ID[34]+slot), phash, passwordlength);
+        aes_gcm_decrypt(temp, slot, 5, phash, passwordlength);
         #endif
         }
         ByteToChar2(temp, keybuffer, passwordlength, index);
@@ -1067,7 +1067,7 @@ void process_slot(int s) {
         Serial.println(otplength);
         #endif
           #ifdef US_VERSION
-          if (!PDmode) aes_gcm_decrypt(temp, (uint8_t*)('t'+ID[34]+slot), phash, otplength);
+          if (!PDmode) aes_gcm_decrypt(temp, slot, 9, phash, otplength);
           #endif
         ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG

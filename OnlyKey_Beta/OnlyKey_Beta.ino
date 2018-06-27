@@ -1,7 +1,7 @@
 // OnlyKey Beta 
 /*
  * Tim Steiner
- * Copyright (c) 2017 , CryptoTrust LLC.
+ * Copyright (c) 2018, CryptoTrust LLC.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,7 +49,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#define DEBUG //Enable Serial Monitor 
+//#define DEBUG //Enable Serial Monitor 
 #define US_VERSION //Define for US Version Firmare
 #define OK_Color //Color Version 
 
@@ -88,9 +88,9 @@ extern bool PDmode;
 #include "tweetnacl.h"
 #endif
 #ifdef OK_Color
-#define OKversion "v0.2-beta.6c"
+#define OKversion "v0.2-beta.7c"
 #else
-#define OKversion "v0.2-beta.6o"
+#define OKversion "v0.2-beta.7o"
 #endif
 extern uint8_t NEO_Color;
 /*************************************/
@@ -144,11 +144,14 @@ extern uint8_t phash[32];
 extern uint8_t sdhash[32];
 extern uint8_t pdhash[32];
 extern uint8_t nonce[32];
+extern int initcheck;
+extern int integrityctr1;
+extern int integrityctr2;
 /*************************************/
 //SoftTimer
 /*************************************/
 #define THRESHOLD   .5
-#define TIME_POLL 100 // poll "key" every 100 ms
+#define TIME_POLL 75 // poll "key" every 75 ms
 Task taskKey(TIME_POLL, checkKey);
 Task taskKB(50, sendKey); // Default send kb codes every 50 ms
 Task taskInitialized(1000, sendInitialized);
@@ -169,7 +172,7 @@ extern uint8_t outputU2F;
 //Arduino Setup 
 /*************************************/
 void setup() {
-  delay(200);
+  delay(100);
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
@@ -193,39 +196,40 @@ void setup() {
   /*************************************/
   uint8_t *ptr;
   ptr = nonce;
-  int isinit = onlykey_flashget_noncehash (ptr, 32);
+  initcheck = onlykey_flashget_noncehash (ptr, 32); //Check if first time use
+  integrityctr1++;
+  /* //dump flash storage
+  Serial.println(initcheck);
+  char temp[32];
+  wipeEEPROM();
+  unsigned long readadr = flashstorestart;
+  while (readadr <= flashend) { 
+    for(int i =0; i<=2048; i=i+4){ 
+      sprintf (temp, "%.8X", *((unsigned int*)readadr));
+      Serial.print(temp);
+      readadr = readadr + 4;
+    }
+    Serial.println();
+  }
+  */
   //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
-  if(FTFL_FSEC==0xDE) { 
+  if(!initcheck) { 
       int nn = 0;
       wipeEEPROM();
-      nn=flashSecurityLockBits();
-      #ifdef DEBUG
-      Serial.print("Flash security bits ");
-      if(nn) Serial.print("not ");
-      Serial.println("written successfully");
-      #endif
+      if (FTFL_FSEC!=0x44) {
+        nn=flashSecurityLockBits();
+        #ifdef DEBUG
+        Serial.print("Flash security bits ");
+        if(nn) Serial.print("not ");
+        Serial.println("written successfully");
+        #endif
+      }
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       #ifdef DEBUG
-      Serial.println("UNLOCKED, FIRST TIME USE");
-      // For debuging to display flash sector contents
-      // Compare to intel HEX parsed with http://www.dlwrr.com/electronics/tools/hexview/hexview.html
-      //  uintptr_t readadr = 0x0;
-       // int j = 0;
-       // for(int i =0; i<256000; i=i+4){
-        //Serial.printf("From 0x%X", readadr);
-        //Serial.printf("successful. Read Value:0x%X\r\n", *((unsigned int*)readadr));
-       // Serial.printf("%X\r", *((unsigned int*)readadr));
-       // readadr = readadr + 4;
-       // j++;
-       // delay(2);
-       // if (j>=4) {
-       //   Serial.println();
-       //   j=0;
-       // }
-       // }
+      Serial.println("UNLOCKED, NO PIN SET");
       #endif
-  } else if(FTFL_FSEC==0x44 && isinit>=1) { 
+  } else if(FTFL_FSEC==0x44 && initcheck) { 
         ptr = phash;
         onlykey_flashget_pinhash (ptr, 32); //store PIN hash
         ptr = sdhash;
@@ -258,13 +262,10 @@ void setup() {
         Serial.println("INITIALIZED");
         #endif
         SoftTimer.add(&taskInitialized);
-  } else {
-        unlocked = true;
-        initialized = false;
-        #ifdef DEBUG
-        Serial.println("UNLOCKED, PIN HAS NOT BEEN SET");
-        #endif
-  } 
+  } else { //Glitch detect, somehow device is initialized but flash security is not on
+    CPU_RESTART();
+  }
+  integrityctr2++;
   /*************************************/
   //Initialize the random number generator with analog noise, stored NONCE, and chip ID
   /*************************************/
@@ -313,6 +314,22 @@ void checkKey(Task* me) {
   static int key_press = 0;
   static int key_on = 0;
   static int key_off = 0;
+
+
+  if (!digitalRead(33)) { //Trigger bootloader to load firmware by PTA4 low for 3 sec
+    elapsedMillis waiting;     
+    int jumptobootloader = 0;
+    while (waiting < 3000) {
+      delay(100);
+      jumptobootloader = jumptobootloader + digitalRead(33);
+    }
+    if (jumptobootloader==0) {
+    CLEAR_JUMP_FLAG(); //Go to bootloader
+    SET_FWLOAD_FLAG(); //Firmware ready to load
+    CPU_RESTART(); //Reboot
+    }
+  }
+
 
   if (unlocked) {
     recvmsg();
@@ -573,6 +590,7 @@ void payload(int duration) {
           }
           idletimer=0; 
           unlocked = true;
+          integrityctr2=1;
           if (configmode) {
             #ifdef OK_Color
             NEO_Color = 1; //Red

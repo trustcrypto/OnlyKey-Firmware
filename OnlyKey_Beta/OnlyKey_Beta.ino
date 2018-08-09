@@ -13,11 +13,11 @@
  *    copyright notice, this list of conditions and the following
  *    disclaimer in the documentation and/or other materials provided
  *    with the distribution.
- *      
+ *
  * 3. All advertising materials mentioning features or use of this
  *    software must display the following acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (http://www.crp.to/ok)" 
+ *    the OnlyKey Project (http://www.crp.to/ok)"
  *
  * 4. The names "OnlyKey" and "OnlyKey Project" must not be used to
  *    endorse or promote products derived from this software without
@@ -25,57 +25,57 @@
  *    admin@crp.to.
  *
  * 5. Products derived from this software may not be called "OnlyKey"
- *    nor may "OnlyKey" or "CryptoTrust" appear in their names without 
+ *    nor may "OnlyKey" or "CryptoTrust" appear in their names without
  *    specific prior written permission. For written permission, please
  *    contact admin@crp.to.
  *
  * 6. Redistributions of any form whatsoever must retain the following
  *    acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (http://www.crp.to/ok)" 
+ *    the OnlyKey Project (http://www.crp.to/ok)"
  *
- * 7. Redistributions in any form must be accompanied by information on 
- *    how to obtain complete source code for this software and any 
- *    accompanying software that uses this software. The source code 
- *    must either be included in the distribution or be available for 
- *    no more than the cost of distribution plus a nominal fee, and must 
- *    be freely redistributable under reasonable conditions. For a 
- *    binary file, complete source code means the source code for all 
- *    modules it contains. 
+ * 7. Redistributions in any form must be accompanied by information on
+ *    how to obtain complete source code for this software and any
+ *    accompanying software that uses this software. The source code
+ *    must either be included in the distribution or be available for
+ *    no more than the cost of distribution plus a nominal fee, and must
+ *    be freely redistributable under reasonable conditions. For a
+ *    binary file, complete source code means the source code for all
+ *    modules it contains.
  *
  *
  * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
- * GRANTED BY THIS LICENSE. IF SOFTWARE RECIPIENT INSTITUTES PATENT LITIGATION 
+ * GRANTED BY THIS LICENSE. IF SOFTWARE RECIPIENT INSTITUTES PATENT LITIGATION
  * AGAINST ANY ENTITY (INCLUDING A CROSS-CLAIM OR COUNTERCLAIM IN A LAWSUIT)
- * ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE SOFTWARE WITH 
- * OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE RECIPIENT'S PATENT(S), 
- * THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY THIS LICENSE SHALL TERMINATE 
- * AS OF THE DATE SUCH LITIGATION IS FILED. IF ANY PROVISION OF THIS AGREEMENT 
+ * ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE SOFTWARE WITH
+ * OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE RECIPIENT'S PATENT(S),
+ * THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY THIS LICENSE SHALL TERMINATE
+ * AS OF THE DATE SUCH LITIGATION IS FILED. IF ANY PROVISION OF THIS AGREEMENT
  * IS INVALID OR UNENFORCEABLE UNDER APPLICABLE LAW, IT SHALL NOT AFFECT
- * THE VALIDITY OR ENFORCEABILITY OF THE REMAINDER OF THE TERMS OF THIS 
- * AGREEMENT, AND WITHOUT FURTHER ACTION BY THE PARTIES HERETO, SUCH 
- * PROVISION SHALL BE REFORMED TO THE MINIMUM EXTENT NECESSARY TO MAKE 
- * SUCH PROVISION VALID AND ENFORCEABLE. ALL SOFTWARE RECIPIENT'S RIGHTS UNDER 
- * THIS AGREEMENT SHALL TERMINATE IF IT FAILS TO COMPLY WITH ANY OF THE MATERIAL 
- * TERMS OR CONDITIONS OF THIS AGREEMENT AND DOES NOT CURE SUCH FAILURE IN 
- * A REASONABLE PERIOD OF TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE. 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+ * THE VALIDITY OR ENFORCEABILITY OF THE REMAINDER OF THE TERMS OF THIS
+ * AGREEMENT, AND WITHOUT FURTHER ACTION BY THE PARTIES HERETO, SUCH
+ * PROVISION SHALL BE REFORMED TO THE MINIMUM EXTENT NECESSARY TO MAKE
+ * SUCH PROVISION VALID AND ENFORCEABLE. ALL SOFTWARE RECIPIENT'S RIGHTS UNDER
+ * THIS AGREEMENT SHALL TERMINATE IF IT FAILS TO COMPLY WITH ANY OF THE MATERIAL
+ * TERMS OR CONDITIONS OF THIS AGREEMENT AND DOES NOT CURE SUCH FAILURE IN
+ * A REASONABLE PERIOD OF TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR 
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
  * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
- * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 
-#define DEBUG //Enable Serial Monitor 
+#define DEBUG //Enable Serial Monitor
 #define US_VERSION //Define for US Version Firmware
-#define OK_Color //Color Version 
+#define OK_Color //Color Version
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -197,7 +197,7 @@ extern uint8_t outputU2F;
 extern uint8_t sshchallengemode;
 extern uint8_t pgpchallengemode;
 /*************************************/
-//Arduino Setup 
+//Arduino Setup
 /*************************************/
 void setup() {
   delay(100);
@@ -207,7 +207,7 @@ void setup() {
   #ifdef US_VERSION
   PDmode = false;
   #else
-  PDmode = true; 
+  PDmode = true;
   #endif
   /*************************************/
   //PIN Assigments
@@ -231,8 +231,8 @@ void setup() {
   char temp[32];
   wipeEEPROM();
   unsigned long readadr = flashstorestart;
-  while (readadr <= flashend) { 
-    for(int i =0; i<=2048; i=i+4){ 
+  while (readadr <= flashend) {
+    for(int i =0; i<=2048; i=i+4){
       sprintf (temp, "%.8X", *((unsigned int*)readadr));
       Serial.print(temp);
       readadr = readadr + 4;
@@ -241,7 +241,7 @@ void setup() {
   }
   */
   //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
-  if(!initcheck) { 
+  if(!initcheck) {
       int nn = 0;
       wipeEEPROM();
       if (FTFL_FSEC!=0x44) {
@@ -257,16 +257,14 @@ void setup() {
       #ifdef DEBUG
       Serial.println("UNLOCKED, NO PIN SET");
       #endif
-      eeprom_write_byte(0x00, 0xAE); //Go to firmware
-      eeprom_write_byte((unsigned char *)0x01, 0xAE); //Firmware not ready to load
-  } else if(FTFL_FSEC==0x44 && initcheck) { 
+  } else if(FTFL_FSEC==0x44 && initcheck) {
         ptr = phash;
         onlykey_flashget_pinhash (ptr, 32); //store PIN hash
         ptr = sdhash;
         onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
         ptr = pdhash;
         onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
-        ptr = TYPESPEED;  
+        ptr = TYPESPEED;
         onlykey_eeget_typespeed(ptr);
         #ifdef DEBUG
         Serial.println("typespeed = ");
@@ -276,8 +274,8 @@ void setup() {
           TYPESPEED[0] = 4;
          } else if (*ptr  <= 10) {
           TYPESPEED[0]=*ptr;
-         }   
-        ptr = TIMEOUT; 
+         }
+        ptr = TIMEOUT;
         onlykey_eeget_timeout(ptr);
         ptr = KeyboardLayout;
         onlykey_eeget_keyboardlayout(ptr);
@@ -310,9 +308,9 @@ void setup() {
   #ifdef DEBUG
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
-  Serial.println(FTFL_FSEC, HEX); 
+  Serial.println(FTFL_FSEC, HEX);
   Serial.print("PDmode = ");
-  Serial.println(PDmode); 
+  Serial.println(PDmode);
   #endif
   rngloop(); //Start RNG
   #ifdef OK_Color
@@ -337,7 +335,7 @@ void setup() {
 }
 /*************************************/
 
-extern elapsedMillis idletimer; 
+extern elapsedMillis idletimer;
 //Main Loop, Read Key Press Using Capacitive Touch
 /*************************************/
 void checkKey(Task* me) {
@@ -347,15 +345,15 @@ void checkKey(Task* me) {
 
 
   if (!digitalRead(33)) { //Trigger bootloader to load firmware by PTA4 low for 3 sec
-    elapsedMillis waiting;     
+    elapsedMillis waiting;
     int jumptobootloader = 0;
     while (waiting < 3000) {
       delay(100);
       jumptobootloader = jumptobootloader + digitalRead(33);
     }
     if (jumptobootloader==0) {
-    eeprom_write_byte(0x00, 0); //Go to bootloader
-    eeprom_write_byte((unsigned char *)0x01, 0); //Firmware ready to load
+    eeprom_write_byte(0x00, 1); //Go to bootloader
+    eeprom_write_byte((unsigned char *)0x01, 1); //Firmware ready to load
     CPU_RESTART(); //Reboot
     }
   }
@@ -368,7 +366,7 @@ void checkKey(Task* me) {
     yubikey_incr_time();
     #endif
     if (TIMEOUT[0] && idletimer >= (TIMEOUT[0]*60000)) {
-      unlocked = false; 
+      unlocked = false;
       firsttime = true;
       password.reset(); //reset the guessed password to NULL
       pass_keypress=1;
@@ -382,55 +380,55 @@ void checkKey(Task* me) {
       #endif
       fadeon();
   }
-  
+
     //Uncomment to test RNG
     //RNG2(data, 32);
     //printHex(data, 32);
 
   rngloop(); //Perform regular housekeeping on the random number generator.
-  
+
   if (touchread1 > (touchread1ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '5';
     //Serial.println(touchread1);
-  }      
+  }
     else if (touchread2 > (touchread2ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '2';
     //Serial.println(touchread2);
-  } 
+  }
     else if (touchread3 > (touchread3ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '1';
     //Serial.println(touchread3);
-  } 
+  }
    else if (touchread4 > (touchread4ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '3';
     //Serial.println(touchread4);
-  } 
+  }
    else if (touchread5 > (touchread5ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '4';
     //Serial.println(touchread5);
-  } 
+  }
    else if (touchread6 > (touchread6ref+100)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '6';
     //Serial.println(touchread6);
-  } 
+  }
 
 
   else {
@@ -475,30 +473,30 @@ void sendKey(Task* me) {
     }
     else if ((uint8_t)*pos == 1) {
         if (!isfade) {
-          Keyboard.press(KEY_TAB); 
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);  
-          Keyboard.releaseAll(); 
-          delay(((TYPESPEED[0]*TYPESPEED[0])*2)); 
+          Keyboard.press(KEY_TAB);
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+          Keyboard.releaseAll();
+          delay(((TYPESPEED[0]*TYPESPEED[0])*2));
         }
-        pos++;  
-    } 
+        pos++;
+    }
     else if ((uint8_t)*pos == 2) {
         if (!isfade) {
           Keyboard.press(KEY_RETURN);
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
-          Keyboard.releaseAll(); 
-          delay(((TYPESPEED[0]*TYPESPEED[0])*2)); 
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+          Keyboard.releaseAll();
+          delay(((TYPESPEED[0]*TYPESPEED[0])*2));
         }
-        pos++;  
-    } 
+        pos++;
+    }
     else if ((uint8_t)*pos == 9) {
         if(PDmode) return;
         #ifdef US_VERSION
         #ifdef DEBUG
         Serial.println("Starting U2F...");
         #endif
-        u2f_button = 1;         
-        uECC_set_rng(&RNG2); 
+        u2f_button = 1;
+        uECC_set_rng(&RNG2);
         unsigned long u2fwait = millis() + 4000;
         while(u2f_button && millis() < u2fwait) {
         recvmsg();
@@ -511,15 +509,15 @@ void sendKey(Task* me) {
         return;
     }
     else if ((uint8_t)*pos >= 10 && (uint8_t)*pos <= 31) {
-        if (!isfade) delay((*pos - 10)*1000);   
-        pos++;  
-    } 
+        if (!isfade) delay((*pos - 10)*1000);
+        pos++;
+    }
     else if (*pos){
         if (!isfade) {
           Keyboard.press(*pos);
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
-          Keyboard.releaseAll(); 
-          delay(((TYPESPEED[0]*TYPESPEED[0])*2)); 
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+          Keyboard.releaseAll();
+          delay(((TYPESPEED[0]*TYPESPEED[0])*2));
         }
         pos++;
     }
@@ -560,7 +558,7 @@ void payload(int duration) {
         }
     return;
     }
-   
+
    if (firsttime) //Get failed login counter from eeprom and increment for new login attempt
    {
    onlykey_eeget_failedlogins (ptr);
@@ -594,17 +592,17 @@ void payload(int duration) {
    pass_attempts[0] = 0;
    return;
    }
-   onlykey_eeset_failedlogins (ptr); 
+   onlykey_eeset_failedlogins (ptr);
    firsttime = false;
    }
    password.append(button_selected);
-   if (unlocked || password.hashevaluate() || password.pdhashevaluate()) { 
+   if (unlocked || password.hashevaluate() || password.pdhashevaluate()) {
         if (unlocked != true) //A correct PIN was just entered do the following for first login
         {
           onlykey_eeset_failedlogins(0); //Set failed login counter to 0
           password.reset(); //reset the guessed password to NULL
           session_attempts=0;
-          hidprint(UNLOCKED); 
+          hidprint(UNLOCKED);
           SoftTimer.remove(&taskInitialized);
           #ifdef DEBUG
           Serial.println("UNLOCKED");
@@ -613,12 +611,12 @@ void payload(int duration) {
           fadeoff(85);
           if (!PDmode) {
 #ifdef US_VERSION
-        yubikeyinit(); 
+        yubikeyinit();
           U2Finit();
           onlykey_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
 #endif
           }
-          idletimer=0; 
+          idletimer=0;
           unlocked = true;
           integrityctr2=1;
           if (configmode) {
@@ -629,13 +627,13 @@ void payload(int duration) {
           }
           return;
         }
-        else if (PINSET==0 && !initialized) { 
+        else if (PINSET==0 && !initialized) {
         return;
         }
-        else if (PINSET==0) { 
+        else if (PINSET==0) {
         }
-        else if (PINSET<=3) { 
-          
+        else if (PINSET<=3) {
+
             #ifdef DEBUG
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
@@ -669,7 +667,7 @@ void payload(int duration) {
         Serial.print("Challenge1 entered");
         Serial.println(button_selected-'0');
         #endif
-        CRYPTO_AUTH++; 
+        CRYPTO_AUTH++;
         #endif
         return;
       } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2 && isfade) {
@@ -677,7 +675,7 @@ void payload(int duration) {
         Serial.print("Challenge2 entered");
         Serial.println(button_selected-'0');
         #endif
-        CRYPTO_AUTH++; 
+        CRYPTO_AUTH++;
         return;
       } else if (CRYPTO_AUTH == 3 && (button_selected==Challenge_button3 || sshchallengemode==1 || pgpchallengemode==1) && isfade) {
         if (PDmode) return;
@@ -688,12 +686,12 @@ void payload(int duration) {
         #endif
         CRYPTO_AUTH = 4;
         sshchallengemode = 0;
-        pgpchallengemode = 0; 
+        pgpchallengemode = 0;
         if (!outputU2F) {
         Keyboard.press(KEY_RETURN);
-        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
-        Keyboard.releaseAll(); 
-        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
+        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+        Keyboard.releaseAll();
+        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
         }
         if(packet_buffer_details[0] == 0xED) {
           recv_buffer[4] = packet_buffer_details[0];
@@ -720,9 +718,9 @@ void payload(int duration) {
           hidprint("Error incorrect challenge was entered");
           analogWrite(BLINKPIN, 255); //LED ON
           Keyboard.press(KEY_RETURN);
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);  
-          Keyboard.releaseAll(); 
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8); 
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+          Keyboard.releaseAll();
+          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
         }
         return;
         #endif
@@ -742,7 +740,7 @@ void payload(int duration) {
         return;
       } else if (duration >= 50 && button_selected=='6' && !isfade) {
         configmode=true;
-        unlocked = false; 
+        unlocked = false;
         firsttime = true;
         password.reset(); //reset the guessed password to NULL
         pass_keypress=1;
@@ -758,14 +756,14 @@ void payload(int duration) {
         pos = keybuffer;
         SoftTimer.remove(&taskKey);
         SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
-      } 
+      }
       return;
   }
    else if (password.sdhashevaluate()) {
     #ifdef DEBUG
-    Serial.println("Self Destruct PIN entered"); 
+    Serial.println("Self Destruct PIN entered");
     #endif
-    factorydefault(); 
+    factorydefault();
    }
    else {
     if (pass_keypress < 10) {
@@ -775,8 +773,8 @@ void payload(int duration) {
         Serial.print("Number of keys entered for this passcode = ");
         Serial.println(pass_keypress);
         #endif
-        pass_keypress++; 
-        return;  
+        pass_keypress++;
+        return;
       } else {
         firsttime = true;
         session_attempts++;
@@ -810,14 +808,14 @@ void gen_press(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
-  idletimer=0; 
+  idletimer=0;
   int slot;
   if (PDmode) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
   }
-      process_slot(slot);   
+      process_slot(slot);
 }
 /*************************************/
 //Trigger on long button press
@@ -830,14 +828,14 @@ void gen_hold(void) {
     hidprint("UNINITIALIZED - You must set a password first");
     return;
   }
-  idletimer=0; 
+  idletimer=0;
   int slot;
   if (PDmode) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
   }
-      process_slot(slot+6);   
+      process_slot(slot+6);
 }
 /*************************************/
 //Load Set Values to Keybuffer
@@ -1045,7 +1043,7 @@ void process_slot(int s) {
         #endif
         index=passwordlength+index;
       }
-      memset(temp, 0, 64); //Wipe all data from buffer    
+      memset(temp, 0, 64); //Wipe all data from buffer
       if(addchar2)
       {
         #ifdef DEBUG
@@ -1066,7 +1064,7 @@ void process_slot(int s) {
         index++;
         }
       }
-      memset(temp, 0, 64); //Wipe all data from buffer    
+      memset(temp, 0, 64); //Wipe all data from buffer
       onlykey_eeget_delay3(ptr, slot);
       if(temp[0] > 0)
       {
@@ -1083,7 +1081,7 @@ void process_slot(int s) {
         index++;
         }
       }
-      memset(temp, 0, 64); //Wipe all data from buffer 
+      memset(temp, 0, 64); //Wipe all data from buffer
       if(addchar5)
       {
         #ifdef DEBUG
@@ -1109,7 +1107,7 @@ void process_slot(int s) {
             Serial.print(temp[z], HEX);
             }
            Serial.println();
-          
+
         Serial.print("TOTP Key Length = ");
         Serial.println(otplength);
         #endif
@@ -1190,6 +1188,3 @@ void sendInitialized(Task* me) {
     Serial.println("INITIALIZED");
     #endif
 }
-
-
-

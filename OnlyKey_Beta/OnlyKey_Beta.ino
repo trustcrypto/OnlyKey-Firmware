@@ -99,7 +99,7 @@
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-extern bool PDmode;
+extern uint8_t profile2mode;
 #ifdef US_VERSION
 #include "yksim.h"
 #include "uECC.h"
@@ -166,9 +166,10 @@ extern unsigned int touchread6ref;
 /*************************************/
 //PIN HASH
 /*************************************/
-extern uint8_t phash[32];
+extern uint8_t profilekey[32];
+extern uint8_t p1hash[32];
 extern uint8_t sdhash[32];
-extern uint8_t pdhash[32];
+extern uint8_t p2hash[32];
 extern uint8_t nonce[32];
 extern int initcheck;
 extern int integrityctr1;
@@ -205,9 +206,9 @@ void setup() {
   Serial.begin(9600);
   #endif
   #ifdef US_VERSION
-  PDmode = false;
+  profile2mode = 0;
   #else
-  PDmode = true;
+  profile2mode = NOENCRYPT; 
   #endif
   /*************************************/
   //PIN Assigments
@@ -241,29 +242,29 @@ void setup() {
   }
   */
   //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
+   if (FTFL_FSEC!=0x44) {
+    int nn = 0;
+    nn=flashSecurityLockBits();
+    #ifdef DEBUG
+    Serial.print("Flash security bits ");
+    if(nn) Serial.print("not ");
+    Serial.println("written successfully");
+    #endif
+  }
   if(!initcheck) {
-      int nn = 0;
       wipeEEPROM();
-      if (FTFL_FSEC!=0x44) {
-        nn=flashSecurityLockBits();
-        #ifdef DEBUG
-        Serial.print("Flash security bits ");
-        if(nn) Serial.print("not ");
-        Serial.println("written successfully");
-        #endif
-      }
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       #ifdef DEBUG
       Serial.println("UNLOCKED, NO PIN SET");
       #endif
   } else if(FTFL_FSEC==0x44 && initcheck) {
-        ptr = phash;
-        onlykey_flashget_pinhash (ptr, 32); //store PIN hash
+        ptr = p1hash;
+        onlykey_flashget_pinhashpublic (ptr, 32); //store PIN hash
         ptr = sdhash;
         onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
-        ptr = pdhash;
-        onlykey_flashget_plausdenyhash (ptr); //store plausible deniability PIN hash
+        ptr = p2hash;
+        onlykey_flashget_2ndpinhashpublic (ptr); //store plausible deniability PIN hash
         ptr = TYPESPEED;
         onlykey_eeget_typespeed(ptr);
         #ifdef DEBUG
@@ -309,8 +310,8 @@ void setup() {
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX);
-  Serial.print("PDmode = ");
-  Serial.println(PDmode);
+  Serial.print("profile2mode = ");
+  Serial.println(profile2mode);
   #endif
   rngloop(); //Start RNG
   #ifdef OK_Color
@@ -328,7 +329,6 @@ void setup() {
  configmode=true;
  initialized=true;
 */
-
 
 
   SoftTimer.add(&taskKey);
@@ -370,6 +370,7 @@ void checkKey(Task* me) {
       firsttime = true;
       password.reset(); //reset the guessed password to NULL
       pass_keypress=1;
+      memset(profilekey, 0, 32);  
     }
     }
   }
@@ -490,7 +491,7 @@ void sendKey(Task* me) {
         pos++;
     }
     else if ((uint8_t)*pos == 9) {
-        if(PDmode) return;
+        if(profile2mode) return;
         #ifdef US_VERSION
         #ifdef DEBUG
         Serial.println("Starting U2F...");
@@ -558,7 +559,7 @@ void payload(int duration) {
         }
     return;
     }
-
+   integrityctr1++;
    if (firsttime) //Get failed login counter from eeprom and increment for new login attempt
    {
    onlykey_eeget_failedlogins (ptr);
@@ -571,10 +572,10 @@ void payload(int duration) {
     #endif
     if (sincelastregularlogin[0] >= 20) {
     for (int i =0; i<32; i++) {
-      phash[i] = 0xFF;
+      p1hash[i] = 0xFF;
     }
-    ptr = phash;
-    onlykey_flashset_pinhash (ptr); //permanently wipe pinhash
+    ptr = p1hash;
+    onlykey_flashset_pinhashpublic (ptr); //permanently wipe pinhash
     onlykey_eeset_sincelastregularlogin (0);
    } else {
     sincelastregularlogin[0]++;
@@ -582,7 +583,9 @@ void payload(int duration) {
    }
    }
    ptr = pass_attempts;
+   integrityctr2++;
    pass_attempts[0]++;
+   integrityctr1++;
    if (pass_attempts[0] > 10) {
     #ifdef DEBUG
     Serial.println("Password attempts exhausted");
@@ -595,8 +598,11 @@ void payload(int duration) {
    onlykey_eeset_failedlogins (ptr);
    firsttime = false;
    }
+   integrityctr2++;
    password.append(button_selected);
-   if (unlocked || password.hashevaluate() || password.pdhashevaluate()) {
+   integrityctr1++;
+   if (unlocked || password.profile1hashevaluate() || password.profile2hashevaluate()) {
+    integrityctr2++;
         if (unlocked != true) //A correct PIN was just entered do the following for first login
         {
           onlykey_eeset_failedlogins(0); //Set failed login counter to 0
@@ -609,7 +615,7 @@ void payload(int duration) {
           #endif
           fadeon();
           fadeoff(85);
-          if (!PDmode) {
+          if (profile2mode!=NOENCRYPT) {
 #ifdef US_VERSION
         yubikeyinit();
           U2Finit();
@@ -618,7 +624,6 @@ void payload(int duration) {
           }
           idletimer=0;
           unlocked = true;
-          integrityctr2=1;
           if (configmode) {
             #ifdef OK_Color
             NEO_Color = 1; //Red
@@ -627,7 +632,7 @@ void payload(int duration) {
           }
           return;
         }
-        else if (PINSET==0 && !initialized) {
+        else if (PINSET==0 && !initcheck) {
         return;
         }
         else if (PINSET==0) {
@@ -647,21 +652,21 @@ void payload(int duration) {
             #endif
             return;
         }
-        else {
-            if(!PDmode){
+        else if (PINSET<=9) {
+            if(profile2mode!=NOENCRYPT){
             #ifdef US_VERSION
             #ifdef DEBUG
-            Serial.print("PD password appended with ");
+            Serial.print("2nd profile password appended with ");
             Serial.println(button_selected-'0');
             #endif
             #endif
             }
             return;
-        }
+        }      
       Keyboard.begin();
       *keybuffer = '\0';
       if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
-        if (PDmode) return;
+        if (profile2mode==NOENCRYPT) return;
         #ifdef US_VERSION
         #ifdef DEBUG
         Serial.print("Challenge1 entered");
@@ -678,7 +683,7 @@ void payload(int duration) {
         CRYPTO_AUTH++;
         return;
       } else if (CRYPTO_AUTH == 3 && (button_selected==Challenge_button3 || sshchallengemode==1 || pgpchallengemode==1) && isfade) {
-        if (PDmode) return;
+        if (profile2mode==NOENCRYPT) return;
         #ifdef US_VERSION
         #ifdef DEBUG
         Serial.print("Challenge3 entered");
@@ -707,7 +712,7 @@ void payload(int duration) {
         #endif
         return;
       } else if (CRYPTO_AUTH) { //Wrong challenge was entered
-        if (PDmode) return;
+        if (profile2mode==NOENCRYPT) return;
         #ifdef US_VERSION
         CRYPTO_AUTH = 0;
         Challenge_button1 = 0;
@@ -725,7 +730,7 @@ void payload(int duration) {
         return;
         #endif
       } else if (duration >= 50 && button_selected=='1' && !isfade) {
-        if (PDmode) return;
+        if (profile2mode==NOENCRYPT) return;
         #ifdef US_VERSION
         SoftTimer.remove(&taskKey);
         backup();
@@ -739,10 +744,12 @@ void payload(int duration) {
         GETKEYLABELS(1);
         return;
       } else if (duration >= 50 && button_selected=='6' && !isfade) {
+        integrityctr1++;
         configmode=true;
         unlocked = false;
         firsttime = true;
         password.reset(); //reset the guessed password to NULL
+        integrityctr2++;
         pass_keypress=1;
         return;
       } else {
@@ -766,6 +773,7 @@ void payload(int duration) {
     factorydefault();
    }
    else {
+    integrityctr2++;
     if (pass_keypress < 10) {
         #ifdef DEBUG
         Serial.print("password appended with ");
@@ -801,16 +809,9 @@ void payload(int duration) {
 //Trigger on short button press
 /*************************************/
 void gen_press(void) {
-  if (!initialized) {
-    #ifdef DEBUG
-    Serial.println("UNINITIALIZED - You must set a password first");
-    #endif
-    hidprint("UNINITIALIZED - You must set a password first");
-    return;
-  }
   idletimer=0;
   int slot;
-  if (PDmode) {
+  if (profile2mode) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
@@ -821,16 +822,9 @@ void gen_press(void) {
 //Trigger on long button press
 /*************************************/
 void gen_hold(void) {
-  if (!initialized) {
-    #ifdef DEBUG
-    Serial.println("UNINITIALIZED - You must set a password first");
-    #endif
-    hidprint("UNINITIALIZED - You must set a password first");
-    return;
-  }
   idletimer=0;
   int slot;
-  if (PDmode) {
+  if (profile2mode) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
@@ -860,7 +854,6 @@ void process_slot(int s) {
   uint8_t *ptr;
   int slot=s;
   index = 0;
-
       onlykey_eeget_addchar(&addchar5, slot);
       #ifdef DEBUG
       Serial.println("Additional Character");
@@ -887,7 +880,7 @@ void process_slot(int s) {
         Serial.print("URL Length = ");
         Serial.println(urllength);
         #endif
-        if (!PDmode) {
+        if (profile2mode!=NOENCRYPT) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < urllength; z++) {
@@ -896,7 +889,7 @@ void process_slot(int s) {
             Serial.println();
         #endif
         #ifdef US_VERSION
-        aes_gcm_decrypt(temp, slot, 15, phash, urllength);
+        aes_gcm_decrypt(temp, slot, 15, profilekey, urllength);
         #endif
         }
         ByteToChar2(temp, keybuffer, urllength, index);
@@ -950,7 +943,7 @@ void process_slot(int s) {
         Serial.print("Username Length = ");
         Serial.println(usernamelength);
         #endif
-        if (!PDmode) {
+        if (profile2mode!=NOENCRYPT) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < usernamelength; z++) {
@@ -959,7 +952,7 @@ void process_slot(int s) {
             Serial.println();
         #endif
         #ifdef US_VERSION
-        aes_gcm_decrypt(temp, slot, 2, phash, usernamelength);
+        aes_gcm_decrypt(temp, slot, 2, profilekey, usernamelength);
         #endif
         }
         ByteToChar2(temp, keybuffer, usernamelength, index);
@@ -1021,7 +1014,7 @@ void process_slot(int s) {
         Serial.print("Password Length = ");
         Serial.println(passwordlength);
         #endif
-        if (!PDmode) {
+        if (profile2mode!=NOENCRYPT) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < passwordlength; z++) {
@@ -1030,7 +1023,7 @@ void process_slot(int s) {
             Serial.println();
           #endif
         #ifdef US_VERSION
-        aes_gcm_decrypt(temp, slot, 5, phash, passwordlength);
+        aes_gcm_decrypt(temp, slot, 5, profilekey, passwordlength);
         #endif
         }
         ByteToChar2(temp, keybuffer, passwordlength, index);
@@ -1112,7 +1105,7 @@ void process_slot(int s) {
         Serial.println(otplength);
         #endif
           #ifdef US_VERSION
-          if (!PDmode) aes_gcm_decrypt(temp, slot, 9, phash, otplength);
+          if (profile2mode!=NOENCRYPT) aes_gcm_decrypt(temp, slot, 9, profilekey, otplength);
           #endif
         ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG
@@ -1147,7 +1140,7 @@ void process_slot(int s) {
           index=index+6;
           memset(temp, 0, 64); //Wipe all data from buffer
         }
-        if(temp[0] == 121 && !PDmode) {
+        if(temp[0] == 121 && profile2mode!=NOENCRYPT) {
         #ifdef DEBUG
         Serial.println("Generating Yubico OTP...");
         #endif
@@ -1156,7 +1149,7 @@ void process_slot(int s) {
         index=index+44;
         #endif
         }
-        if(temp[0] == 117 && !PDmode) { //U2F
+        if(temp[0] == 117 && profile2mode!=NOENCRYPT) { //U2F
         keybuffer[index] = 9;
         index++;
         }

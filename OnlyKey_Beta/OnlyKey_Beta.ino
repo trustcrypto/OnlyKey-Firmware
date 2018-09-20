@@ -73,7 +73,7 @@
  */
 
 
-#define DEBUG //Enable Serial Monitor
+//#define DEBUG //Enable Serial Monitor
 #define US_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
 
@@ -665,6 +665,10 @@ void payload(int duration) {
         }      
       Keyboard.begin();
       *keybuffer = '\0';
+      #ifdef DEBUG
+      Serial.print("Button selected");
+      Serial.println(button_selected-'0');
+      #endif
       if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
         if (profile2mode==NOENCRYPT) return;
         #ifdef US_VERSION
@@ -682,7 +686,7 @@ void payload(int duration) {
         #endif
         CRYPTO_AUTH++;
         return;
-      } else if (CRYPTO_AUTH == 3 && (button_selected==Challenge_button3 || sshchallengemode==1 || pgpchallengemode==1) && isfade) {
+      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade) || (sshchallengemode==1 && isfade) || (pgpchallengemode==1 && isfade)) {
         if (profile2mode==NOENCRYPT) return;
         #ifdef US_VERSION
         #ifdef DEBUG

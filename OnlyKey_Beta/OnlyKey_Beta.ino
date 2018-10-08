@@ -73,7 +73,7 @@
  */
 
 
-//#define DEBUG //Enable Serial Monitor
+#define DEBUG //Enable Serial Monitor
 #define US_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
 
@@ -99,7 +99,7 @@
 //Additional Libraries to Load for US Version
 //These libraries will only be used if US_Version is defined
 /*************************************/
-extern uint8_t profile2mode;
+extern uint8_t profilemode;
 #ifdef US_VERSION
 #include "yksim.h"
 #include "uECC.h"
@@ -206,9 +206,9 @@ void setup() {
   Serial.begin(9600);
   #endif
   #ifdef US_VERSION
-  profile2mode = 0;
+  profilemode = STDPROFILE1;
   #else
-  profile2mode = NOENCRYPT; 
+  profilemode = NONENCRYPTEDPROFILE; 
   #endif
   /*************************************/
   //PIN Assigments
@@ -310,8 +310,6 @@ void setup() {
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_failedlogins);
   Serial.println(FTFL_FSEC, HEX);
-  Serial.print("profile2mode = ");
-  Serial.println(profile2mode);
   #endif
   rngloop(); //Start RNG
   #ifdef OK_Color
@@ -333,6 +331,7 @@ void setup() {
 
   SoftTimer.add(&taskKey);
 }
+
 /*************************************/
 
 extern elapsedMillis idletimer;
@@ -342,7 +341,6 @@ void checkKey(Task* me) {
   static int key_press = 0;
   static int key_on = 0;
   static int key_off = 0;
-
 
   if (!digitalRead(33)) { //Trigger bootloader to load firmware by PTA4 low for 3 sec
     elapsedMillis waiting;
@@ -358,10 +356,9 @@ void checkKey(Task* me) {
     }
   }
 
-
   if (unlocked) {
     recvmsg();
-    if(initialized) {
+    if(initialized && initcheck) {
     #ifdef US_VERSION
     yubikey_incr_time();
     #endif
@@ -491,7 +488,7 @@ void sendKey(Task* me) {
         pos++;
     }
     else if ((uint8_t)*pos == 9) {
-        if(profile2mode) return;
+        if(profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
         #ifdef DEBUG
         Serial.println("Starting U2F...");
@@ -615,7 +612,7 @@ void payload(int duration) {
           #endif
           fadeon();
           fadeoff(85);
-          if (profile2mode!=NOENCRYPT) {
+          if (profilemode!=NONENCRYPTEDPROFILE) {
 #ifdef US_VERSION
         yubikeyinit();
           U2Finit();
@@ -653,7 +650,7 @@ void payload(int duration) {
             return;
         }
         else if (PINSET<=9) {
-            if(profile2mode!=NOENCRYPT){
+            if(profilemode!=NONENCRYPTEDPROFILE){
             #ifdef US_VERSION
             #ifdef DEBUG
             Serial.print("2nd profile password appended with ");
@@ -670,7 +667,7 @@ void payload(int duration) {
       Serial.println(button_selected-'0');
       #endif
       if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
-        if (profile2mode==NOENCRYPT) return;
+        if (profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
         #ifdef DEBUG
         Serial.print("Challenge1 entered");
@@ -687,7 +684,7 @@ void payload(int duration) {
         CRYPTO_AUTH++;
         return;
       } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade) || (sshchallengemode==1 && isfade) || (pgpchallengemode==1 && isfade)) {
-        if (profile2mode==NOENCRYPT) return;
+        if (profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
         #ifdef DEBUG
         Serial.print("Challenge3 entered");
@@ -716,7 +713,7 @@ void payload(int duration) {
         #endif
         return;
       } else if (CRYPTO_AUTH) { //Wrong challenge was entered
-        if (profile2mode==NOENCRYPT) return;
+        if (profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
         CRYPTO_AUTH = 0;
         Challenge_button1 = 0;
@@ -734,7 +731,7 @@ void payload(int duration) {
         return;
         #endif
       } else if (duration >= 50 && button_selected=='1' && !isfade) {
-        if (profile2mode==NOENCRYPT) return;
+        if (profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
         SoftTimer.remove(&taskKey);
         backup();
@@ -748,14 +745,18 @@ void payload(int duration) {
         GETKEYLABELS(1);
         return;
       } else if (duration >= 50 && button_selected=='6' && !isfade) {
-        integrityctr1++;
-        configmode=true;
-        unlocked = false;
-        firsttime = true;
-        password.reset(); //reset the guessed password to NULL
-        integrityctr2++;
-        pass_keypress=1;
-        return;
+          if(profilemode!=NONENCRYPTEDPROFILE) {
+            #ifdef US_VERSION
+            integrityctr1++;
+            configmode=true;
+            unlocked = false;
+            firsttime = true;
+            password.reset(); //reset the guessed password to NULL
+            integrityctr2++;
+            pass_keypress=1;
+            #endif
+          }
+          return;
       } else {
         #ifdef OK_Color
         setcolor(0); // NEO Pixel OFF
@@ -815,7 +816,7 @@ void payload(int duration) {
 void gen_press(void) {
   idletimer=0;
   int slot;
-  if (profile2mode) {
+  if (profilemode) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
@@ -828,7 +829,7 @@ void gen_press(void) {
 void gen_hold(void) {
   idletimer=0;
   int slot;
-  if (profile2mode) {
+  if (profilemode) {
     slot=(button_selected-'0')+12;
   } else {
     slot=button_selected-'0';
@@ -884,7 +885,7 @@ void process_slot(int s) {
         Serial.print("URL Length = ");
         Serial.println(urllength);
         #endif
-        if (profile2mode!=NOENCRYPT) {
+        if (profilemode!=NONENCRYPTEDPROFILE) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < urllength; z++) {
@@ -947,7 +948,7 @@ void process_slot(int s) {
         Serial.print("Username Length = ");
         Serial.println(usernamelength);
         #endif
-        if (profile2mode!=NOENCRYPT) {
+        if (profilemode!=NONENCRYPTEDPROFILE) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < usernamelength; z++) {
@@ -1018,7 +1019,7 @@ void process_slot(int s) {
         Serial.print("Password Length = ");
         Serial.println(passwordlength);
         #endif
-        if (profile2mode!=NOENCRYPT) {
+        if (profilemode!=NONENCRYPTEDPROFILE) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < passwordlength; z++) {
@@ -1109,7 +1110,7 @@ void process_slot(int s) {
         Serial.println(otplength);
         #endif
           #ifdef US_VERSION
-          if (profile2mode!=NOENCRYPT) aes_gcm_decrypt(temp, slot, 9, profilekey, otplength);
+          if (profilemode!=NONENCRYPTEDPROFILE) aes_gcm_decrypt(temp, slot, 9, profilekey, otplength);
           #endif
         ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG
@@ -1144,7 +1145,7 @@ void process_slot(int s) {
           index=index+6;
           memset(temp, 0, 64); //Wipe all data from buffer
         }
-        if(temp[0] == 121 && profile2mode!=NOENCRYPT) {
+        if(temp[0] == 121 && profilemode!=NONENCRYPTEDPROFILE) {
         #ifdef DEBUG
         Serial.println("Generating Yubico OTP...");
         #endif
@@ -1153,7 +1154,7 @@ void process_slot(int s) {
         index=index+44;
         #endif
         }
-        if(temp[0] == 117 && profile2mode!=NOENCRYPT) { //U2F
+        if(temp[0] == 117 && profilemode!=NONENCRYPTEDPROFILE) { //U2F
         keybuffer[index] = 9;
         index++;
         }

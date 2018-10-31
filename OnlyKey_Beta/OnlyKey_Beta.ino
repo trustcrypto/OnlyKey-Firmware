@@ -605,7 +605,7 @@ void payload(int duration) {
           onlykey_eeset_failedlogins(0); //Set failed login counter to 0
           password.reset(); //reset the guessed password to NULL
           session_attempts=0;
-          hidprint(UNLOCKED);
+          if (!configmode) hidprint(UNLOCKED);
           SoftTimer.remove(&taskInitialized);
           #ifdef DEBUG
           Serial.println("UNLOCKED");

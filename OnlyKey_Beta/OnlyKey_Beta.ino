@@ -104,7 +104,6 @@ extern uint8_t profilemode;
 #include "yksim.h"
 #include "uECC.h"
 #include "ykcore.h"
-#include <Crypto.h>
 #include <AES.h>
 #include <GCM.h>
 #include "rsa.h"
@@ -178,7 +177,7 @@ extern int integrityctr2;
 //SoftTimer
 /*************************************/
 #define THRESHOLD   .5
-#define TIME_POLL 75 // poll "key" every 75 ms
+#define TIME_POLL 50 // poll "key" every 50 ms
 Task taskKey(TIME_POLL, checkKey);
 Task taskKB(50, sendKey); // Default send kb codes every 50 ms
 Task taskInitialized(1000, sendInitialized);
@@ -253,6 +252,7 @@ void setup() {
   }
   if(!initcheck) {
       wipeEEPROM();
+      onlykey_eeset_timeout((uint8_t*)30); //Default lockout 30 min
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       #ifdef DEBUG
@@ -314,7 +314,7 @@ void setup() {
   rngloop(); //Start RNG
   #ifdef OK_Color
   initColor();
-  rainbowCycle(4, 2);
+  rainbowCycle(3, 2);
   #else
   pinMode(BLINKPIN, OUTPUT);
   fadein();//Additional delay to make sure button is not pressed during plug into USB
@@ -385,42 +385,42 @@ void checkKey(Task* me) {
 
   rngloop(); //Perform regular housekeeping on the random number generator.
 
-  if (touchread1 > (touchread1ref+100)) {
+  if (touchread1 > (touchread1ref+40)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '5';
     //Serial.println(touchread1);
   }
-    else if (touchread2 > (touchread2ref+100)) {
+    else if (touchread2 > (touchread2ref+40)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '2';
     //Serial.println(touchread2);
   }
-    else if (touchread3 > (touchread3ref+100)) {
+    else if (touchread3 > (touchread3ref+40)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '1';
     //Serial.println(touchread3);
   }
-   else if (touchread4 > (touchread4ref+100)) {
+   else if (touchread4 > (touchread4ref+40)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '3';
     //Serial.println(touchread4);
   }
-   else if (touchread5 > (touchread5ref+100)) {
+   else if (touchread5 > (touchread5ref+40)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
     button_selected = '4';
     //Serial.println(touchread5);
   }
-   else if (touchread6 > (touchread6ref+100)) {
+   else if (touchread6 > (touchread6ref+40)) {
     key_off = 0;
     key_press = 0;
     key_on += 1;
@@ -431,7 +431,6 @@ void checkKey(Task* me) {
 
   else {
     if (key_on > THRESHOLD) key_press = key_on;
-    key_on = 0;
     key_off += 1;
     if (!unlocked){
       #ifdef OK_Color
@@ -439,7 +438,7 @@ void checkKey(Task* me) {
       #else
       analogWrite(BLINKPIN, 0); //LED OFF
       #endif
-    } else if (!isfade) {
+    } else if (!isfade && initcheck) {
       #ifdef OK_Color
       setcolor(85); // NEO Pixel ON Green
       #else
@@ -448,8 +447,17 @@ void checkKey(Task* me) {
     }
   }
 
-  if ((key_press > 0) && (key_off > THRESHOLD)) {
+  if (!initcheck && key_off > 2) {
+    #ifdef OK_Color
+    setcolor(85); // NEO Pixel ON Green
+    #else
+    analogWrite(BLINKPIN, 255); //LED ON
+    #endif
+  }
+
+  if ((key_press > 0) && (key_off > 2)) {
     payload(key_press);
+    key_on = 0;
     key_press = 0;
    }
 }
@@ -730,7 +738,7 @@ void payload(int duration) {
         }
         return;
         #endif
-      } else if (duration >= 50 && button_selected=='1' && !isfade) {
+      } else if (duration >= 90 && button_selected=='1' && !isfade) {
         if (profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
         SoftTimer.remove(&taskKey);
@@ -738,13 +746,13 @@ void payload(int duration) {
         SoftTimer.add(&taskKey);
         #endif
         return;
-      } else if (duration >= 50 && button_selected=='2' && !isfade) {
+      } else if (duration >= 90 && button_selected=='2' && !isfade) {
         GETSLOTLABELS(1);
         return;
-      } else if (duration >= 50 && button_selected=='3' && !isfade) {
+      } else if (duration >= 90 && button_selected=='3' && !isfade) {
         GETKEYLABELS(1);
         return;
-      } else if (duration >= 50 && button_selected=='6' && !isfade) {
+      } else if (duration >= 90 && button_selected=='6' && !isfade) {
           if(profilemode!=NONENCRYPTEDPROFILE) {
             #ifdef US_VERSION
             integrityctr1++;
@@ -763,8 +771,8 @@ void payload(int duration) {
         #else
         analogWrite(BLINKPIN, 0); //LED OFF
         #endif
-        if (duration <= 10 && !configmode) gen_press();
-        if (duration >= 11 && !configmode) gen_hold();
+        if (duration <= 20 && !configmode) gen_press();
+        if (duration >= 21 && !configmode) gen_hold();
         pos = keybuffer;
         SoftTimer.remove(&taskKey);
         SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);

@@ -252,7 +252,8 @@ void setup() {
   }
   if(!initcheck) {
       wipeEEPROM();
-      onlykey_eeset_timeout((uint8_t*)30); //Default lockout 30 min
+      ptr = TIMEOUT;
+      onlykey_eeset_timeout(ptr); //Default lockout 30 min
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       #ifdef DEBUG

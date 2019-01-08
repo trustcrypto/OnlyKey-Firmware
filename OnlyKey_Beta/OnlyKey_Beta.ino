@@ -136,6 +136,7 @@ extern uint8_t TOUCHPIN5;
 extern uint8_t TOUCHPIN6;
 extern uint8_t ANALOGPIN1;
 extern uint8_t ANALOGPIN2;
+extern unsigned int sumofall;
 /*************************************/
 //Keypad / password assignments
 /*************************************/
@@ -301,8 +302,6 @@ void setup() {
   /*************************************/
   RNG.begin(OKversion, 2045); //Start RNG with the device version
   CHIP_ID();
-  RNG.stir((uint8_t*)ID, sizeof(ID)); //Stir in unique 128 bit Freescale chip ID
-  RNG.stir((uint8_t*)nonce, sizeof(nonce)); //Stir in unique nonce that is generated from user entropy when OK is first initialized
   unsigned int analog1 = analogRead(ANALOGPIN1);
   RNG.stir((uint8_t *)analog1, sizeof(analog1), sizeof(analog1)*2);
   unsigned int analog2 = analogRead(ANALOGPIN2);
@@ -323,12 +322,10 @@ void setup() {
   fadein();
   fadeout();
   #endif
-/*For testing with python-onlykey to disable PIN
- unlocked=true;
- configmode=true;
- initialized=true;
-*/
-
+//For testing and development to disable PIN
+//unlocked=true;
+//configmode=true;
+//initialized=true;
 
   SoftTimer.add(&taskKey);
 }
@@ -356,8 +353,11 @@ void checkKey(Task* me) {
     CPU_RESTART(); //Reboot
     }
   }
-
+  
+  integrityctr1++;
+  delay(sumofall % 6); //delay 0 - 6 ms
   if (unlocked) {
+    integrityctr2++;
     recvmsg();
     if(initialized && initcheck) {
     #ifdef US_VERSION
@@ -371,6 +371,8 @@ void checkKey(Task* me) {
       memset(profilekey, 0, 32);  
     }
     }
+  } else{
+    integrityctr2++;
   }
 
   if(configmode && unlocked && !isfade) {
@@ -607,6 +609,7 @@ void payload(int duration) {
    integrityctr2++;
    password.append(button_selected);
    integrityctr1++;
+   delay((sumofall % 4)+(sumofall % 3)); //delay 0 - 7 ms
    if (unlocked || password.profile1hashevaluate() || password.profile2hashevaluate()) {
     integrityctr2++;
         if (unlocked != true) //A correct PIN was just entered do the following for first login
@@ -692,7 +695,7 @@ void payload(int duration) {
         #endif
         CRYPTO_AUTH++;
         return;
-      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade) || (sshchallengemode==1 && isfade) || (pgpchallengemode==1 && isfade)) {
+      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (sshchallengemode==1 && isfade && packet_buffer_details[0] == 0xED) || (pgpchallengemode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == 0xFF && isfade)) {
         if (profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
         #ifdef DEBUG
@@ -717,6 +720,9 @@ void payload(int duration) {
           recv_buffer[4] = packet_buffer_details[0];
           recv_buffer[5] = packet_buffer_details[1];
           DECRYPT(recv_buffer);
+        }
+        if(packet_buffer_details[0] == 0xFF) {
+          HMACSHA1();
         }
         fadeoff(0);
         #endif

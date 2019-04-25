@@ -12,8 +12,8 @@
  * 2. Redistributions in binary form must reproduce the above
  *    copyright notice, this list of conditions and the following
  *    disclaimer in the documentation and/or other materials provided
- *    with the distribution.
- *
+ *    with the distribmution.
+ *  
  * 3. All advertising materials mentioning features or use of this
  *    software must display the following acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
@@ -76,6 +76,7 @@
 #define DEBUG //Enable Serial Monitor
 #define US_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
+#define OKSOLO //Using FIDO2 from SOLO
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -109,6 +110,21 @@ extern uint8_t profilemode;
 #include "rsa.h"
 #include <newhope.h>
 #include "tweetnacl.h"
+/*************************************/
+//FIDO2 Selection
+/*************************************/
+#ifdef OKSOLO
+#include "ctap.h"
+#include "ctaphid.h"
+#include "cbor.h"
+#include "ctap_parse.h"
+#include "ctap_errors.h"
+#include "device.h"
+#include "storage.h"
+#include "extensions/wallet.h"
+#include "extensions/extensions.h"
+#include "crypto.h"
+#endif
 #endif
 #ifdef OK_Color
 #define OKversion "v0.2-beta.7c"
@@ -118,6 +134,7 @@ extern uint8_t profilemode;
 #define UNLOCKED "UNLOCKED" OKversion
 #define UNINITIALIZED "UNINITIALIZED" OKversion
 extern uint8_t NEO_Color;
+extern uint8_t NEO_Brightness[1];
 /*************************************/
 //RNG assignments
 /*************************************/
@@ -197,6 +214,13 @@ extern uint8_t packet_buffer_details[2];
 extern uint8_t outputU2F;
 extern uint8_t sshchallengemode;
 extern uint8_t pgpchallengemode;
+
+extern "C"{
+  int _getpid(){ return -1;}
+  int _kill(int pid, int sig){ return -1; }
+  int _write(){return -1;}
+}
+
 /*************************************/
 //Arduino Setup
 /*************************************/
@@ -278,6 +302,8 @@ void setup() {
          } else if (*ptr  <= 10) {
           TYPESPEED[0]=*ptr;
          }
+        ptr = NEO_Brightness;
+        onlykey_eeget_ledbrightness(ptr);
         ptr = TIMEOUT;
         onlykey_eeget_timeout(ptr);
         ptr = KeyboardLayout;
@@ -314,7 +340,7 @@ void setup() {
   rngloop(); //Start RNG
   #ifdef OK_Color
   initColor();
-  rainbowCycle(3, 2);
+  rainbowCycle(1, 1);
   #else
   pinMode(BLINKPIN, OUTPUT);
   fadein();//Additional delay to make sure button is not pressed during plug into USB
@@ -379,8 +405,13 @@ void checkKey(Task* me) {
       #ifdef OK_Color
       NEO_Color = 1; //Red
       #endif
-      fadeon();
+      fadeon(1);
   }
+
+  #ifdef DEBUG
+  // Auto set default PINs and passphrase for testing
+  if (!initialized) keyboard_mode_config(AUTO_PIN_SET);  
+  #endif
 
     //Uncomment to test RNG
     //RNG2(data, 32);
@@ -505,7 +536,6 @@ void sendKey(Task* me) {
         Serial.println("Starting U2F...");
         #endif
         u2f_button = 1;
-        uECC_set_rng(&RNG2);
         unsigned long u2fwait = millis() + 4000;
         while(u2f_button && millis() < u2fwait) {
         recvmsg();
@@ -622,7 +652,7 @@ void payload(int duration) {
           #ifdef DEBUG
           Serial.println("UNLOCKED");
           #endif
-          fadeon();
+          fadeon(NEO_Color);
           fadeoff(85);
           if (profilemode!=NONENCRYPTEDPROFILE) {
 #ifdef US_VERSION
@@ -637,31 +667,32 @@ void payload(int duration) {
             #ifdef OK_Color
             NEO_Color = 1; //Red
             #endif
-            fadeon();
+            fadeon(1);
           }
           return;
+        } else if ((!initialized || configmode) && duration >= 90 && button_selected=='3') {
+              keyboard_mode_config(0); //Setup with keyboard prompt
+              return;
+        } else if (pin_set==0 && !initcheck) {
+          return;
         }
-        else if (PINSET==0 && !initcheck) {
-        return;
+        else if (pin_set==0) {
         }
-        else if (PINSET==0) {
-        }
-        else if (PINSET<=3) {
-
+        else if (pin_set<=3) {
             #ifdef DEBUG
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
             #endif
             return;
         }
-        else if (PINSET<=6) {
+        else if (pin_set<=6) {
             #ifdef DEBUG
             Serial.print("SD password appended with ");
             Serial.println(button_selected-'0');
             #endif
             return;
         }
-        else if (PINSET<=9) {
+        else if (pin_set<=9) {
             if(profilemode!=NONENCRYPTEDPROFILE){
             #ifdef US_VERSION
             #ifdef DEBUG
@@ -671,7 +702,11 @@ void payload(int duration) {
             #endif
             }
             return;
-        }      
+        } else if (pin_set==10 && button_selected=='1') {
+            cancelfadeoffafter20();
+            keyboard_mode_config(MANUAL_PIN_SET); //Manual
+            return;
+        }
       Keyboard.begin();
       *keybuffer = '\0';
       #ifdef DEBUG
@@ -695,7 +730,7 @@ void payload(int duration) {
         #endif
         CRYPTO_AUTH++;
         return;
-      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (sshchallengemode==1 && isfade && packet_buffer_details[0] == 0xED) || (pgpchallengemode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == 0xFF && isfade)) {
+      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (sshchallengemode==1 && isfade && packet_buffer_details[0] == 0xED) || (pgpchallengemode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == 0xFF && isfade) || (packet_buffer_details[0] == 0xFE && isfade)) {
         if (profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
         #ifdef DEBUG
@@ -705,7 +740,7 @@ void payload(int duration) {
         CRYPTO_AUTH = 4;
         sshchallengemode = 0;
         pgpchallengemode = 0;
-        if (!outputU2F) {
+        if (!outputU2F && packet_buffer_details[0] <= 0xF0) {
         Keyboard.press(KEY_RETURN);
         delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
         Keyboard.releaseAll();
@@ -715,14 +750,19 @@ void payload(int duration) {
           recv_buffer[4] = packet_buffer_details[0];
           recv_buffer[5] = packet_buffer_details[1];
           SIGN(recv_buffer);
-        }
-        if(packet_buffer_details[0] == 0xF0) {
+        } else if (packet_buffer_details[0] == 0xF0) {
           recv_buffer[4] = packet_buffer_details[0];
           recv_buffer[5] = packet_buffer_details[1];
           DECRYPT(recv_buffer);
-        }
-        if(packet_buffer_details[0] == 0xFF) {
+        } else if (packet_buffer_details[0] == 0xFF) {
           HMACSHA1();
+        } else if (packet_buffer_details[0] == 0xFE) {
+          u2f_button = 1;
+          unsigned long u2fwait = millis() + 4000;
+          while(u2f_button && millis() < u2fwait) {
+          recvmsg();
+          }
+          u2f_button = 0;
         }
         fadeoff(0);
         #endif
@@ -745,19 +785,27 @@ void payload(int duration) {
         }
         return;
         #endif
-      } else if (duration >= 90 && button_selected=='1' && !isfade) {
+      }else if (duration >= 90 && button_selected=='1' && !isfade) {
         if (profilemode==NONENCRYPTEDPROFILE) return;
         #ifdef US_VERSION
-        SoftTimer.remove(&taskKey);
-        backup();
-        SoftTimer.add(&taskKey);
+            SoftTimer.remove(&taskKey);
+            backup();
+            SoftTimer.add(&taskKey);
         #endif
         return;
       } else if (duration >= 90 && button_selected=='2' && !isfade) {
-        GETSLOTLABELS(1);
-        return;
-      } else if (duration >= 90 && button_selected=='3' && !isfade) {
-        GETKEYLABELS(1);
+          if (profilemode==NONENCRYPTEDPROFILE) return;
+          #ifdef US_VERSION
+            get_slot_labels(1);
+            get_key_labels(1);
+          #endif
+          return;
+      } else if (duration >= 90 && button_selected=='5' && !isfade) {
+        unlocked = false;
+        firsttime = true;
+        password.reset(); //reset the guessed password to NULL
+        pass_keypress=1;
+        memset(profilekey, 0, 32);  
         return;
       } else if (duration >= 90 && button_selected=='6' && !isfade) {
           if(profilemode!=NONENCRYPTEDPROFILE) {
@@ -884,7 +932,7 @@ void process_slot(int s) {
       addchar3 = (addchar5 >> 6) & 0x1; //After OTP
       addchar4 = (addchar5 >> 2) & 0x1; //Before Username
       addchar5 = (addchar5 >> 3) & 0x1; //Before OTP
-      if (isfade && NEO_Color != 170) return; //Only U2F Button
+      if (isfade) return; 
       #ifdef DEBUG
       Serial.print("Slot Number ");
       Serial.println(button_selected-'0');
@@ -1201,3 +1249,5 @@ void sendInitialized(Task* me) {
     Serial.println("INITIALIZED");
     #endif
 }
+
+

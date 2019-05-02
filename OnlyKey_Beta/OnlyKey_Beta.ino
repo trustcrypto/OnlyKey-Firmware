@@ -108,7 +108,6 @@ extern uint8_t profilemode;
 #include <AES.h>
 #include <GCM.h>
 #include "rsa.h"
-#include <newhope.h>
 #include "tweetnacl.h"
 /*************************************/
 //FIDO2 Selection
@@ -121,9 +120,11 @@ extern uint8_t profilemode;
 #include "ctap_errors.h"
 #include "device.h"
 #include "storage.h"
-#include "extensions/wallet.h"
-#include "extensions/extensions.h"
+#include "wallet.h"
+#include "solo.h"
+#include "extensions.h"
 #include "crypto.h"
+#include "u2f.h"
 #endif
 #endif
 #ifdef OK_Color
@@ -334,7 +335,7 @@ void setup() {
   RNG.stir((uint8_t *)analog2, sizeof(analog2), sizeof(analog2)*2);
   #ifdef DEBUG
   Serial.print("EEPROM Used ");
-  Serial.println(EEpos_failedlogins);
+  Serial.println(EEpos_ledbrightness);
   Serial.println(FTFL_FSEC, HEX);
   #endif
   rngloop(); //Start RNG

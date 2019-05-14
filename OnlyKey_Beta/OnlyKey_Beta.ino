@@ -341,7 +341,7 @@ void setup() {
   rngloop(); //Start RNG
   #ifdef OK_Color
   initColor();
-  rainbowCycle(1, 1);
+  rainbowCycle();
   #else
   pinMode(BLINKPIN, OUTPUT);
   fadein();//Additional delay to make sure button is not pressed during plug into USB
@@ -765,6 +765,7 @@ void payload(int duration) {
           }
           u2f_button = 0;
         }
+        packet_buffer_details[0]=0;
         fadeoff(0);
         #endif
         return;
@@ -806,7 +807,24 @@ void payload(int duration) {
         firsttime = true;
         password.reset(); //reset the guessed password to NULL
         pass_keypress=1;
-        memset(profilekey, 0, 32);  
+        memset(profilekey, 0, 32);
+        //Lock Windows and Linux (Gnome Super+L to lock)
+        Keyboard.set_modifier(MODIFIERKEY_GUI);  
+        Keyboard.send_now();
+        Keyboard.set_key1(KEY_L);  
+        Keyboard.send_now();
+        resetkeys();
+        //Lock Mac
+        Keyboard.set_modifier(MODIFIERKEY_CTRL);  
+        Keyboard.send_now();
+        Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_SHIFT); 
+        Keyboard.send_now();
+        Keyboard.set_media(KEY_MEDIA_EJECT);
+        Keyboard.send_now();  
+        delay(500);  // Mac OS-X will not recognize a very short eject press
+        Keyboard.set_media(0);
+        Keyboard.send_now(); 
+        resetkeys();
         return;
       } else if (duration >= 90 && button_selected=='6' && !isfade) {
           if(profilemode!=NONENCRYPTEDPROFILE) {
@@ -1251,4 +1269,27 @@ void sendInitialized(Task* me) {
     #endif
 }
 
+void resetkeys () {
+  delay(200);
+  Keyboard.set_key1(0);
+  Keyboard.set_key2(0);
+  Keyboard.set_key3(0);
+  Keyboard.set_key4(0);
+  Keyboard.set_key5(0);
+  Keyboard.set_key6(0);
+  Keyboard.set_modifier(0);
+  Keyboard.set_media(0);
+  Keyboard.send_now();
+}
+
+void ctrl_alt_del () {
+  delay(200);
+  Keyboard.set_modifier(MODIFIERKEY_CTRL);  
+  Keyboard.send_now();
+  Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_ALT);  
+  Keyboard.send_now();
+  Keyboard.set_key1(KEY_DELETE);  
+  Keyboard.send_now();
+  resetkeys();
+}
 

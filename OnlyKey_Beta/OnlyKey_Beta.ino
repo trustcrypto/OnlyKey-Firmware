@@ -1,5 +1,5 @@
 /* Tim Steiner
- * Copyright (c) 2015-2018, CryptoTrust LLC.
+ * Copyright (c) 2015-2019, CryptoTrust LLC.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -123,14 +123,15 @@ extern uint8_t profilemode;
 #include "wallet.h"
 #include "solo.h"
 #include "extensions.h"
+#include "ok_extension.h"
 #include "crypto.h"
 #include "u2f.h"
 #endif
 #endif
 #ifdef OK_Color
-#define OKversion "v0.2-beta.7c"
+#define OKversion "v0.2-beta.8c"
 #else
-#define OKversion "v0.2-beta.7o"
+#define OKversion "v0.2-beta.8o"
 #endif
 #define UNLOCKED "UNLOCKED" OKversion
 #define UNINITIALIZED "UNINITIALIZED" OKversion
@@ -211,12 +212,12 @@ extern uint8_t Challenge_button2;
 extern uint8_t Challenge_button3;
 extern uint8_t CRYPTO_AUTH;
 extern int packet_buffer_offset;
-extern uint8_t packet_buffer_details[2];
-extern uint8_t outputU2F;
+extern uint8_t packet_buffer_details[3];
+extern uint8_t outputmode;
 extern uint8_t sshchallengemode;
 extern uint8_t pgpchallengemode;
 
-extern "C"{
+extern "C" {
   int _getpid(){ return -1;}
   int _kill(int pid, int sig){ return -1; }
   int _write(){return -1;}
@@ -385,7 +386,7 @@ void checkKey(Task* me) {
   delay(sumofall % 6); //delay 0 - 6 ms
   if (unlocked) {
     integrityctr2++;
-    recvmsg();
+    recvmsg(0);
     if(initialized && initcheck) {
     #ifdef US_VERSION
     yubikey_incr_time();
@@ -411,7 +412,10 @@ void checkKey(Task* me) {
 
   #ifdef DEBUG
   // Auto set default PINs and passphrase for testing
-  if (!initialized) keyboard_mode_config(AUTO_PIN_SET);  
+  if (!initialized) {
+    onlykey_eeset_timeout(0); //Disable lockout
+    keyboard_mode_config(AUTO_PIN_SET);  
+  }
   #endif
 
     //Uncomment to test RNG
@@ -539,7 +543,7 @@ void sendKey(Task* me) {
         u2f_button = 1;
         unsigned long u2fwait = millis() + 4000;
         while(u2f_button && millis() < u2fwait) {
-        recvmsg();
+        recvmsg(0);
         }
         u2f_button = 0;
         Keyboard.end();
@@ -741,7 +745,7 @@ void payload(int duration) {
         CRYPTO_AUTH = 4;
         sshchallengemode = 0;
         pgpchallengemode = 0;
-        if (!outputU2F && packet_buffer_details[0] <= 0xF0) {
+        if ((outputmode!=1 && outputmode != 4) && packet_buffer_details[0] <= 0xF0) {
         Keyboard.press(KEY_RETURN);
         delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
         Keyboard.releaseAll();
@@ -761,7 +765,7 @@ void payload(int duration) {
           u2f_button = 1;
           unsigned long u2fwait = millis() + 4000;
           while(u2f_button && millis() < u2fwait) {
-          recvmsg();
+          recvmsg(0);
           }
           u2f_button = 0;
         }
@@ -777,9 +781,9 @@ void payload(int duration) {
         Challenge_button2 = 0;
         Challenge_button3 = 0;
         fadeoff(1);
-        if (!outputU2F) {
-          hidprint("Error incorrect challenge was entered");
-          analogWrite(BLINKPIN, 255); //LED ON
+        hidprint("Error incorrect challenge was entered");
+        analogWrite(BLINKPIN, 255); //LED ON
+        if (outputmode != 1 && outputmode != 4) {
           Keyboard.press(KEY_RETURN);
           delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
           Keyboard.releaseAll();
@@ -802,30 +806,6 @@ void payload(int duration) {
             get_key_labels(1);
           #endif
           return;
-      } else if (duration >= 90 && button_selected=='5' && !isfade) {
-        unlocked = false;
-        firsttime = true;
-        password.reset(); //reset the guessed password to NULL
-        pass_keypress=1;
-        memset(profilekey, 0, 32);
-        //Lock Windows and Linux (Gnome Super+L to lock)
-        Keyboard.set_modifier(MODIFIERKEY_GUI);  
-        Keyboard.send_now();
-        Keyboard.set_key1(KEY_L);  
-        Keyboard.send_now();
-        resetkeys();
-        //Lock Mac
-        Keyboard.set_modifier(MODIFIERKEY_CTRL);  
-        Keyboard.send_now();
-        Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_SHIFT); 
-        Keyboard.send_now();
-        Keyboard.set_media(KEY_MEDIA_EJECT);
-        Keyboard.send_now();  
-        delay(500);  // Mac OS-X will not recognize a very short eject press
-        Keyboard.set_media(0);
-        Keyboard.send_now(); 
-        resetkeys();
-        return;
       } else if (duration >= 90 && button_selected=='6' && !isfade) {
           if(profilemode!=NONENCRYPTEDPROFILE) {
             #ifdef US_VERSION
@@ -922,25 +902,32 @@ void gen_hold(void) {
 //Load Set Values to Keybuffer
 /*************************************/
 void process_slot(int s) {
-  long GMT;
-  char* newcode;
-  static uint8_t index;
-  uint8_t temp[64];
-  int urllength;
-  int usernamelength;
-  int passwordlength;
-  int otplength;
-  uint8_t addchar1;
-  uint8_t addchar2;
-  uint8_t addchar3;
-  uint8_t addchar4;
-  uint8_t addchar5;
-  int delay1 = 0;
-  int delay2 = 0;
-  int delay3 = 0;
-  uint8_t *ptr;
-  int slot=s;
-  index = 0;
+      long GMT;
+      char* newcode;
+      static uint8_t index;
+      uint8_t temp[64];
+      int urllength;
+      int usernamelength;
+      int passwordlength;
+      int otplength;
+      uint8_t addchar1;
+      uint8_t addchar2;
+      uint8_t addchar3;
+      uint8_t addchar4;
+      uint8_t addchar5;
+      uint8_t autolockslot;
+      int delay1 = 0;
+      int delay2 = 0;
+      int delay3 = 0;
+      uint8_t *ptr;
+      int slot=s;
+      index = 0;
+      
+      onlykey_eeget_autolockslot(&autolockslot);
+      //if ((profilemode && slot==(autolockslot & 0x3)) || (!profilemode && slot == (autolockslot >> 3) & 0x3)) {
+       // lock_ok_and_screen ();
+       // return;
+      //}
       onlykey_eeget_addchar(&addchar5, slot);
       #ifdef DEBUG
       Serial.println("Additional Character");
@@ -1283,13 +1270,41 @@ void resetkeys () {
 }
 
 void ctrl_alt_del () {
-  delay(200);
-  Keyboard.set_modifier(MODIFIERKEY_CTRL);  
+  //Keyboard.set_modifier(MODIFIERKEY_CTRL);  
+ // Keyboard.send_now();
+ // Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_ALT);  
   Keyboard.send_now();
-  Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_ALT);  
-  Keyboard.send_now();
-  Keyboard.set_key1(KEY_DELETE);  
+ // Keyboard.set_key1(KEY_DELETE);  
   Keyboard.send_now();
   resetkeys();
+ // Keyboard.set_key1(KEY_ESC);  
+  Keyboard.send_now();
+  resetkeys();
+}
+
+void lock_ok_and_screen () {
+    unlocked = false;
+    firsttime = true;
+    password.reset(); //reset the guessed password to NULL
+    pass_keypress=1;
+    memset(profilekey, 0, 32);
+    //Lock Windows and Linux (Gnome Super+L to lock)
+   // Keyboard.set_modifier(MODIFIERKEY_GUI);  
+    Keyboard.send_now();
+   // Keyboard.set_key1(KEY_L);  
+    Keyboard.send_now();
+    resetkeys();
+    //Lock Mac
+   // Keyboard.set_modifier(MODIFIERKEY_CTRL);  
+    Keyboard.send_now();
+   // Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_SHIFT); 
+    Keyboard.send_now();
+    Keyboard.set_media(KEY_MEDIA_EJECT);
+    Keyboard.send_now();  
+    delay(500);  // Mac OS-X will not recognize a very short eject press
+    Keyboard.set_media(0);
+    Keyboard.send_now(); 
+    resetkeys();
+
 }
 

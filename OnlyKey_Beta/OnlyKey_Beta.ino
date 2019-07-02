@@ -30,7 +30,7 @@
  *    contact admin@crp.to.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
+ *    acknowledgment:h
  *    "This product includes software developed by CryptoTrust LLC. for
  *    the OnlyKey Project (http://www.crp.to/ok)"
  *
@@ -74,7 +74,7 @@
 
 
 #define DEBUG //Enable Serial Monitor
-#define US_VERSION //Define for US Version Firmware
+#define STD_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
 #define OKSOLO //Using FIDO2 from SOLO
 
@@ -98,10 +98,10 @@
 
 /*************************************/
 //Additional Libraries to Load for US Version
-//These libraries will only be used if US_Version is defined
+//These libraries will only be used if STD_VERSION is defined
 /*************************************/
 extern uint8_t profilemode;
-#ifdef US_VERSION
+#ifdef STD_VERSION
 #include "yksim.h"
 #include "uECC.h"
 #include "ykcore.h"
@@ -159,7 +159,7 @@ extern unsigned int sumofall;
 /*************************************/
 //Keypad / password assignments
 /*************************************/
-static int button_selected = 0;    //Key selected 1-6
+extern int button_selected;    //Key selected 1-6
 static int pass_keypress = 1;  //The number key presses in current password attempt
 static int session_attempts = 0; //The number of password attempts this session
 static bool firsttime = true;
@@ -196,9 +196,8 @@ extern int integrityctr2;
 /*************************************/
 //SoftTimer
 /*************************************/
-#define THRESHOLD   .5
 #define TIME_POLL 50 // poll "key" every 50 ms
-Task taskKey(TIME_POLL, checkKey);
+extern Task taskKey(TIME_POLL, checkKey);
 Task taskKB(50, sendKey); // Default send kb codes every 50 ms
 Task taskInitialized(1000, sendInitialized);
 char keybuffer[EElen_url+EElen_addchar+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64+EElen_addchar]; //Buffer to hold all keystrokes
@@ -212,7 +211,7 @@ extern uint8_t Challenge_button2;
 extern uint8_t Challenge_button3;
 extern uint8_t CRYPTO_AUTH;
 extern int packet_buffer_offset;
-extern uint8_t packet_buffer_details[3];
+extern uint8_t packet_buffer_details[5];
 extern uint8_t outputmode;
 extern uint8_t sshchallengemode;
 extern uint8_t pgpchallengemode;
@@ -231,7 +230,7 @@ void setup() {
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
-  #ifdef US_VERSION
+  #ifdef STD_VERSION
   profilemode = STDPROFILE1;
   #else
   profilemode = NONENCRYPTEDPROFILE; 
@@ -358,22 +357,21 @@ void setup() {
   SoftTimer.add(&taskKey);
 }
 
-/*************************************/
-
 extern elapsedMillis idletimer;
+
+/*************************************/
 //Main Loop, Read Key Press Using Capacitive Touch
+//Called every 50ms
 /*************************************/
 void checkKey(Task* me) {
-  static int key_press = 0;
-  static int key_on = 0;
-  static int key_off = 0;
 
+  //Check for bootloader trigger
   if (!digitalRead(33)) { //Trigger bootloader to load firmware by PTA4 low for 3 sec
     elapsedMillis waiting;
     int jumptobootloader = 0;
     while (waiting < 3000) {
-      delay(100);
-      jumptobootloader = jumptobootloader + digitalRead(33);
+    delay(100);
+    jumptobootloader = jumptobootloader + digitalRead(33);
     }
     if (jumptobootloader==0) {
     eeprom_write_byte(0x00, 1); //Go to bootloader
@@ -381,22 +379,23 @@ void checkKey(Task* me) {
     CPU_RESTART(); //Reboot
     }
   }
-  
+
+  //Check integrity counters and recv usb data
   integrityctr1++;
   delay(sumofall % 6); //delay 0 - 6 ms
   if (unlocked) {
     integrityctr2++;
     recvmsg(0);
     if(initialized && initcheck) {
-    #ifdef US_VERSION
+    #ifdef STD_VERSION
     yubikey_incr_time();
     #endif
     if (TIMEOUT[0] && idletimer >= (TIMEOUT[0]*60000)) {
-      unlocked = false;
-      firsttime = true;
-      password.reset(); //reset the guessed password to NULL
-      pass_keypress=1;
-      memset(profilekey, 0, 32);  
+    unlocked = false;
+    firsttime = true;
+    password.reset(); //reset the guessed password to NULL
+    pass_keypress=1;
+    memset(profilekey, 0, 32);  
     }
     }
   } else{
@@ -404,10 +403,10 @@ void checkKey(Task* me) {
   }
 
   if(configmode && unlocked && !isfade) {
-      #ifdef OK_Color
-      NEO_Color = 1; //Red
-      #endif
-      fadeon(1);
+    #ifdef OK_Color
+    NEO_Color = 1; //Red
+    #endif
+    fadeon(1);
   }
 
   #ifdef DEBUG
@@ -417,88 +416,11 @@ void checkKey(Task* me) {
     keyboard_mode_config(AUTO_PIN_SET);  
   }
   #endif
+  
 
-    //Uncomment to test RNG
-    //RNG2(data, 32);
-    //printHex(data, 32);
+  int press_duration = touch_sense_loop();
+  if (press_duration) payload(press_duration);
 
-  rngloop(); //Perform regular housekeeping on the random number generator.
-
-  if (touchread1 > (touchread1ref+40)) {
-    key_off = 0;
-    key_press = 0;
-    key_on += 1;
-    button_selected = '5';
-    //Serial.println(touchread1);
-  }
-    else if (touchread2 > (touchread2ref+40)) {
-    key_off = 0;
-    key_press = 0;
-    key_on += 1;
-    button_selected = '2';
-    //Serial.println(touchread2);
-  }
-    else if (touchread3 > (touchread3ref+40)) {
-    key_off = 0;
-    key_press = 0;
-    key_on += 1;
-    button_selected = '1';
-    //Serial.println(touchread3);
-  }
-   else if (touchread4 > (touchread4ref+40)) {
-    key_off = 0;
-    key_press = 0;
-    key_on += 1;
-    button_selected = '3';
-    //Serial.println(touchread4);
-  }
-   else if (touchread5 > (touchread5ref+40)) {
-    key_off = 0;
-    key_press = 0;
-    key_on += 1;
-    button_selected = '4';
-    //Serial.println(touchread5);
-  }
-   else if (touchread6 > (touchread6ref+40)) {
-    key_off = 0;
-    key_press = 0;
-    key_on += 1;
-    button_selected = '6';
-    //Serial.println(touchread6);
-  }
-
-
-  else {
-    if (key_on > THRESHOLD) key_press = key_on;
-    key_off += 1;
-    if (!unlocked){
-      #ifdef OK_Color
-      setcolor(0); // NEO Pixel OFF
-      #else
-      analogWrite(BLINKPIN, 0); //LED OFF
-      #endif
-    } else if (!isfade && initcheck) {
-      #ifdef OK_Color
-      setcolor(85); // NEO Pixel ON Green
-      #else
-      analogWrite(BLINKPIN, 255); //LED ON
-      #endif
-    }
-  }
-
-  if (!initcheck && key_off > 2) {
-    #ifdef OK_Color
-    setcolor(85); // NEO Pixel ON Green
-    #else
-    analogWrite(BLINKPIN, 255); //LED ON
-    #endif
-  }
-
-  if ((key_press > 0) && (key_off > 2)) {
-    payload(key_press);
-    key_on = 0;
-    key_press = 0;
-   }
 }
 /*************************************/
 //Type out on Keyboard the contents of Keybuffer
@@ -536,7 +458,7 @@ void sendKey(Task* me) {
     }
     else if ((uint8_t)*pos == 9) {
         if(profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
         #ifdef DEBUG
         Serial.println("Starting U2F...");
         #endif
@@ -660,7 +582,7 @@ void payload(int duration) {
           fadeon(NEO_Color);
           fadeoff(85);
           if (profilemode!=NONENCRYPTEDPROFILE) {
-#ifdef US_VERSION
+#ifdef STD_VERSION
         yubikeyinit();
           U2Finit();
           onlykey_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
@@ -699,7 +621,7 @@ void payload(int duration) {
         }
         else if (pin_set<=9) {
             if(profilemode!=NONENCRYPTEDPROFILE){
-            #ifdef US_VERSION
+            #ifdef STD_VERSION
             #ifdef DEBUG
             Serial.print("2nd profile password appended with ");
             Serial.println(button_selected-'0');
@@ -720,7 +642,7 @@ void payload(int duration) {
       #endif
       if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
         if (profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
         #ifdef DEBUG
         Serial.print("Challenge1 entered");
         Serial.println(button_selected-'0');
@@ -735,9 +657,9 @@ void payload(int duration) {
         #endif
         CRYPTO_AUTH++;
         return;
-      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (sshchallengemode==1 && isfade && packet_buffer_details[0] == 0xED) || (pgpchallengemode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == 0xFF && isfade) || (packet_buffer_details[0] == 0xFE && isfade)) {
+      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (sshchallengemode==1 && isfade && packet_buffer_details[0] == OKSIGN) || (pgpchallengemode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == OKHMAC && isfade) || (packet_buffer_details[0] == OKWEBAUTHN && isfade)) {
         if (profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
         #ifdef DEBUG
         Serial.print("Challenge3 entered");
         Serial.println(button_selected-'0');
@@ -751,17 +673,17 @@ void payload(int duration) {
         Keyboard.releaseAll();
         delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
         }
-        if(packet_buffer_details[0] == 0xED) {
+        if(packet_buffer_details[0] == OKSIGN) {
           recv_buffer[4] = packet_buffer_details[0];
           recv_buffer[5] = packet_buffer_details[1];
           SIGN(recv_buffer);
-        } else if (packet_buffer_details[0] == 0xF0) {
+        } else if (packet_buffer_details[0] == OKDECRYPT) {
           recv_buffer[4] = packet_buffer_details[0];
           recv_buffer[5] = packet_buffer_details[1];
           DECRYPT(recv_buffer);
-        } else if (packet_buffer_details[0] == 0xFF) {
+        } else if (packet_buffer_details[0] == OKHMAC) {
           HMACSHA1();
-        } else if (packet_buffer_details[0] == 0xFE) {
+        } else if (packet_buffer_details[0] == OKWEBAUTHN) {
           u2f_button = 1;
           unsigned long u2fwait = millis() + 4000;
           while(u2f_button && millis() < u2fwait) {
@@ -769,13 +691,14 @@ void payload(int duration) {
           }
           u2f_button = 0;
         }
+        CRYPTO_AUTH = 0;
         packet_buffer_details[0]=0;
         fadeoff(0);
         #endif
         return;
       } else if (CRYPTO_AUTH) { //Wrong challenge was entered
         if (profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
         CRYPTO_AUTH = 0;
         Challenge_button1 = 0;
         Challenge_button2 = 0;
@@ -793,7 +716,7 @@ void payload(int duration) {
         #endif
       }else if (duration >= 90 && button_selected=='1' && !isfade) {
         if (profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
             SoftTimer.remove(&taskKey);
             backup();
             SoftTimer.add(&taskKey);
@@ -801,14 +724,14 @@ void payload(int duration) {
         return;
       } else if (duration >= 90 && button_selected=='2' && !isfade) {
           if (profilemode==NONENCRYPTEDPROFILE) return;
-          #ifdef US_VERSION
+          #ifdef STD_VERSION
             get_slot_labels(1);
             get_key_labels(1);
           #endif
           return;
       } else if (duration >= 90 && button_selected=='6' && !isfade) {
           if(profilemode!=NONENCRYPTEDPROFILE) {
-            #ifdef US_VERSION
+            #ifdef STD_VERSION
             integrityctr1++;
             configmode=true;
             unlocked = false;
@@ -962,7 +885,7 @@ void process_slot(int s) {
             }
             Serial.println();
         #endif
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
         aes_gcm_decrypt(temp, slot, 15, profilekey, urllength);
         #endif
         }
@@ -1025,7 +948,7 @@ void process_slot(int s) {
             }
             Serial.println();
         #endif
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
         aes_gcm_decrypt(temp, slot, 2, profilekey, usernamelength);
         #endif
         }
@@ -1096,7 +1019,7 @@ void process_slot(int s) {
             }
             Serial.println();
           #endif
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
         aes_gcm_decrypt(temp, slot, 5, profilekey, passwordlength);
         #endif
         }
@@ -1178,7 +1101,7 @@ void process_slot(int s) {
         Serial.print("TOTP Key Length = ");
         Serial.println(otplength);
         #endif
-          #ifdef US_VERSION
+          #ifdef STD_VERSION
           if (profilemode!=NONENCRYPTEDPROFILE) aes_gcm_decrypt(temp, slot, 9, profilekey, otplength);
           #endif
         ByteToChar2(temp, keybuffer, otplength, index);
@@ -1218,7 +1141,7 @@ void process_slot(int s) {
         #ifdef DEBUG
         Serial.println("Generating Yubico OTP...");
         #endif
-        #ifdef US_VERSION
+        #ifdef STD_VERSION
         yubikeysim(keybuffer + index);
         index=index+44;
         #endif

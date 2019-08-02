@@ -1,4 +1,4 @@
-// /* Teensyduino Core Library
+/* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
  * Copyright (c) 2013 PJRC.COM, LLC.
  *
@@ -408,7 +408,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         NUM_INTERFACE,                          // bNumInterfaces
         1,                                      // bConfigurationValue
         0,                                      // iConfiguration
-        0xC0,                                   // bmAttributes
+        0x80,                                   // bmAttributes
         50,                                     // bMaxPower
 
 #ifdef CDC_IAD_DESCRIPTOR
@@ -851,7 +851,7 @@ struct usb_string_descriptor_struct usb_string_serial_number_default = {
 void usb_init_serialnumber(void)
 {
 	char buf[11];
-	uint32_t i, num = 0;
+	uint32_t i, num = 1000000000;
 
 	//__disable_irq();
 	//FTFL_FSTAT = FTFL_FSTAT_RDCOLERR | FTFL_FSTAT_ACCERR | FTFL_FSTAT_FPVIOL;
@@ -859,10 +859,10 @@ void usb_init_serialnumber(void)
 	//FTFL_FCCOB1 = 15;
 	//FTFL_FSTAT = FTFL_FSTAT_CCIF;
 	//while (!(FTFL_FSTAT & FTFL_FSTAT_CCIF)) ; // wait
-	//num = *(uint32_t *)&FTFL_FCCOB7;
+	//num = 1000000000;
 	//__enable_irq();
 	// add extra zero to work around OS-X CDC-ACM driver bug
-	if (num < 10000000) num = num * 10;
+	//if (num < 10000000) num = num * 10;
 	ultoa(num, buf, 10);
 	for (i=0; i<10; i++) {
 		char c = buf[i];
@@ -907,7 +907,7 @@ const usb_descriptor_list_t usb_descriptor_list[] = {
 	{0x2200, FLIGHTSIM_INTERFACE, flightsim_report_desc, sizeof(flightsim_report_desc)},
 	{0x2100, FLIGHTSIM_INTERFACE, config_descriptor+FLIGHTSIM_HID_DESC_OFFSET, 9},
 #endif
-        {0x0300, 0x0000, (const uint8_t *)&string0, 0},
+        {0x0300, 0x0409, (const uint8_t *)&string0, 0},
         {0x0301, 0x0409, (const uint8_t *)&usb_string_manufacturer_name, 0},
         {0x0302, 0x0409, (const uint8_t *)&usb_string_product_name, 0},
         {0x0303, 0x0409, (const uint8_t *)&usb_string_serial_number, 0},

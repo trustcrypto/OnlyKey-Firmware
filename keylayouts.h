@@ -163,21 +163,8 @@ extern "C"{
 #define KEY_SYSTEM_SLEEP        ( 0x82 | 0xE200 )
 #define KEY_SYSTEM_WAKE_UP      ( 0x83 | 0xE200 )
 
-#define KEY_MEDIA_PLAY          ( 0xB0 | 0xE400 )
-#define KEY_MEDIA_PAUSE         ( 0xB1 | 0xE400 )
-#define KEY_MEDIA_RECORD        ( 0xB2 | 0xE400 )
-#define KEY_MEDIA_FAST_FORWARD  ( 0xB3 | 0xE400 )
-#define KEY_MEDIA_REWIND        ( 0xB4 | 0xE400 )
-#define KEY_MEDIA_NEXT_TRACK    ( 0xB5 | 0xE400 )
-#define KEY_MEDIA_PREV_TRACK    ( 0xB6 | 0xE400 )
-#define KEY_MEDIA_STOP          ( 0xB7 | 0xE400 )
-#define KEY_MEDIA_EJECT         ( 0xB8 | 0xE400 )
-#define KEY_MEDIA_RANDOM_PLAY   ( 0xB9 | 0xE400 )
-#define KEY_MEDIA_PLAY_PAUSE    ( 0xCD | 0xE400 )
-#define KEY_MEDIA_PLAY_SKIP     ( 0xCE | 0xE400 )
-#define KEY_MEDIA_MUTE          ( 0xE2 | 0xE400 )
-#define KEY_MEDIA_VOLUME_INC    ( 0xE9 | 0xE400 )
-#define KEY_MEDIA_VOLUME_DEC    ( 0xEA | 0xE400 )
+#define KEY_MEDIA_EJECT         0x80
+#define KEY_MEDIA_VOLUME_INC    0x01
 
 #define KEY_A                   (   4  | 0xF000 )
 #define KEY_B                   (   5  | 0xF000 )

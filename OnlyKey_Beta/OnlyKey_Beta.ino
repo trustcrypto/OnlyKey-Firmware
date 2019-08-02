@@ -75,7 +75,7 @@
  */
 
 
-#define DEBUG //Enable Serial Monitor
+//#define DEBUG //Enable Serial Monitor
 #define STD_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
 #define OKSOLO //Using FIDO2 from SOLO
@@ -846,8 +846,6 @@ void process_slot(int s) {
       index = 0;
       
       onlykey_eeget_autolockslot(&autolockslot);
-      Serial.println("autolockslot");
-      Serial.println(autolockslot);
       if ((profilemode==STDPROFILE1 && (slot==(autolockslot & 0xF))) || (profilemode==STDPROFILE2 && slot==((autolockslot >> 4) & 0xF)+12)) {
         lock_ok_and_screen ();
         return;

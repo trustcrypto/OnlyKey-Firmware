@@ -1,6 +1,8 @@
-/* Tim Steiner
+/* 
  * Copyright (c) 2015-2019, CryptoTrust LLC.
  * All rights reserved.
+ * 
+ * Author : Tim Steiner <t@crp.to>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -12,14 +14,14 @@
  * 2. Redistributions in binary form must reproduce the above
  *    copyright notice, this list of conditions and the following
  *    disclaimer in the documentation and/or other materials provided
- *    with the distribmution.
- *  
+ *    with the distribution.
+ *
  * 3. All advertising materials mentioning features or use of this
  *    software must display the following acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (http://www.crp.to/ok)"
+ *    the OnlyKey Project (https://www.crp.to/ok)"
  *
- * 4. The names "OnlyKey" and "OnlyKey Project" must not be used to
+ * 4. The names "OnlyKey" and "CryptoTrust" must not be used to
  *    endorse or promote products derived from this software without
  *    prior written permission. For written permission, please contact
  *    admin@crp.to.
@@ -30,9 +32,9 @@
  *    contact admin@crp.to.
  *
  * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:h
+ *    acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (http://www.crp.to/ok)"
+ *    the OnlyKey Project (https://www.crp.to/ok)"
  *
  * 7. Redistributions in any form must be accompanied by information on
  *    how to obtain complete source code for this software and any
@@ -43,33 +45,33 @@
  *    binary file, complete source code means the source code for all
  *    modules it contains.
  *
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
- * GRANTED BY THIS LICENSE. IF SOFTWARE RECIPIENT INSTITUTES PATENT LITIGATION
- * AGAINST ANY ENTITY (INCLUDING A CROSS-CLAIM OR COUNTERCLAIM IN A LAWSUIT)
- * ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE SOFTWARE WITH
- * OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE RECIPIENT'S PATENT(S),
- * THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY THIS LICENSE SHALL TERMINATE
- * AS OF THE DATE SUCH LITIGATION IS FILED. IF ANY PROVISION OF THIS AGREEMENT
- * IS INVALID OR UNENFORCEABLE UNDER APPLICABLE LAW, IT SHALL NOT AFFECT
- * THE VALIDITY OR ENFORCEABILITY OF THE REMAINDER OF THE TERMS OF THIS
- * AGREEMENT, AND WITHOUT FURTHER ACTION BY THE PARTIES HERETO, SUCH
- * PROVISION SHALL BE REFORMED TO THE MINIMUM EXTENT NECESSARY TO MAKE
- * SUCH PROVISION VALID AND ENFORCEABLE. ALL SOFTWARE RECIPIENT'S RIGHTS UNDER
- * THIS AGREEMENT SHALL TERMINATE IF IT FAILS TO COMPLY WITH ANY OF THE MATERIAL
- * TERMS OR CONDITIONS OF THIS AGREEMENT AND DOES NOT CURE SUCH FAILURE IN
- * A REASONABLE PERIOD OF TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
- * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS
+ * ARE GRANTED BY THIS LICENSE. IF SOFTWARE RECIPIENT INSTITUTES PATENT
+ * LITIGATION AGAINST ANY ENTITY (INCLUDING A CROSS-CLAIM OR COUNTERCLAIM
+ * IN A LAWSUIT) ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE
+ * SOFTWARE WITH OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE
+ * RECIPIENT'S PATENT(S), THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY
+ * THIS LICENSE SHALL TERMINATE AS OF THE DATE SUCH LITIGATION IS FILED. IF
+ * ANY PROVISION OF THIS AGREEMENT IS INVALID OR UNENFORCEABLE UNDER
+ * APPLICABLE LAW, IT SHALL NOT AFFECT THE VALIDITY OR ENFORCEABILITY OF THE
+ * REMAINDER OF THE TERMS OF THIS AGREEMENT, AND WITHOUT FURTHER ACTION
+ * BY THE PARTIES HERETO, SUCH PROVISION SHALL BE REFORMED TO THE MINIMUM
+ * EXTENT NECESSARY TO MAKE SUCH PROVISION VALID AND ENFORCEABLE. ALL
+ * SOFTWARE RECIPIENT'S RIGHTS UNDER THIS AGREEMENT SHALL TERMINATE IF IT
+ * FAILS TO COMPLY WITH ANY OF THE MATERIAL TERMS OR CONDITIONS OF THIS
+ * AGREEMENT AND DOES NOT CURE SUCH FAILURE IN A REASONABLE PERIOD OF
+ * TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE. THIS SOFTWARE IS
+ * PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR  PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 
@@ -77,6 +79,7 @@
 #define STD_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
 #define OKSOLO //Using FIDO2 from SOLO
+
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -197,7 +200,7 @@ extern int integrityctr2;
 //SoftTimer
 /*************************************/
 #define TIME_POLL 50 // poll "key" every 50 ms
-extern Task taskKey(TIME_POLL, checkKey);
+Task taskKey(TIME_POLL, checkKey);
 Task taskKB(50, sendKey); // Default send kb codes every 50 ms
 Task taskInitialized(1000, sendInitialized);
 char keybuffer[EElen_url+EElen_addchar+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64+EElen_addchar]; //Buffer to hold all keystrokes
@@ -411,10 +414,10 @@ void checkKey(Task* me) {
 
   #ifdef DEBUG
   // Auto set default PINs and passphrase for testing
-  if (!initialized) {
-    onlykey_eeset_timeout(0); //Disable lockout
-    keyboard_mode_config(AUTO_PIN_SET);  
-  }
+  //if (!initialized) {
+  // onlykey_eeset_timeout(0); //Disable lockout
+  //  keyboard_mode_config(AUTO_PIN_SET);  
+  //}
   #endif
   
 
@@ -597,7 +600,13 @@ void payload(int duration) {
             fadeon(1);
           }
           return;
-        } else if ((!initialized || configmode) && duration >= 90 && button_selected=='3') {
+        } else if (!initialized && duration >= 90 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE) {
+              keyboard_mode_config(MANUAL_PIN_SET);
+              return;
+        } else if (!initialized && duration >= 90 && button_selected=='2' && profilemode!=NONENCRYPTEDPROFILE) {
+              keyboard_mode_config(AUTO_PIN_SET);
+              return;
+        } else if (!initialized && duration >= 90 && button_selected=='3' && profilemode!=NONENCRYPTEDPROFILE) {
               keyboard_mode_config(0); //Setup with keyboard prompt
               return;
         } else if (pin_set==0 && !initcheck) {
@@ -605,7 +614,7 @@ void payload(int duration) {
         }
         else if (pin_set==0) {
         }
-        else if (pin_set<=3) {
+        else if (pin_set<=3) { 
             #ifdef DEBUG
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
@@ -629,9 +638,10 @@ void payload(int duration) {
             #endif
             }
             return;
-        } else if (pin_set==10 && button_selected=='1') {
+        } else if (pin_set==10) {
             cancelfadeoffafter20();
-            keyboard_mode_config(MANUAL_PIN_SET); //Manual
+            if (button_selected=='1') keyboard_mode_config(MANUAL_PIN_SET); //Manual
+            else keyboard_mode_config(AUTO_PIN_SET); //Manual
             return;
         }
       Keyboard.begin();
@@ -640,98 +650,83 @@ void payload(int duration) {
       Serial.print("Button selected");
       Serial.println(button_selected-'0');
       #endif
-      if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
-        if (profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef STD_VERSION
-        #ifdef DEBUG
-        Serial.print("Challenge1 entered");
-        Serial.println(button_selected-'0');
-        #endif
-        CRYPTO_AUTH++;
-        #endif
-        return;
-      } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2 && isfade) {
-        #ifdef DEBUG
-        Serial.print("Challenge2 entered");
-        Serial.println(button_selected-'0');
-        #endif
-        CRYPTO_AUTH++;
-        return;
-      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (sshchallengemode==1 && isfade && packet_buffer_details[0] == OKSIGN) || (pgpchallengemode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == OKHMAC && isfade) || (packet_buffer_details[0] == OKWEBAUTHN && isfade)) {
-        if (profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef STD_VERSION
-        #ifdef DEBUG
-        Serial.print("Challenge3 entered");
-        Serial.println(button_selected-'0');
-        #endif
-        CRYPTO_AUTH = 4;
-        sshchallengemode = 0;
-        pgpchallengemode = 0;
-        if ((outputmode!=1 && outputmode != 4) && packet_buffer_details[0] <= 0xF0) {
-        Keyboard.press(KEY_RETURN);
-        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
-        Keyboard.releaseAll();
-        delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
-        }
-        if(packet_buffer_details[0] == OKSIGN) {
-          recv_buffer[4] = packet_buffer_details[0];
-          recv_buffer[5] = packet_buffer_details[1];
-          SIGN(recv_buffer);
-        } else if (packet_buffer_details[0] == OKDECRYPT) {
-          recv_buffer[4] = packet_buffer_details[0];
-          recv_buffer[5] = packet_buffer_details[1];
-          DECRYPT(recv_buffer);
-        } else if (packet_buffer_details[0] == OKHMAC) {
-          HMACSHA1();
-        } else if (packet_buffer_details[0] == OKWEBAUTHN) {
-          u2f_button = 1;
-          unsigned long u2fwait = millis() + 4000;
-          while(u2f_button && millis() < u2fwait) {
-          recvmsg(0);
-          }
-          u2f_button = 0;
-        }
-        CRYPTO_AUTH = 0;
-        packet_buffer_details[0]=0;
-        fadeoff(0);
-        #endif
-        return;
-      } else if (CRYPTO_AUTH) { //Wrong challenge was entered
-        if (profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef STD_VERSION
-        CRYPTO_AUTH = 0;
-        Challenge_button1 = 0;
-        Challenge_button2 = 0;
-        Challenge_button3 = 0;
-        fadeoff(1);
-        hidprint("Error incorrect challenge was entered");
-        analogWrite(BLINKPIN, 255); //LED ON
-        if (outputmode != 1 && outputmode != 4) {
-          Keyboard.press(KEY_RETURN);
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
-          Keyboard.releaseAll();
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
-        }
-        return;
-        #endif
-      }else if (duration >= 90 && button_selected=='1' && !isfade) {
-        if (profilemode==NONENCRYPTEDPROFILE) return;
-        #ifdef STD_VERSION
+      if (profilemode!=NONENCRYPTEDPROFILE) {
+      #ifdef STD_VERSION
+        if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
+            #ifdef DEBUG
+            Serial.print("Challenge1 entered");
+            Serial.println(button_selected-'0');
+            #endif
+            CRYPTO_AUTH++;
+            return;
+        } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2 && isfade) {
+            #ifdef DEBUG
+            Serial.print("Challenge2 entered");
+            Serial.println(button_selected-'0');
+            #endif
+            CRYPTO_AUTH++;
+            return;
+        } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (sshchallengemode==1 && isfade && packet_buffer_details[0] == OKSIGN) || (pgpchallengemode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == OKHMAC && isfade) || (packet_buffer_details[0] == OKWEBAUTHN && isfade)) {
+            #ifdef DEBUG
+            Serial.print("Challenge3 entered");
+            Serial.println(button_selected-'0');
+            #endif
+            CRYPTO_AUTH = 4;
+            sshchallengemode = 0;
+            pgpchallengemode = 0;
+            if ((outputmode!=1 && outputmode != 4) && packet_buffer_details[0] <= 0xF0) {
+            Keyboard.press(KEY_RETURN);
+            delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+            Keyboard.releaseAll();
+            delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+            }
+            if(packet_buffer_details[0] == OKSIGN) {
+              recv_buffer[4] = packet_buffer_details[0];
+              recv_buffer[5] = packet_buffer_details[1];
+              SIGN(recv_buffer);
+            } else if (packet_buffer_details[0] == OKDECRYPT) {
+              recv_buffer[4] = packet_buffer_details[0];
+              recv_buffer[5] = packet_buffer_details[1];
+              DECRYPT(recv_buffer);
+            } else if (packet_buffer_details[0] == OKHMAC) {
+              HMACSHA1();
+            } else if (packet_buffer_details[0] == OKWEBAUTHN) {
+              u2f_button = 1;
+              unsigned long u2fwait = millis() + 4000;
+              while(u2f_button && millis() < u2fwait) {
+              recvmsg(0);
+              }
+              u2f_button = 0;
+            }
+            CRYPTO_AUTH = 0;
+            packet_buffer_details[0]=0;
+            fadeoff(0);
+            return;
+        } else if (CRYPTO_AUTH) { //Wrong challenge was entered
+            CRYPTO_AUTH = 0;
+            Challenge_button1 = 0;
+            Challenge_button2 = 0;
+            Challenge_button3 = 0;
+            fadeoff(1);
+            hidprint("Error incorrect challenge was entered");
+            analogWrite(BLINKPIN, 255); //LED ON
+            if (outputmode != 1 && outputmode != 4) {
+              Keyboard.press(KEY_RETURN);
+              delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+              Keyboard.releaseAll();
+              delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+            }
+            return;
+        }else if (duration >= 90 && button_selected=='1' && !isfade) {
             SoftTimer.remove(&taskKey);
             backup();
             SoftTimer.add(&taskKey);
-        #endif
-        return;
-      } else if (duration >= 90 && button_selected=='2' && !isfade) {
-          if (profilemode==NONENCRYPTEDPROFILE) return;
-          #ifdef STD_VERSION
+            return;
+        } else if (duration >= 90 && button_selected=='2' && !isfade) {
             get_slot_labels(1);
             get_key_labels(1);
-          #endif
-          return;
-      } else if (duration >= 90 && button_selected=='6' && !isfade) {
-          if(profilemode!=NONENCRYPTEDPROFILE) {
-            #ifdef STD_VERSION
+            return;
+        } else if (duration >= 90 && button_selected=='6' && !isfade) {
             integrityctr1++;
             configmode=true;
             unlocked = false;
@@ -739,21 +734,25 @@ void payload(int duration) {
             password.reset(); //reset the guessed password to NULL
             integrityctr2++;
             pass_keypress=1;
-            #endif
-          }
-          return;
-      } else {
-        #ifdef OK_Color
-        setcolor(0); // NEO Pixel OFF
-        #else
-        analogWrite(BLINKPIN, 0); //LED OFF
-        #endif
-        if (duration <= 20 && !configmode) gen_press();
-        if (duration >= 21 && !configmode) gen_hold();
-        pos = keybuffer;
-        SoftTimer.remove(&taskKey);
-        SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
+            return;
+        }
+      #endif
       }
+      
+      #ifdef OK_Color
+      setcolor(0); // NEO Pixel OFF
+      #else
+      analogWrite(BLINKPIN, 0); //LED OFF
+      #endif
+      if (duration <= 20 && !configmode) gen_press();
+      else if (duration >= 21 && duration < 90 && !configmode) gen_hold();
+      else if (duration >= 90 && !configmode) {
+        NEO_Color = 1;
+        blink(2);
+      }
+      pos = keybuffer;
+      SoftTimer.remove(&taskKey);
+      SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
       return;
   }
    else if (password.sdhashevaluate()) {
@@ -847,10 +846,12 @@ void process_slot(int s) {
       index = 0;
       
       onlykey_eeget_autolockslot(&autolockslot);
-      //if ((profilemode && slot==(autolockslot & 0x3)) || (!profilemode && slot == (autolockslot >> 3) & 0x3)) {
-       // lock_ok_and_screen ();
-       // return;
-      //}
+      Serial.println("autolockslot");
+      Serial.println(autolockslot);
+      if ((profilemode==STDPROFILE1 && (slot==(autolockslot & 0xF))) || (profilemode==STDPROFILE2 && slot==((autolockslot >> 4) & 0xF)+12)) {
+        lock_ok_and_screen ();
+        return;
+      }
       onlykey_eeget_addchar(&addchar5, slot);
       #ifdef DEBUG
       Serial.println("Additional Character");
@@ -1212,15 +1213,15 @@ void lock_ok_and_screen () {
     pass_keypress=1;
     memset(profilekey, 0, 32);
     //Lock Windows and Linux (Gnome Super+L to lock)
-   // Keyboard.set_modifier(MODIFIERKEY_GUI);  
+    Keyboard.set_modifier(MODIFIERKEY_GUI);  
     Keyboard.send_now();
-   // Keyboard.set_key1(KEY_L);  
+    Keyboard.set_key1(KEY_L);  
     Keyboard.send_now();
     resetkeys();
     //Lock Mac
-   // Keyboard.set_modifier(MODIFIERKEY_CTRL);  
+    Keyboard.set_modifier(MODIFIERKEY_CTRL);  
     Keyboard.send_now();
-   // Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_SHIFT); 
+    Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_SHIFT); 
     Keyboard.send_now();
     Keyboard.set_media(KEY_MEDIA_EJECT);
     Keyboard.send_now();  

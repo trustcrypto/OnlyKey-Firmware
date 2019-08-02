@@ -1,4 +1,80 @@
-// /* Teensyduino Core Library
+/* Modifications
+ * Copyright (c) 2015-2019, CryptoTrust LLC.
+ * All rights reserved.
+ * 
+ * Author : Tim Steiner <t@crp.to>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *
+ * 3. All advertising materials mentioning features or use of this
+ *    software must display the following acknowledgment:
+ *    "This product includes software developed by CryptoTrust LLC. for
+ *    the OnlyKey Project (https://www.crp.to/ok)"
+ *
+ * 4. The names "OnlyKey" and "CryptoTrust" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. For written permission, please contact
+ *    admin@crp.to.
+ *
+ * 5. Products derived from this software may not be called "OnlyKey"
+ *    nor may "OnlyKey" or "CryptoTrust" appear in their names without
+ *    specific prior written permission. For written permission, please
+ *    contact admin@crp.to.
+ *
+ * 6. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by CryptoTrust LLC. for
+ *    the OnlyKey Project (https://www.crp.to/ok)"
+ *
+ * 7. Redistributions in any form must be accompanied by information on
+ *    how to obtain complete source code for this software and any
+ *    accompanying software that uses this software. The source code
+ *    must either be included in the distribution or be available for
+ *    no more than the cost of distribution plus a nominal fee, and must
+ *    be freely redistributable under reasonable conditions. For a
+ *    binary file, complete source code means the source code for all
+ *    modules it contains.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS
+ * ARE GRANTED BY THIS LICENSE. IF SOFTWARE RECIPIENT INSTITUTES PATENT
+ * LITIGATION AGAINST ANY ENTITY (INCLUDING A CROSS-CLAIM OR COUNTERCLAIM
+ * IN A LAWSUIT) ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE
+ * SOFTWARE WITH OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE
+ * RECIPIENT'S PATENT(S), THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY
+ * THIS LICENSE SHALL TERMINATE AS OF THE DATE SUCH LITIGATION IS FILED. IF
+ * ANY PROVISION OF THIS AGREEMENT IS INVALID OR UNENFORCEABLE UNDER
+ * APPLICABLE LAW, IT SHALL NOT AFFECT THE VALIDITY OR ENFORCEABILITY OF THE
+ * REMAINDER OF THE TERMS OF THIS AGREEMENT, AND WITHOUT FURTHER ACTION
+ * BY THE PARTIES HERETO, SUCH PROVISION SHALL BE REFORMED TO THE MINIMUM
+ * EXTENT NECESSARY TO MAKE SUCH PROVISION VALID AND ENFORCEABLE. ALL
+ * SOFTWARE RECIPIENT'S RIGHTS UNDER THIS AGREEMENT SHALL TERMINATE IF IT
+ * FAILS TO COMPLY WITH ANY OF THE MATERIAL TERMS OR CONDITIONS OF THIS
+ * AGREEMENT AND DOES NOT CURE SUCH FAILURE IN A REASONABLE PERIOD OF
+ * TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE. THIS SOFTWARE IS
+ * PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR  PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/* Original Teensyduino Core Library
  * http://www.pjrc.com/teensy/
  * Copyright (c) 2013 PJRC.COM, LLC.
  *
@@ -408,7 +484,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         NUM_INTERFACE,                          // bNumInterfaces
         1,                                      // bConfigurationValue
         0,                                      // iConfiguration
-        0xC0,                                   // bmAttributes
+        0x80,                                   // bmAttributes
         50,                                     // bMaxPower
 
 #ifdef CDC_IAD_DESCRIPTOR
@@ -851,7 +927,7 @@ struct usb_string_descriptor_struct usb_string_serial_number_default = {
 void usb_init_serialnumber(void)
 {
 	char buf[11];
-	uint32_t i, num = 0;
+	uint32_t i, num = 1000000000;
 
 	//__disable_irq();
 	//FTFL_FSTAT = FTFL_FSTAT_RDCOLERR | FTFL_FSTAT_ACCERR | FTFL_FSTAT_FPVIOL;
@@ -859,10 +935,10 @@ void usb_init_serialnumber(void)
 	//FTFL_FCCOB1 = 15;
 	//FTFL_FSTAT = FTFL_FSTAT_CCIF;
 	//while (!(FTFL_FSTAT & FTFL_FSTAT_CCIF)) ; // wait
-	//num = *(uint32_t *)&FTFL_FCCOB7;
+	//num = 1000000000;
 	//__enable_irq();
 	// add extra zero to work around OS-X CDC-ACM driver bug
-	if (num < 10000000) num = num * 10;
+	//if (num < 10000000) num = num * 10;
 	ultoa(num, buf, 10);
 	for (i=0; i<10; i++) {
 		char c = buf[i];
@@ -907,7 +983,7 @@ const usb_descriptor_list_t usb_descriptor_list[] = {
 	{0x2200, FLIGHTSIM_INTERFACE, flightsim_report_desc, sizeof(flightsim_report_desc)},
 	{0x2100, FLIGHTSIM_INTERFACE, config_descriptor+FLIGHTSIM_HID_DESC_OFFSET, 9},
 #endif
-        {0x0300, 0x0000, (const uint8_t *)&string0, 0},
+        {0x0300, 0x0409, (const uint8_t *)&string0, 0},
         {0x0301, 0x0409, (const uint8_t *)&usb_string_manufacturer_name, 0},
         {0x0302, 0x0409, (const uint8_t *)&usb_string_product_name, 0},
         {0x0303, 0x0409, (const uint8_t *)&usb_string_serial_number, 0},

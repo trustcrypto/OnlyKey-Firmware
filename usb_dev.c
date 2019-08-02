@@ -14,11 +14,11 @@
  *    copyright notice, this list of conditions and the following
  *    disclaimer in the documentation and/or other materials provided
  *    with the distribution.
- *      
+ *
  * 3. All advertising materials mentioning features or use of this
  *    software must display the following acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (http://www.crp.to/ok)" 
+ *    the OnlyKey Project (http://www.crp.to/ok)"
  *
  * 4. The names "OnlyKey" and "OnlyKey Project" must not be used to
  *    endorse or promote products derived from this software without
@@ -26,51 +26,51 @@
  *    admin@crp.to.
  *
  * 5. Products derived from this software may not be called "OnlyKey"
- *    nor may "OnlyKey" or "CryptoTrust" appear in their names without 
+ *    nor may "OnlyKey" or "CryptoTrust" appear in their names without
  *    specific prior written permission. For written permission, please
  *    contact admin@crp.to.
  *
  * 6. Redistributions of any form whatsoever must retain the following
  *    acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (http://www.crp.to/ok)" 
+ *    the OnlyKey Project (http://www.crp.to/ok)"
  *
- * 7. Redistributions in any form must be accompanied by information on 
- *    how to obtain complete source code for this software and any 
- *    accompanying software that uses this software. The source code 
- *    must either be included in the distribution or be available for 
- *    no more than the cost of distribution plus a nominal fee, and must 
- *    be freely redistributable under reasonable conditions. For a 
- *    binary file, complete source code means the source code for all 
- *    modules it contains. 
+ * 7. Redistributions in any form must be accompanied by information on
+ *    how to obtain complete source code for this software and any
+ *    accompanying software that uses this software. The source code
+ *    must either be included in the distribution or be available for
+ *    no more than the cost of distribution plus a nominal fee, and must
+ *    be freely redistributable under reasonable conditions. For a
+ *    binary file, complete source code means the source code for all
+ *    modules it contains.
  *
  * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS
  * ARE GRANTED BY THIS LICENSE. IF SOFTWARE RECIPIENT INSTITUTES PATENT
  * LITIGATION AGAINST ANY ENTITY (INCLUDING A CROSS-CLAIM OR COUNTERCLAIM
- * IN A LAWSUIT) ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE 
- * SOFTWARE WITH OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE 
- * RECIPIENT'S PATENT(S), THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY 
+ * IN A LAWSUIT) ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE
+ * SOFTWARE WITH OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE
+ * RECIPIENT'S PATENT(S), THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY
  * THIS LICENSE SHALL TERMINATE AS OF THE DATE SUCH LITIGATION IS FILED. IF
- * ANY PROVISION OF THIS AGREEMENT IS INVALID OR UNENFORCEABLE UNDER 
- * APPLICABLE LAW, IT SHALL NOT AFFECT THE VALIDITY OR ENFORCEABILITY OF THE 
- * REMAINDER OF THE TERMS OF THIS AGREEMENT, AND WITHOUT FURTHER ACTION 
- * BY THE PARTIES HERETO, SUCH PROVISION SHALL BE REFORMED TO THE MINIMUM 
- * EXTENT NECESSARY TO MAKE SUCH PROVISION VALID AND ENFORCEABLE. ALL 
- * SOFTWARE RECIPIENT'S RIGHTS UNDER THIS AGREEMENT SHALL TERMINATE IF IT 
- * FAILS TO COMPLY WITH ANY OF THE MATERIAL TERMS OR CONDITIONS OF THIS 
- * AGREEMENT AND DOES NOT CURE SUCH FAILURE IN A REASONABLE PERIOD OF 
- * TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE. THIS SOFTWARE IS 
- * PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR  PURPOSE 
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS 
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR 
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR 
- * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ * ANY PROVISION OF THIS AGREEMENT IS INVALID OR UNENFORCEABLE UNDER
+ * APPLICABLE LAW, IT SHALL NOT AFFECT THE VALIDITY OR ENFORCEABILITY OF THE
+ * REMAINDER OF THE TERMS OF THIS AGREEMENT, AND WITHOUT FURTHER ACTION
+ * BY THE PARTIES HERETO, SUCH PROVISION SHALL BE REFORMED TO THE MINIMUM
+ * EXTENT NECESSARY TO MAKE SUCH PROVISION VALID AND ENFORCEABLE. ALL
+ * SOFTWARE RECIPIENT'S RIGHTS UNDER THIS AGREEMENT SHALL TERMINATE IF IT
+ * FAILS TO COMPLY WITH ANY OF THE MATERIAL TERMS OR CONDITIONS OF THIS
+ * AGREEMENT AND DOES NOT CURE SUCH FAILURE IN A REASONABLE PERIOD OF
+ * TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE. THIS SOFTWARE IS
+ * PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR  PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /* Original Teensyduino Core Library
@@ -223,7 +223,7 @@ uint32_t desc=table[index(0,RX,ep0_rx_bdt_bank)].desc;
 uint8_t size=(desc>>16);
 uint8_t origsize=size;
 
-while (size--) {*data++=*inc++;}	
+while (size--) {*data++=*inc++;}
 
 table[index(0,RX,ep0_rx_bdt_bank)].desc=BDT_DESC(EP0_SIZE,ep0_rx_data_toggle);
 ep0_rx_data_toggle ^= 1;
@@ -460,49 +460,40 @@ static void usb_setup(void)
 	  case 0x0921: // HID SET_REPORT
 		if (setup.wLength) {
 			ep0_rx_ptr=setBuffer;
-			ep0_rx_len=8;	
+			ep0_rx_len=8;
    		}
 		break;
 	  case 0x0A21: // HID SET_IDLE
 		break;
 	  case 0x01a1: // HID GET_REPORT
 	    data = getBuffer;
-		
-		if (getBuffer[8] == 4) { 
-			for(i=0; i<70; i++) { 
-				hmacBuffer[i]=0; 
-			}	
-			getBuffer[1] = 0x02; 
-			getBuffer[2] = 0x02;
-			getBuffer[3] = 0x03;
-			getBuffer[4] = 0x03;
-			getBuffer[5] = 0x03;
-			getBuffer[6] = 0x05;
-			getBuffer[7] = 0x00; 
-			getBuffer[8] = 0x05;
-		}
 
 		if (setBuffer[7] >= 0x80 && setBuffer[7] <= 0x89) {
 			for(i=0; i<7; i++) {
-				hmacBuffer[i+((setBuffer[7]-0x80)*7)]=setBuffer[i];
-			}	
-		} 
+				keyboard_buffer[i+((setBuffer[7]-0x80)*7)]=setBuffer[i];
+			}
+		}
 	    // HMACSHA1 Message Types
-		// Default Report = RD 00  00 02 02 03 03 03 05 00 
+		// Default Report = RD 00  00 02 02 03 03 03 05 00
 		// Reset/Done/ACK - Operation complete
-		if (setBuffer[7] == 0x8f || (setBuffer[7] < 0x89 && setBuffer[7] > 0x80)) { 
-			getBuffer[1] = 0x02; 
+		if (setBuffer[7] == 0x8f || (setBuffer[7] < 0x89 && setBuffer[7] > 0x80)) {
+			getBuffer[1] = 0x02;
 			getBuffer[2] = 0x02;
 			getBuffer[3] = 0x03;
 			getBuffer[4] = 0x03; //slot 1 and 2 configured
 			getBuffer[5] = 0x03;
 			getBuffer[6] = 0x05;
-			getBuffer[7] = 0x00; 
-			getBuffer[8] = 0x05;
+			getBuffer[7] = 0x00;
+			getBuffer[8] = 0x00;
+			if (setBuffer[7] == 0x8f) {
+				for(i=0; i<80; i++) {
+					keyboard_buffer[i]=0;
+				}
+			}
 			setBuffer[7] = 0;
 		}
 		// Get Serial Number - https://github.com/Yubico/yubikey-personalization/blob/7b1d7130617d652359a2226de3734f0b99edd550/ykcore/ykcore.c#L154
-	    else if (setBuffer[1] == 0x10 && setBuffer[2] == 0x6b && setBuffer[3] == 0x5b) { 
+	    else if (setBuffer[1] == 0x10 && setBuffer[2] == 0x6b && setBuffer[3] == 0x5b) {
 			getBuffer[1] = 0x10; //10C8DF = Serial number 1099999
 			getBuffer[2] = 0xbf;
 			getBuffer[3] = 0x91;
@@ -511,29 +502,39 @@ static void usb_setup(void)
 			getBuffer[6] = 0x00;
 			getBuffer[7] = 0xc0;
 			setBuffer[7] = 0;
-	    } 
-		else if (getBuffer[8] <= 2 ) { //Send C0 - C2
-			data = hmacBuffer + (getBuffer[8]*8);
-			getBuffer[8]++;
-			if (getBuffer[7] == 0) { //Send final C0
-				getBuffer[8] = 4; //Done
-			}
-		} 
-		else if (getBuffer[8] == 3 ) { //Send C3
-			data = hmacBuffer + (3*8);
-			getBuffer[8] = 0;
-			getBuffer[7] = 0;
-		} 
+	    }
 		else if (getBuffer[7] >= 0xa1) { // Waiting for button press
-			if (hmacBuffer[7] == 0xC0 && hmacBuffer[15] == 0xC1 && hmacBuffer[23] == 0xC2 && hmacBuffer[31] == 0xC3) {
-				getBuffer[8] = 1; //HMACSHA1 Complete
-				data = hmacBuffer; // Send 1st C0
+			if (getBuffer[8] == 0x43 || getBuffer[8] == 0xA9) {
+				getBuffer[8]++;
+				data = keyboard_buffer; // Send second C0
+				//Reset getBuffer
+				getBuffer[1] = 0x02;
+				getBuffer[2] = 0x02;
+				getBuffer[3] = 0x03;
+				getBuffer[4] = 0x03;
+				getBuffer[5] = 0x03;
+				getBuffer[6] = 0x05;
+				getBuffer[7] = 0x00;
+				getBuffer[8] = 0x00;
+				setBuffer[7] = 0x8f;
+			}
+			else if (getBuffer[8]) { // Already sent first C0
+				getBuffer[8]++;
+				data = keyboard_buffer + ((getBuffer[8]&0x0F)*8);
+			}
+			else if (keyboard_buffer[79] == 0xC9) {
+				getBuffer[8] = 0xA0; // 10 messages to send 
+				data = keyboard_buffer; // Send 1st message (C0)
+			}
+			else if (keyboard_buffer[31] == 0xC3) {
+				getBuffer[8] = 0x40; // 4 messages to send
+				data = keyboard_buffer; // Send 1st message (C0)
 			} 
-		} 
+		}
 		else if (setBuffer[7] == 0x89 && getBuffer[6] == 0x05) { //Received all packets
 			getBuffer[7] = 0x89;
 			setBuffer[8] = 1; // Process packets
-		}		
+		}
 		datalen = 8;
         goto send;
         endpoint0_stall();
@@ -628,7 +629,7 @@ static void usb_control(uint32_t stat)
 		// clear any leftover pending IN transactions
 		}
 		ep0_rx_ptr = NULL;
-		
+
 		if (ep0_tx_data_toggle) {
 		}
 		//if (table[index(0, TX, EVEN)].desc & 0x80) {
@@ -660,7 +661,7 @@ static void usb_control(uint32_t stat)
 		// unfreeze the USB, now that we're ready
 		USB0_CTL = USB_CTL_USBENSOFEN; // clear TXSUSPENDTOKENBUSY bit
 		break;
-	case 0x01:  // OUT transaction received from host	
+	case 0x01:  // OUT transaction received from host
 		if (ep0_rx_ptr) { //if there is a pending OUT transfer
 			uint8_t size=endpoint0_receive(ep0_rx_ptr); //receives current packet
 			ep0_rx_ptr+=size; //moves pointer ahead by received byte count
@@ -670,7 +671,7 @@ static void usb_control(uint32_t stat)
 		}
 		} else {
 		b->desc = BDT_DESC(EP0_SIZE, DATA1); //if no pending transfer we just free the buffer, same as we used to
-		}	
+		}
 		break;
 	case 0x02:
 		//serial_print("PID=OUT\n");

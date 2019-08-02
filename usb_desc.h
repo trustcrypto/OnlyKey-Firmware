@@ -103,7 +103,6 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 #ifndef _usb_desc_h_
 #define _usb_desc_h_
 
@@ -173,7 +172,6 @@ computer unless the vendor or product ID numbers change, or the
 If these instructions are missing steps or could be improved, please
 let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 */
-
 
 #if defined(USB_SERIAL)
   #define VENDOR_ID		0x16C0
@@ -305,71 +303,71 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define ENDPOINT3_CONFIG	ENDPOINT_TRANSIMIT_ONLY
   #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_ONLY
   
-
   
-  #elif defined(USB_RAWHID)
-  #define VENDOR_ID             0x1d50
-  #define PRODUCT_ID            0x60fc
-  #define RAWHID_USAGE_PAGE	0xf1d0  // Changed for FIDO support
-  #define RAWHID_USAGE		0x01  // Changed for FIDO support
-  #define MANUFACTURER_NAME     {'C','R','Y','P','T','O','T','R','U','S','T'}
-  #define MANUFACTURER_NAME_LEN	11
-  #define PRODUCT_NAME          {'O','N','L','Y','K','E','Y'}
-  #define PRODUCT_NAME_LEN	    7  
-  #define EP0_SIZE		        64
-  #define NUM_ENDPOINTS         5
-  #define NUM_USB_BUFFERS	    30
-  #define NUM_INTERFACE		    3
-  #define RAWHID_INTERFACE      0	// RawHID
-  #define RAWHID_TX_ENDPOINT    3
-  #define RAWHID_TX_SIZE        64
-  #define RAWHID_TX_INTERVAL    1
-  #define RAWHID_RX_ENDPOINT    4
-  #define RAWHID_RX_SIZE        64
-  #define RAWHID_RX_INTERVAL    1
-  #define SEREMU_INTERFACE      1	// Serial emulation
-  #define SEREMU_TX_ENDPOINT    1
-  #define SEREMU_TX_SIZE        64
-  #define SEREMU_TX_INTERVAL    1
-  #define SEREMU_RX_ENDPOINT    2
-  #define SEREMU_RX_SIZE        32
-  #define SEREMU_RX_INTERVAL    2
-  #define KEYBOARD_INTERFACE    2	// Keyboard
-  #define KEYBOARD_ENDPOINT     5
-  #define KEYBOARD_SIZE         8
-  #define KEYBOARD_INTERVAL     1
-  #define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
-  #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
-  #define ENDPOINT3_CONFIG	ENDPOINT_TRANSIMIT_ONLY
-  #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_ONLY
-  #define ENDPOINT5_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+ #elif defined(USB_RAWHID)
+		//#define VENDOR_ID             0x16C0
+		//#define PRODUCT_ID            0x0486
+		//#define RAWHID_USAGE_PAGE	0xf1d0  // Changed for FIDO support
+		//#define RAWHID_USAGE		0x01  // Changed for FIDO support
+		//#define MANUFACTURER_NAME     {'C','R','Y','P','T','O','T','R','U','S','T'}
+		//#define MANUFACTURER_NAME_LEN	11
+		//#define PRODUCT_NAME          {'O','N','L','Y','K','E','Y'}
+		//#define PRODUCT_NAME_LEN	    7
+		//#define EP0_SIZE		        64
+		//#define NUM_ENDPOINTS         5
+		//#define NUM_USB_BUFFERS	    30
+		//#define NUM_INTERFACE		    3
+		//#define RAWHID_INTERFACE      1	// RawHID
+		//#define RAWHID_TX_ENDPOINT    3
+		//#define RAWHID_TX_SIZE        64
+		//#define RAWHID_TX_INTERVAL    1
+		//#define RAWHID_RX_ENDPOINT    4
+		//#define RAWHID_RX_SIZE        64
+		//#define RAWHID_RX_INTERVAL    1
+		//#define SEREMU_INTERFACE      2	// Serial emulation
+		//#define SEREMU_TX_ENDPOINT    1
+		//#define SEREMU_TX_SIZE        64
+		//#define SEREMU_TX_INTERVAL    1
+		//#define SEREMU_RX_ENDPOINT    2
+		//#define SEREMU_RX_SIZE        32
+		//#define SEREMU_RX_INTERVAL    2
+		//#define KEYBOARD_INTERFACE    0	// Keyboard
+		//#define KEYBOARD_ENDPOINT     5
+		//#define KEYBOARD_SIZE         8
+		//#define KEYBOARD_INTERVAL     1
+		//#define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+		//#define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
+		//#define ENDPOINT3_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+		//#define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_ONLY
+		//#define ENDPOINT5_CONFIG	ENDPOINT_TRANSIMIT_ONLY
 
-  //#define VENDOR_ID             0x1d50
-  //#define PRODUCT_ID            0x60fc
-  //#define RAWHID_USAGE_PAGE	0xf1d0  // Changed for FIDO support
-  //#define RAWHID_USAGE		0x01  // Changed for FIDO support
-  //#define MANUFACTURER_NAME     {'C','R','Y','P','T','O','T','R','U','S','T'}
-  //#define MANUFACTURER_NAME_LEN	11
-  //#define PRODUCT_NAME          {'O','N','L','Y','K','E','Y'}
-  //#define PRODUCT_NAME_LEN	    7
-  //#define EP0_SIZE		        64
-  //#define NUM_ENDPOINTS         3
-  //#define NUM_USB_BUFFERS	    30
-  //#define NUM_INTERFACE		    2
-  //#define RAWHID_INTERFACE      0	// RawHID
-  //#define RAWHID_TX_ENDPOINT    1
-  //#define RAWHID_TX_SIZE        64
-  //#define RAWHID_TX_INTERVAL    1
-  //#define RAWHID_RX_ENDPOINT    2
-  //#define RAWHID_RX_SIZE        64
-  //#define RAWHID_RX_INTERVAL    1
-  //#define KEYBOARD_INTERFACE    1	// Keyboard
-  //#define KEYBOARD_ENDPOINT     3
-  //#define KEYBOARD_SIZE         8
-  //#define KEYBOARD_INTERVAL     1
-  //#define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
-  //#define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
-  //#define ENDPOINT3_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+		#define VENDOR_ID             0x1d50
+		#define PRODUCT_ID            0x60fc
+		#define RAWHID_USAGE_PAGE	0xf1d0  // Changed for FIDO support
+		#define RAWHID_USAGE		0x01  // Changed for FIDO support
+		#define MANUFACTURER_NAME     {'C','R','Y','P','T','O','T','R','U','S','T'}
+		#define MANUFACTURER_NAME_LEN	11
+		#define PRODUCT_NAME          {'O','N','L','Y','K','E','Y'}
+		#define PRODUCT_NAME_LEN	    7
+		#define EP0_SIZE		        64
+		#define NUM_ENDPOINTS         3
+		#define NUM_USB_BUFFERS	    30
+		#define NUM_INTERFACE		    2
+		#define RAWHID_INTERFACE      1	// RawHID
+		#define RAWHID_TX_ENDPOINT    1
+		#define RAWHID_TX_SIZE        64
+		#define RAWHID_TX_INTERVAL    1
+		#define RAWHID_RX_ENDPOINT    2
+		#define RAWHID_RX_SIZE        64
+		#define RAWHID_RX_INTERVAL    1
+		#define KEYBOARD_INTERFACE    0	// Keyboard
+		#define KEYBOARD_ENDPOINT     3
+		#define KEYBOARD_SIZE         8
+		#define KEYBOARD_INTERVAL     1
+		#define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+		#define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
+		#define ENDPOINT3_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+
   
 
 #elif defined(USB_FLIGHTSIM)

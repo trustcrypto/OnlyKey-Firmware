@@ -124,7 +124,7 @@ extern "C" {
 
 extern uint8_t setBuffer[9];
 extern uint8_t getBuffer[9];
-extern uint8_t hmacBuffer[70];
+extern uint8_t keyboard_buffer[80];
 
 void usb_init(void);
 void usb_init_serialnumber(void);

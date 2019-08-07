@@ -260,6 +260,79 @@ ep0_tx_data_toggle ^= 1;
 ep0_tx_bdt_bank ^= 1;
 }
 
+
+void wipe_usb_buffer() {
+	volatile uint8_t *reg;
+	uint8_t epconf;
+	const uint8_t *cfg;
+	int i;
+		for (i=4; i < (NUM_ENDPOINTS+1)*4; i++) {
+			if (table[i].desc & BDT_OWN) {
+				usb_free((usb_packet_t *)((uint8_t *)(table[i].addr) - 8));
+			}
+		}
+		// free all queued packets
+		for (i=0; i < NUM_ENDPOINTS; i++) {
+			usb_packet_t *p, *n;
+			p = rx_first[i];
+			while (p) {
+				n = p->next;
+				usb_free(p);
+				p = n;
+			}
+			rx_first[i] = NULL;
+			rx_last[i] = NULL;
+			p = tx_first[i];
+			while (p) {
+				n = p->next;
+				usb_free(p);
+				p = n;
+			}
+			tx_first[i] = NULL;
+			tx_last[i] = NULL;
+			usb_rx_byte_count_data[i] = 0;
+			switch (tx_state[i]) {
+			  case TX_STATE_EVEN_FREE:
+			  case TX_STATE_NONE_FREE_EVEN_FIRST:
+				tx_state[i] = TX_STATE_BOTH_FREE_EVEN_FIRST;
+				break;
+			  case TX_STATE_ODD_FREE:
+			  case TX_STATE_NONE_FREE_ODD_FIRST:
+				tx_state[i] = TX_STATE_BOTH_FREE_ODD_FIRST;
+				break;
+			  default:
+				break;
+			}
+		}
+		usb_rx_memory_needed = 0;
+		for (i=1; i <= NUM_ENDPOINTS; i++) {
+			epconf = *cfg++;
+			*reg = epconf;
+			reg += 4;
+			if (epconf & USB_ENDPT_EPRXEN) {
+				usb_packet_t *p;
+				p = usb_malloc();
+				if (p) {
+					table[index(i, RX, EVEN)].addr = p->buf;
+					table[index(i, RX, EVEN)].desc = BDT_DESC(64, 0);
+				} else {
+					table[index(i, RX, EVEN)].desc = 0;
+					usb_rx_memory_needed++;
+				}
+				p = usb_malloc();
+				if (p) {
+					table[index(i, RX, ODD)].addr = p->buf;
+					table[index(i, RX, ODD)].desc = BDT_DESC(64, 1);
+				} else {
+					table[index(i, RX, ODD)].desc = 0;
+					usb_rx_memory_needed++;
+				}
+			}
+			table[index(i, TX, EVEN)].desc = 0;
+			table[index(i, TX, ODD)].desc = 0;
+		}
+}
+
 static void usb_setup(void)
 {
 	const uint8_t *data = NULL;
@@ -864,7 +937,6 @@ void usb_tx(uint32_t endpoint, usb_packet_t *packet)
 {
 	bdt_t *b = &table[index(endpoint, TX, EVEN)];
 	uint8_t next;
-
 	endpoint--;
 	if (endpoint >= NUM_ENDPOINTS) return;
 	__disable_irq();

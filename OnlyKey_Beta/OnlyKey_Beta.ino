@@ -75,7 +75,7 @@
  */
 
 
-//#define DEBUG //Enable Serial Monitor
+#define DEBUG //Enable Serial Monitor
 #define STD_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
 #define OKSOLO //Using FIDO2 from SOLO
@@ -94,6 +94,7 @@
 #include <RNG.h>
 #include "base64.h"
 #include <ADC.h>
+#include <usb_dev.h>
 
 #ifdef OK_Color
 #include "Adafruit_NeoPixel.h"
@@ -599,6 +600,7 @@ void payload(int duration) {
             #endif
             fadeon(1);
           }
+          wipe_usb_buffer(); // Wipe old initialized messages
           return;
         } else if (!initialized && duration >= 90 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE) {
               keyboard_mode_config(MANUAL_PIN_SET);

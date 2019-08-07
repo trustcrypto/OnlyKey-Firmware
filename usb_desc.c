@@ -1,80 +1,4 @@
-/* Modifications
- * Copyright (c) 2015-2019, CryptoTrust LLC.
- * All rights reserved.
- * 
- * Author : Tim Steiner <t@crp.to>
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above
- *    copyright notice, this list of conditions and the following
- *    disclaimer in the documentation and/or other materials provided
- *    with the distribution.
- *
- * 3. All advertising materials mentioning features or use of this
- *    software must display the following acknowledgment:
- *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (https://www.crp.to/ok)"
- *
- * 4. The names "OnlyKey" and "CryptoTrust" must not be used to
- *    endorse or promote products derived from this software without
- *    prior written permission. For written permission, please contact
- *    admin@crp.to.
- *
- * 5. Products derived from this software may not be called "OnlyKey"
- *    nor may "OnlyKey" or "CryptoTrust" appear in their names without
- *    specific prior written permission. For written permission, please
- *    contact admin@crp.to.
- *
- * 6. Redistributions of any form whatsoever must retain the following
- *    acknowledgment:
- *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (https://www.crp.to/ok)"
- *
- * 7. Redistributions in any form must be accompanied by information on
- *    how to obtain complete source code for this software and any
- *    accompanying software that uses this software. The source code
- *    must either be included in the distribution or be available for
- *    no more than the cost of distribution plus a nominal fee, and must
- *    be freely redistributable under reasonable conditions. For a
- *    binary file, complete source code means the source code for all
- *    modules it contains.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS
- * ARE GRANTED BY THIS LICENSE. IF SOFTWARE RECIPIENT INSTITUTES PATENT
- * LITIGATION AGAINST ANY ENTITY (INCLUDING A CROSS-CLAIM OR COUNTERCLAIM
- * IN A LAWSUIT) ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE
- * SOFTWARE WITH OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE
- * RECIPIENT'S PATENT(S), THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY
- * THIS LICENSE SHALL TERMINATE AS OF THE DATE SUCH LITIGATION IS FILED. IF
- * ANY PROVISION OF THIS AGREEMENT IS INVALID OR UNENFORCEABLE UNDER
- * APPLICABLE LAW, IT SHALL NOT AFFECT THE VALIDITY OR ENFORCEABILITY OF THE
- * REMAINDER OF THE TERMS OF THIS AGREEMENT, AND WITHOUT FURTHER ACTION
- * BY THE PARTIES HERETO, SUCH PROVISION SHALL BE REFORMED TO THE MINIMUM
- * EXTENT NECESSARY TO MAKE SUCH PROVISION VALID AND ENFORCEABLE. ALL
- * SOFTWARE RECIPIENT'S RIGHTS UNDER THIS AGREEMENT SHALL TERMINATE IF IT
- * FAILS TO COMPLY WITH ANY OF THE MATERIAL TERMS OR CONDITIONS OF THIS
- * AGREEMENT AND DOES NOT CURE SUCH FAILURE IN A REASONABLE PERIOD OF
- * TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE. THIS SOFTWARE IS
- * PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR  PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
- * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-/* Original Teensyduino Core Library
+/* Teensyduino Core Library
  * http://www.pjrc.com/teensy/
  * Copyright (c) 2013 PJRC.COM, LLC.
  *
@@ -144,7 +68,7 @@
 static uint8_t device_descriptor[] = {
         18,                                     // bLength
         1,                                      // bDescriptorType
-        0x10, 0x01,                             // bcdUSB
+        0x00, 0x02,                             // bcdUSB
 #ifdef DEVICE_CLASS
         DEVICE_CLASS,                           // bDeviceClass
 #else
@@ -189,6 +113,48 @@ static uint8_t keyboard_report_desc[] = {
         0x05, 0x01,             //  Usage Page (Generic Desktop),
         0x09, 0x06,             //  Usage (Keyboard),
         0xA1, 0x01,             //  Collection (Application),
+		0x05, 0x07,             //  Usage Page (Key Codes),
+		0x19, 0xE0,             //  Usage Minimum (224),
+		0x29, 0xE7,             //  Usage Maximum (231),
+		0x15, 0x00,             //  Logical Minimum (0),
+        0x25, 0x01,             //  Logical Maximum (1),
+        0x75, 0x01,             //  Report Size (1),
+        0x95, 0x08,             //  Report Count (8),
+        0x81, 0x02,             //  Input (Data, Variable, Absolute), ;Modifier byte
+        0x95, 0x01,             //  Report Count (1),
+        0x75, 0x08,             //  Report Size (8),
+        0x05, 0x0C,             //  Usage Page (Consumer),
+        0x09, 0xB8,             //  Usage (Eject),
+        0x81, 0x01,             //  Input (Data, Variable, Absolute), ;Media keys
+        0x95, 0x05,             //  Report Count (5),
+        0x75, 0x01,             //  Report Size (1),
+        0x05, 0x08,             //  Usage Page (LEDs),
+        0x19, 0x01,             //  Usage Minimum (1),
+        0x29, 0x05,             //  Usage Maximum (5),
+        0x91, 0x02,             //  Output (Data, Variable, Absolute), ;LED report
+        0x95, 0x01,             //  Report Count (1),
+        0x75, 0x03,             //  Report Size (3),
+        0x91, 0x01,             //  Output (Constant),                 ;LED report padding
+        0x95, 0x06,             //  Report Count (6),
+        0x75, 0x08,             //  Report Size (8),
+        0x15, 0x00,             //  Logical Minimum (0),
+        0x25, 0x7F,             //  Logical Maximum(104),
+        0x05, 0x07,             //  Usage Page (Key Codes),
+        0x19, 0x00,             //  Usage Minimum (0),
+        0x29, 0x7F,             //  Usage Maximum (104),
+        0x81, 0x00,             //  Input (Data, Array),                ;Normal keys
+        0x09, 0x76,             //  usage (local)
+        0x95, 0x08,             //  Report Count (8),
+        0x75, 0x08,             //  Report Size (8),
+        0xB1, 0x02,             //  Feature
+        0xC0                    //  End Collection
+};
+
+//Old report desc
+/*
+        0x05, 0x01,             //  Usage Page (Generic Desktop),
+        0x09, 0x06,             //  Usage (Keyboard),
+        0xA1, 0x01,             //  Collection (Application),
         0x75, 0x01,             //  Report Size (1),
         0x95, 0x08,             //  Report Count (8),
         0x05, 0x07,             //  Usage Page (Key Codes),
@@ -202,13 +168,6 @@ static uint8_t keyboard_report_desc[] = {
         0x15, 0x00,             //  Logical Minimum (0),
         0x25, 0x01,             //  Logical Maximum (1),
         0x05, 0x0C,             //  Usage Page (Consumer),
-        0x09, 0xE9,             //  Usage (Volume Increment),
-        0x09, 0xEA,             //  Usage (Volume Decrement),
-        0x09, 0xE2,             //  Usage (Mute),
-        0x09, 0xCD,             //  Usage (Play/Pause),
-        0x09, 0xB5,             //  Usage (Scan Next Track),
-        0x09, 0xB6,             //  Usage (Scan Previous Track),
-        0x09, 0xB7,             //  Usage (Stop),
         0x09, 0xB8,             //  Usage (Eject),
         0x81, 0x02,             //  Input (Data, Variable, Absolute), ;Media keys
         0x95, 0x05,             //  Report Count (5),
@@ -233,6 +192,7 @@ static uint8_t keyboard_report_desc[] = {
         0xB1, 0x02,                     //   Feature
         0xc0                    // End Collection
 };
+*/
 #endif
 
 #ifdef MOUSE_INTERFACE
@@ -346,19 +306,22 @@ static uint8_t seremu_report_desc[] = {
 
 #ifdef RAWHID_INTERFACE
 static uint8_t rawhid_report_desc[] = {
-        0x06, LSB(RAWHID_USAGE_PAGE), MSB(RAWHID_USAGE_PAGE),
-        0x0A, LSB(RAWHID_USAGE), MSB(RAWHID_USAGE),
+        0x06, LSB(RAWHID_USAGE_PAGE), MSB(RAWHID_USAGE_PAGE), //Usage Page 06 D0 F1
+        0x09, LSB(RAWHID_USAGE), 				// Usage 09 01
         0xA1, 0x01,                             // Collection 0x01
-        0x75, 0x08,                             // report size = 8 bits
+        0x09, 0x20,                             // Usage
         0x15, 0x00,                             // logical minimum = 0
         0x26, 0xFF, 0x00,                       // logical maximum = 255
-        0x95, RAWHID_TX_SIZE,                   // report count
-        0x09, 0x01,                             // usage
+        0x75, 0x08,                   // report count
+        0x95, 0x40,                             // usage
         0x81, 0x02,                             // Input (array)
-        0x95, RAWHID_RX_SIZE,                   // report count
-        0x09, 0x02,                             // usage
-        0x91, 0x02,                             // Output (array)
-        0xC0                                    // end collection
+        0x09, 0x21,                   
+        0x15, 0x00,                             
+        0x26, 0xFF, 0x00, 
+		0x75, 0x08, 
+		0x95, 0x40, 
+		0x91, 0x02, 
+		0xC0,                                   // end collection
 };
 #endif
 
@@ -658,7 +621,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         0x03,                                   // bInterfaceClass (0x03 = HID)
         0x01,                                   // bInterfaceSubClass (0x01 = Boot)
         0x01,                                   // bInterfaceProtocol (0x01 = Keyboard)
-        0,                                      // iInterface
+        0x02,                                      // iInterface
         // HID interface descriptor, HID 1.11 spec, section 6.2.1
         9,                                      // bLength
         0x21,                                   // bDescriptorType
@@ -716,7 +679,7 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         0x03,                                   // bInterfaceClass (0x03 = HID)
         0x00,                                   // bInterfaceSubClass
         0x00,                                   // bInterfaceProtocol
-        0,                                      // iInterface
+        0x02,                                      // iInterface
         // HID interface descriptor, HID 1.11 spec, section 6.2.1
         9,                                      // bLength
         0x21,                                   // bDescriptorType
@@ -983,7 +946,10 @@ const usb_descriptor_list_t usb_descriptor_list[] = {
 	{0x2200, FLIGHTSIM_INTERFACE, flightsim_report_desc, sizeof(flightsim_report_desc)},
 	{0x2100, FLIGHTSIM_INTERFACE, config_descriptor+FLIGHTSIM_HID_DESC_OFFSET, 9},
 #endif
-        {0x0300, 0x0409, (const uint8_t *)&string0, 0},
+        //{0x0201, 0x0000, (const uint8_t *)&string0, 0},
+		{0x0300, 0x0000, (const uint8_t *)&string0, 0},
+		{0x0300, 0x0409, (const uint8_t *)&string0, 0},
+		{0x0201, 0x0000, (const uint8_t *)&string0, 0},
         {0x0301, 0x0409, (const uint8_t *)&usb_string_manufacturer_name, 0},
         {0x0302, 0x0409, (const uint8_t *)&usb_string_product_name, 0},
         {0x0303, 0x0409, (const uint8_t *)&usb_string_serial_number, 0},

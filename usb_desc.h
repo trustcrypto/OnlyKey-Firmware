@@ -1,8 +1,7 @@
 /* Modifications
- * Copyright (c) 2015-2019, CryptoTrust LLC.
+ * Tim Steiner
+ * Copyright (c) 2015-2018, CryptoTrust LLC.
  * All rights reserved.
- * 
- * Author : Tim Steiner <t@crp.to>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,63 +14,63 @@
  *    copyright notice, this list of conditions and the following
  *    disclaimer in the documentation and/or other materials provided
  *    with the distribution.
- *
+ *      
  * 3. All advertising materials mentioning features or use of this
  *    software must display the following acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (https://www.crp.to/ok)"
+ *    the OnlyKey Project (http://www.crp.to/ok)" 
  *
- * 4. The names "OnlyKey" and "CryptoTrust" must not be used to
+ * 4. The names "OnlyKey" and "OnlyKey Project" must not be used to
  *    endorse or promote products derived from this software without
  *    prior written permission. For written permission, please contact
  *    admin@crp.to.
  *
  * 5. Products derived from this software may not be called "OnlyKey"
- *    nor may "OnlyKey" or "CryptoTrust" appear in their names without
+ *    nor may "OnlyKey" or "CryptoTrust" appear in their names without 
  *    specific prior written permission. For written permission, please
  *    contact admin@crp.to.
  *
  * 6. Redistributions of any form whatsoever must retain the following
  *    acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (https://www.crp.to/ok)"
+ *    the OnlyKey Project (http://www.crp.to/ok)" 
  *
- * 7. Redistributions in any form must be accompanied by information on
- *    how to obtain complete source code for this software and any
- *    accompanying software that uses this software. The source code
- *    must either be included in the distribution or be available for
- *    no more than the cost of distribution plus a nominal fee, and must
- *    be freely redistributable under reasonable conditions. For a
- *    binary file, complete source code means the source code for all
- *    modules it contains.
+ * 7. Redistributions in any form must be accompanied by information on 
+ *    how to obtain complete source code for this software and any 
+ *    accompanying software that uses this software. The source code 
+ *    must either be included in the distribution or be available for 
+ *    no more than the cost of distribution plus a nominal fee, and must 
+ *    be freely redistributable under reasonable conditions. For a 
+ *    binary file, complete source code means the source code for all 
+ *    modules it contains. 
  *
  * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS
  * ARE GRANTED BY THIS LICENSE. IF SOFTWARE RECIPIENT INSTITUTES PATENT
  * LITIGATION AGAINST ANY ENTITY (INCLUDING A CROSS-CLAIM OR COUNTERCLAIM
- * IN A LAWSUIT) ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE
- * SOFTWARE WITH OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE
- * RECIPIENT'S PATENT(S), THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY
+ * IN A LAWSUIT) ALLEGING THAT THIS SOFTWARE (INCLUDING COMBINATIONS OF THE 
+ * SOFTWARE WITH OTHER SOFTWARE OR HARDWARE) INFRINGES SUCH SOFTWARE 
+ * RECIPIENT'S PATENT(S), THEN SUCH SOFTWARE RECIPIENT'S RIGHTS GRANTED BY 
  * THIS LICENSE SHALL TERMINATE AS OF THE DATE SUCH LITIGATION IS FILED. IF
- * ANY PROVISION OF THIS AGREEMENT IS INVALID OR UNENFORCEABLE UNDER
- * APPLICABLE LAW, IT SHALL NOT AFFECT THE VALIDITY OR ENFORCEABILITY OF THE
- * REMAINDER OF THE TERMS OF THIS AGREEMENT, AND WITHOUT FURTHER ACTION
- * BY THE PARTIES HERETO, SUCH PROVISION SHALL BE REFORMED TO THE MINIMUM
- * EXTENT NECESSARY TO MAKE SUCH PROVISION VALID AND ENFORCEABLE. ALL
- * SOFTWARE RECIPIENT'S RIGHTS UNDER THIS AGREEMENT SHALL TERMINATE IF IT
- * FAILS TO COMPLY WITH ANY OF THE MATERIAL TERMS OR CONDITIONS OF THIS
- * AGREEMENT AND DOES NOT CURE SUCH FAILURE IN A REASONABLE PERIOD OF
- * TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE. THIS SOFTWARE IS
- * PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR  PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
- * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * ANY PROVISION OF THIS AGREEMENT IS INVALID OR UNENFORCEABLE UNDER 
+ * APPLICABLE LAW, IT SHALL NOT AFFECT THE VALIDITY OR ENFORCEABILITY OF THE 
+ * REMAINDER OF THE TERMS OF THIS AGREEMENT, AND WITHOUT FURTHER ACTION 
+ * BY THE PARTIES HERETO, SUCH PROVISION SHALL BE REFORMED TO THE MINIMUM 
+ * EXTENT NECESSARY TO MAKE SUCH PROVISION VALID AND ENFORCEABLE. ALL 
+ * SOFTWARE RECIPIENT'S RIGHTS UNDER THIS AGREEMENT SHALL TERMINATE IF IT 
+ * FAILS TO COMPLY WITH ANY OF THE MATERIAL TERMS OR CONDITIONS OF THIS 
+ * AGREEMENT AND DOES NOT CURE SUCH FAILURE IN A REASONABLE PERIOD OF 
+ * TIME AFTER BECOMING AWARE OF SUCH NONCOMPLIANCE. THIS SOFTWARE IS 
+ * PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR  PURPOSE 
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS 
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR 
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR 
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
  */
 
 /* Original Teensyduino Core Library
@@ -103,6 +102,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 #ifndef _usb_desc_h_
 #define _usb_desc_h_
 
@@ -305,42 +305,43 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   
   
  #elif defined(USB_RAWHID)
-		//#define VENDOR_ID             0x16C0
-		//#define PRODUCT_ID            0x0486
-		//#define RAWHID_USAGE_PAGE	0xf1d0  // Changed for FIDO support
-		//#define RAWHID_USAGE		0x01  // Changed for FIDO support
-		//#define MANUFACTURER_NAME     {'C','R','Y','P','T','O','T','R','U','S','T'}
-		//#define MANUFACTURER_NAME_LEN	11
-		//#define PRODUCT_NAME          {'O','N','L','Y','K','E','Y'}
-		//#define PRODUCT_NAME_LEN	    7
-		//#define EP0_SIZE		        64
-		//#define NUM_ENDPOINTS         5
-		//#define NUM_USB_BUFFERS	    30
-		//#define NUM_INTERFACE		    3
-		//#define RAWHID_INTERFACE      1	// RawHID
-		//#define RAWHID_TX_ENDPOINT    3
-		//#define RAWHID_TX_SIZE        64
-		//#define RAWHID_TX_INTERVAL    1
-		//#define RAWHID_RX_ENDPOINT    4
-		//#define RAWHID_RX_SIZE        64
-		//#define RAWHID_RX_INTERVAL    1
-		//#define SEREMU_INTERFACE      2	// Serial emulation
-		//#define SEREMU_TX_ENDPOINT    1
-		//#define SEREMU_TX_SIZE        64
-		//#define SEREMU_TX_INTERVAL    1
-		//#define SEREMU_RX_ENDPOINT    2
-		//#define SEREMU_RX_SIZE        32
-		//#define SEREMU_RX_INTERVAL    2
-		//#define KEYBOARD_INTERFACE    0	// Keyboard
-		//#define KEYBOARD_ENDPOINT     5
-		//#define KEYBOARD_SIZE         8
-		//#define KEYBOARD_INTERVAL     1
-		//#define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
-		//#define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
-		//#define ENDPOINT3_CONFIG	ENDPOINT_TRANSIMIT_ONLY
-		//#define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_ONLY
-		//#define ENDPOINT5_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+		#define VENDOR_ID             0x16C0
+		#define PRODUCT_ID            0x0486
+		#define RAWHID_USAGE_PAGE	0xf1d0  // Changed for FIDO support
+		#define RAWHID_USAGE		0x01  // Changed for FIDO support
+		#define MANUFACTURER_NAME     {'C','R','Y','P','T','O','T','R','U','S','T'}
+		#define MANUFACTURER_NAME_LEN	11
+		#define PRODUCT_NAME          {'O','N','L','Y','K','E','Y'}
+		#define PRODUCT_NAME_LEN	    7
+		#define EP0_SIZE		        64
+		#define NUM_ENDPOINTS         5
+		#define NUM_USB_BUFFERS	    30
+		#define NUM_INTERFACE		    3
+		#define RAWHID_INTERFACE      1	// RawHID
+		#define RAWHID_TX_ENDPOINT    3
+		#define RAWHID_TX_SIZE        64
+		#define RAWHID_TX_INTERVAL    5
+		#define RAWHID_RX_ENDPOINT    4
+		#define RAWHID_RX_SIZE        64
+		#define RAWHID_RX_INTERVAL    5
+		#define SEREMU_INTERFACE      2	// Serial emulation
+		#define SEREMU_TX_ENDPOINT    1
+		#define SEREMU_TX_SIZE        64
+		#define SEREMU_TX_INTERVAL    5
+		#define SEREMU_RX_ENDPOINT    2
+		#define SEREMU_RX_SIZE        32
+		#define SEREMU_RX_INTERVAL    2
+		#define KEYBOARD_INTERFACE    0	// Keyboard
+		#define KEYBOARD_ENDPOINT     5
+		#define KEYBOARD_SIZE         8
+		#define KEYBOARD_INTERVAL     5
+		#define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+		#define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
+		#define ENDPOINT3_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+		#define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_ONLY
+		#define ENDPOINT5_CONFIG	ENDPOINT_TRANSIMIT_ONLY
 
+		/*
 		#define VENDOR_ID             0x1d50
 		#define PRODUCT_ID            0x60fc
 		#define RAWHID_USAGE_PAGE	0xf1d0  // Changed for FIDO support
@@ -367,6 +368,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 		#define ENDPOINT1_CONFIG	ENDPOINT_TRANSIMIT_ONLY
 		#define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_ONLY
 		#define ENDPOINT3_CONFIG	ENDPOINT_TRANSIMIT_ONLY
+		*/
 
   
 

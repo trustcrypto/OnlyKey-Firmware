@@ -384,6 +384,11 @@ void checkKey(Task* me) {
     }
   }
 
+  if (setBuffer[8] == 1 && !isfade) //Done receiving packets
+  {                 
+    if (outputmode != KEYBOARD_USB) changeoutputmode(KEYBOARD_USB); //Keyboard USB
+    process_setreport();
+  }
   //Check integrity counters and recv usb data
   integrityctr1++;
   delay(sumofall % 6); //delay 0 - 6 ms

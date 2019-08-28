@@ -539,6 +539,8 @@ static void usb_setup(void)
 		break;
 	  case 0x0A21: // HID SET_IDLE
 		break;
+	  case 0x0B21: // ?
+		break;
 	  case 0x01a1: // HID GET_REPORT
 	    data = getBuffer;
 

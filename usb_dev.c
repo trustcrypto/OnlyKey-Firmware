@@ -262,9 +262,11 @@ ep0_tx_bdt_bank ^= 1;
 
 
 void wipe_usb_buffer() {
-	volatile uint8_t *reg;
+	volatile uint8_t *reg 
 	uint8_t epconf;
 	const uint8_t *cfg;
+	reg = &USB0_ENDPT1;
+	cfg = usb_endpoint_config_table;
 	int i;
 		for (i=4; i < (NUM_ENDPOINTS+1)*4; i++) {
 			if (table[i].desc & BDT_OWN) {

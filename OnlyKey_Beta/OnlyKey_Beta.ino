@@ -75,7 +75,7 @@
  */
 
 
-#define DEBUG //Enable Serial Monitor
+//#define DEBUG //Enable Serial Monitor
 #define STD_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
 #define OKSOLO //Using FIDO2 from SOLO
@@ -230,7 +230,7 @@ extern "C" {
 //Arduino Setup
 /*************************************/
 void setup() {
-  delay(100);
+  //delay(100);
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
@@ -605,7 +605,11 @@ void payload(int duration) {
             #endif
             fadeon(1);
           }
-          wipe_usb_buffer(); // Wipe old initialized messages
+          unsigned long wait = millis() + 200;
+          while(millis() < wait) { //Process waiting messages
+              recvmsg(0);
+          }
+          wipe_usb_buffer(); // Wipe old responses
           return;
         } else if (!initialized && duration >= 90 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE) {
               keyboard_mode_config(MANUAL_PIN_SET);

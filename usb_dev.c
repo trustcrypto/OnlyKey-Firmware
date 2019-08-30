@@ -262,7 +262,7 @@ ep0_tx_bdt_bank ^= 1;
 
 
 void wipe_usb_buffer() {
-	volatile uint8_t *reg 
+	volatile uint8_t *reg;
 	uint8_t epconf;
 	const uint8_t *cfg;
 	reg = &USB0_ENDPT1;

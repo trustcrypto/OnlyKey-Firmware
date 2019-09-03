@@ -661,6 +661,7 @@ void payload(int duration) {
       Serial.print("Button selected");
       Serial.println(button_selected-'0');
       #endif
+      idletimer=0;
       if (profilemode!=NONENCRYPTEDPROFILE) {
       #ifdef STD_VERSION
         if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
@@ -809,7 +810,6 @@ void payload(int duration) {
 //Trigger on short button press
 /*************************************/
 void gen_press(void) {
-  idletimer=0;
   int slot;
   if (profilemode) {
     slot=(button_selected-'0')+12;
@@ -822,7 +822,6 @@ void gen_press(void) {
 //Trigger on long button press
 /*************************************/
 void gen_hold(void) {
-  idletimer=0;
   int slot;
   if (profilemode) {
     slot=(button_selected-'0')+12;

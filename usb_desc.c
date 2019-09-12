@@ -394,10 +394,31 @@ static uint8_t rawhid_report_desc[] = {
         0x09, 0x21,                   
         0x15, 0x00,                             
         0x26, 0xFF, 0x00, 
-		0x75, 0x08, 
-		0x95, 0x40, 
-		0x91, 0x02, 
-		0xC0,                                   // end collection
+        0x75, 0x08, 
+        0x95, 0x40, 
+        0x91, 0x02, 
+        0xC0,                                   // end collection
+};
+#endif
+
+#ifdef RAWHID_INTERFACE2
+static uint8_t rawhid_report_desc2[] = {
+        0x06, LSB(RAWHID_USAGE_PAGE2), MSB(RAWHID_USAGE_PAGE2), //Usage Page 06 D0 F1
+        0x09, LSB(RAWHID_USAGE2), 				// Usage 09 01
+        0xA1, 0x01,                             // Collection 0x01
+        0x09, 0x20,                             // Usage
+        0x15, 0x00,                             // logical minimum = 0
+        0x26, 0xFF, 0x00,                       // logical maximum = 255
+        0x75, 0x08,                   // report count
+        0x95, 0x40,                             // usage
+        0x81, 0x02,                             // Input (array)
+        0x09, 0x21,                   
+        0x15, 0x00,                             
+        0x26, 0xFF, 0x00, 
+        0x75, 0x08, 
+        0x95, 0x40, 
+        0x91, 0x02, 
+        0xC0,                                   // end collection
 };
 #endif
 
@@ -473,7 +494,15 @@ static uint8_t flightsim_report_desc[] = {
 #define RAWHID_INTERFACE_DESC_SIZE	0
 #endif
 
-#define FLIGHTSIM_INTERFACE_DESC_POS	RAWHID_INTERFACE_DESC_POS+RAWHID_INTERFACE_DESC_SIZE
+#define RAWHID_INTERFACE_DESC_POS2	RAWHID_INTERFACE_DESC_POS+RAWHID_INTERFACE_DESC_SIZE
+#ifdef  RAWHID_INTERFACE2
+#define RAWHID_INTERFACE_DESC_SIZE2	9+9+7+7
+#define RAWHID_HID_DESC_OFFSET2		RAWHID_INTERFACE_DESC_POS2+9
+#else
+#define RAWHID_INTERFACE_DESC_SIZE2	0
+#endif
+
+#define FLIGHTSIM_INTERFACE_DESC_POS	RAWHID_INTERFACE_DESC_POS2+RAWHID_INTERFACE_DESC_SIZE2
 #ifdef  FLIGHTSIM_INTERFACE
 #define FLIGHTSIM_INTERFACE_DESC_SIZE	9+9+7+7
 #define FLIGHTSIM_HID_DESC_OFFSET	FLIGHTSIM_INTERFACE_DESC_POS+9
@@ -781,6 +810,42 @@ static uint8_t config_descriptor[CONFIG_DESC_SIZE] = {
         RAWHID_RX_INTERVAL,			// bInterval
 #endif // RAWHID_INTERFACE
 
+#ifdef RAWHID_INTERFACE2
+        // interface descriptor, USB spec 9.6.5, page 267-269, Table 9-12
+        9,                                      // bLength
+        4,                                      // bDescriptorType
+        RAWHID_INTERFACE2,                       // bInterfaceNumber
+        0,                                      // bAlternateSetting
+        2,                                      // bNumEndpoints
+        0x03,                                   // bInterfaceClass (0x03 = HID)
+        0x00,                                   // bInterfaceSubClass
+        0x00,                                   // bInterfaceProtocol
+        0x02,                                      // iInterface
+        // HID interface descriptor, HID 1.11 spec, section 6.2.1
+        9,                                      // bLength
+        0x21,                                   // bDescriptorType
+        0x11, 0x01,                             // bcdHID
+        0,                                      // bCountryCode
+        1,                                      // bNumDescriptors
+        0x22,                                   // bDescriptorType
+        LSB(sizeof(rawhid_report_desc2)),        // wDescriptorLength
+        MSB(sizeof(rawhid_report_desc2)),
+        // endpoint descriptor, USB spec 9.6.6, page 269-271, Table 9-13
+        7,                                      // bLength
+        5,                                      // bDescriptorType
+        RAWHID_TX_ENDPOINT2 | 0x80,              // bEndpointAddress
+        0x03,                                   // bmAttributes (0x03=intr)
+        RAWHID_TX_SIZE, 0,                      // wMaxPacketSize
+        RAWHID_TX_INTERVAL,                     // bInterval
+        // endpoint descriptor, USB spec 9.6.6, page 269-271, Table 9-13
+        7,                                      // bLength
+        5,                                      // bDescriptorType
+        RAWHID_RX_ENDPOINT2,                     // bEndpointAddress
+        0x03,                                   // bmAttributes (0x03=intr)
+        RAWHID_RX_SIZE, 0,                      // wMaxPacketSize
+        RAWHID_RX_INTERVAL,			// bInterval
+#endif // RAWHID_INTERFACE
+
 #ifdef FLIGHTSIM_INTERFACE
         // interface descriptor, USB spec 9.6.5, page 267-269, Table 9-12
         9,                                      // bLength
@@ -1018,14 +1083,18 @@ const usb_descriptor_list_t usb_descriptor_list[] = {
 	{0x2200, RAWHID_INTERFACE, rawhid_report_desc, sizeof(rawhid_report_desc)},
 	{0x2100, RAWHID_INTERFACE, config_descriptor+RAWHID_HID_DESC_OFFSET, 9},
 #endif
+#ifdef RAWHID_INTERFACE2
+	{0x2200, RAWHID_INTERFACE2, rawhid_report_desc2, sizeof(rawhid_report_desc2)},
+	{0x2100, RAWHID_INTERFACE2, config_descriptor+RAWHID_HID_DESC_OFFSET2, 9},
+#endif
 #ifdef FLIGHTSIM_INTERFACE
 	{0x2200, FLIGHTSIM_INTERFACE, flightsim_report_desc, sizeof(flightsim_report_desc)},
 	{0x2100, FLIGHTSIM_INTERFACE, config_descriptor+FLIGHTSIM_HID_DESC_OFFSET, 9},
 #endif
         //{0x0201, 0x0000, (const uint8_t *)&string0, 0},
-		{0x0300, 0x0000, (const uint8_t *)&string0, 0},
-		{0x0300, 0x0409, (const uint8_t *)&string0, 0},
-		{0x0201, 0x0000, (const uint8_t *)&string0, 0},
+	{0x0300, 0x0000, (const uint8_t *)&string0, 0},
+	{0x0300, 0x0409, (const uint8_t *)&string0, 0},
+	{0x0201, 0x0000, (const uint8_t *)&string0, 0},
         {0x0301, 0x0409, (const uint8_t *)&usb_string_manufacturer_name, 0},
         {0x0302, 0x0409, (const uint8_t *)&usb_string_product_name, 0},
         {0x0303, 0x0409, (const uint8_t *)&usb_string_serial_number, 0},

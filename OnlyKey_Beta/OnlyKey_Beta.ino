@@ -75,11 +75,9 @@
  */
 
 
-//#define DEBUG //Enable Serial Monitor
+#define DEBUG //Enable Serial Monitor
 #define STD_VERSION //Define for US Version Firmware
 #define OK_Color //Color Version
-#define OKSOLO //Using FIDO2 from SOLO
-
 
 #include "sha256.h"
 #include <EEPROM.h>
@@ -106,6 +104,7 @@
 /*************************************/
 extern uint8_t profilemode;
 #ifdef STD_VERSION
+#define OKSOLO //Using FIDO2 from SOLO
 #include "yksim.h"
 #include "uECC.h"
 #include "ykcore.h"
@@ -230,7 +229,7 @@ extern "C" {
 //Arduino Setup
 /*************************************/
 void setup() {
-  //delay(100);
+  //delay(3000);
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
@@ -339,7 +338,7 @@ void setup() {
   RNG.stir((uint8_t *)analog2, sizeof(analog2), sizeof(analog2)*2);
   #ifdef DEBUG
   Serial.print("EEPROM Used ");
-  Serial.println(EEpos_ledbrightness);
+  Serial.println(EEpos_ctap_authstate+208);
   Serial.println(FTFL_FSEC, HEX);
   #endif
   rngloop(); //Start RNG
@@ -400,11 +399,12 @@ void checkKey(Task* me) {
     yubikey_incr_time();
     #endif
     if (TIMEOUT[0] && idletimer >= (TIMEOUT[0]*60000)) {
-    unlocked = false;
-    firsttime = true;
-    password.reset(); //reset the guessed password to NULL
-    pass_keypress=1;
-    memset(profilekey, 0, 32);  
+      unlocked = false;
+      firsttime = true;
+      password.reset(); //reset the guessed password to NULL
+      pass_keypress=1;
+      memset(profilekey, 0, 32);  
+      SoftTimer.add(&taskInitialized);
     }
     }
   } else{
@@ -630,6 +630,11 @@ void payload(int duration) {
             Serial.print("password appended with ");
             Serial.println(button_selected-'0');
             #endif
+            if (configmode) {
+              NEO_Color = 45;
+              blink(1);
+              NEO_Color = 1;
+            }
             return;
         }
         else if (pin_set<=6) {
@@ -637,6 +642,11 @@ void payload(int duration) {
             Serial.print("SD password appended with ");
             Serial.println(button_selected-'0');
             #endif
+            if (configmode) {
+              NEO_Color = 45;
+              blink(1);
+              NEO_Color = 1;
+            }
             return;
         }
         else if (pin_set<=9) {
@@ -647,6 +657,11 @@ void payload(int duration) {
             Serial.println(button_selected-'0');
             #endif
             #endif
+            }
+            if (configmode) {
+              NEO_Color = 45;
+              blink(1);
+              NEO_Color = 1;
             }
             return;
         } else if (pin_set==10) {

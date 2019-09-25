@@ -113,23 +113,31 @@
 #ifdef RAWHID_INTERFACE // defined by usb_dev.h -> usb_desc.h
 #if F_CPU >= 20000000
 
+
 int usb_rawhid_recv(void *buffer, uint32_t timeout)
 {
 	usb_packet_t *rx_packet;
 	uint32_t begin = millis();
+	uint8_t useinterface = 0;
 
 	while (1) {
 		if (!usb_configuration) return -1;
 		rx_packet = usb_rx(RAWHID_RX_ENDPOINT);
-		if (rx_packet) break;
+		if (rx_packet) {
+			useinterface=1;
+			break;
+		}
 		rx_packet = usb_rx(RAWHID_RX_ENDPOINT2);
-		if (rx_packet) break;
+		if (rx_packet) {
+			useinterface=2;
+			break;
+		}
 		if (millis() - begin > timeout || !timeout) return 0;
 		yield();
 	}
 	memcpy(buffer, rx_packet->buf, RAWHID_RX_SIZE);
 	usb_free(rx_packet);
-	return RAWHID_RX_SIZE;
+	return useinterface;
 }
 
 int usb_rawhid_available(void)
@@ -149,18 +157,18 @@ int usb_rawhid_send(const void *buffer, uint32_t timeout)
 	usb_packet_t *tx_packet;
 	uint32_t begin = millis();
 
-	while (1) {
-		if (!usb_configuration) return -1;
-		if (usb_tx_packet_count(RAWHID_TX_ENDPOINT) < TX_PACKET_LIMIT) {
-			tx_packet = usb_malloc();
-			if (tx_packet) break;
+		while (1) {
+			if (!usb_configuration) return -1;
+			if (usb_tx_packet_count(RAWHID_TX_ENDPOINT) < TX_PACKET_LIMIT) {
+				tx_packet = usb_malloc();
+				if (tx_packet) break;
+			}
+			if (millis() - begin > timeout) return 0;
+			yield();
 		}
-		if (millis() - begin > timeout) return 0;
-		yield();
-	}
-	memcpy(tx_packet->buf, buffer, RAWHID_TX_SIZE);
-	tx_packet->len = RAWHID_TX_SIZE;
-	usb_tx(RAWHID_TX_ENDPOINT, tx_packet);
+		memcpy(tx_packet->buf, buffer, RAWHID_TX_SIZE);
+		tx_packet->len = RAWHID_TX_SIZE;
+		usb_tx(RAWHID_TX_ENDPOINT, tx_packet);
 	return RAWHID_TX_SIZE;
 }
 

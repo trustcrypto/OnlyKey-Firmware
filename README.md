@@ -60,3 +60,16 @@ For more information on export restrictions see: http://www.apache.org/licenses/
 ## Source
 
 [OnlyKey Firmware on Github](https://github.com/trustcrypto/OnlyKey-Firmware)
+
+## Jargon legend for release file names
+
+'STD' is for Standard.
+
+'IN_TRVL' is for Int Travel and is the international travel stick, without the color LED but with a Label called LED.
+
+'Color' is the normal stick with the colored LED. 
+
+For example:
+
+    Signed_OnlyKey_Beta8_IN_TRVL_Color.txt
+    Signed_OnlyKey_Beta8_STD_Color.txt

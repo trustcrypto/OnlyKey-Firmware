@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2019, CryptoTrust LLC.
+ * Copyright (c) 2015-2020, CryptoTrust LLC.
  * All rights reserved.
  * 
  * Author : Tim Steiner <t@crp.to>
@@ -19,7 +19,7 @@
  * 3. All advertising materials mentioning features or use of this
  *    software must display the following acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (https://www.crp.to/ok)"
+ *    the OnlyKey Project (https://crp.to/ok)"
  *
  * 4. The names "OnlyKey" and "CryptoTrust" must not be used to
  *    endorse or promote products derived from this software without
@@ -34,7 +34,7 @@
  * 6. Redistributions of any form whatsoever must retain the following
  *    acknowledgment:
  *    "This product includes software developed by CryptoTrust LLC. for
- *    the OnlyKey Project (https://www.crp.to/ok)"
+ *    the OnlyKey Project (https://crp.to/ok)"
  *
  * 7. Redistributions in any form must be accompanied by information on
  *    how to obtain complete source code for this software and any
@@ -390,7 +390,7 @@ void checkKey(Task* me) {
   }
   //Check integrity counters and recv usb data
   integrityctr1++;
-  delay(sumofall % 6); //delay 0 - 6 ms
+  delay(sumofall % 6); //delay 0 - 5 ms
   if (unlocked) {
     integrityctr2++;
     recvmsg(0);
@@ -575,7 +575,7 @@ void payload(int duration) {
    integrityctr2++;
    password.append(button_selected);
    integrityctr1++;
-   delay((sumofall % 4)+(sumofall % 3)); //delay 0 - 7 ms
+   delay((sumofall % 4)+(sumofall % 3)); //delay 0 - 5 ms
    if (unlocked || password.profile1hashevaluate() || password.profile2hashevaluate()) {
     integrityctr2++;
         if (unlocked != true) //A correct PIN was just entered do the following for first login

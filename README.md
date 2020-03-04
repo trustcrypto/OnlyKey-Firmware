@@ -6,7 +6,7 @@ This is the official firmware for **OnlyKey**
 
 OnlyKey can be purchased here: [OnlyKey order](http://www.crp.to/p/)
 
-## Geting Started
+## Getting Started
 
 Just getting started with OnlyKey?
 

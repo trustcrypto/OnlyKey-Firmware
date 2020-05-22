@@ -7,6 +7,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
+ * 
  *
  * 1. Redistributions of source code must retain the above copyright
  *    notice, this list of conditions and the following disclaimer.
@@ -75,31 +76,37 @@
  */
 
 
-#define DEBUG //Enable Serial Monitor
-#define STD_VERSION //Define for US Version Firmware
-#define OK_Color //Color Version
-
+/*************************************/
+//Firmware Build Options
+/*************************************/
+#define DEBUG //Enable Serial Monitor, debug firmware
+#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
+#define OK_Color //Define for hardware with color LED
+/*************************************/
+//Standard Libraries 
+/*************************************/
 #include "sha256.h"
-#include <EEPROM.h>
+#include "EEPROM.h"
 #include "T3MacLib.h"
-#include <SoftTimer.h>
-#include <password.h>
+#include "SoftTimer.h"
+#include "password.h"
 #include "sha1.h"
 #include "totp.h"
 #include "Time.h"
 #include "onlykey.h"
 #include "flashkinetis.h"
-#include <RNG.h>
+#include "RNG.h"
 #include "base64.h"
-#include <ADC.h>
-#include <usb_dev.h>
-
+#include "ADC.h"
+#include "usb_dev.h"
+/*************************************/
+//Color LED Libraries 
+/*************************************/
 #ifdef OK_Color
 #include "Adafruit_NeoPixel.h"
 #endif
-
 /*************************************/
-//Additional Libraries to Load for US Version
+//Additional Libraries to Load for STD firmware version
 //These libraries will only be used if STD_VERSION is defined
 /*************************************/
 extern uint8_t profilemode;
@@ -108,12 +115,12 @@ extern uint8_t profilemode;
 #include "yksim.h"
 #include "uECC.h"
 #include "ykcore.h"
-#include <AES.h>
-#include <GCM.h>
+#include "AES.h"
+#include "GCM.h"
 #include "rsa.h"
 #include "tweetnacl.h"
 /*************************************/
-//FIDO2 Selection
+//FIDO2 Libraries
 /*************************************/
 #ifdef OKSOLO
 #include "ctap.h"
@@ -131,21 +138,16 @@ extern uint8_t profilemode;
 #include "u2f.h"
 #endif
 #endif
-#ifdef OK_Color
-#define OKversion "v0.2-beta.8c"
-#else
-#define OKversion "v0.2-beta.8o"
-#endif
-#define UNLOCKED "UNLOCKED" OKversion
-#define UNINITIALIZED "UNINITIALIZED" OKversion
+/*************************************/
+//LED Assignments
+/*************************************/
 extern uint8_t NEO_Color;
 extern uint8_t NEO_Brightness[1];
+extern uint8_t Profile_Offset;
 /*************************************/
-//RNG assignments
+//RNG Assignments
 /*************************************/
 bool calibrating = false;
-uint8_t data[32];
-extern uint8_t recv_buffer[64];
 /*************************************/
 //PIN Assigment Variables
 /*************************************/
@@ -160,7 +162,7 @@ extern uint8_t ANALOGPIN1;
 extern uint8_t ANALOGPIN2;
 extern unsigned int sumofall;
 /*************************************/
-//Keypad / password assignments
+//Keypad / Password Assignments
 /*************************************/
 extern int button_selected;    //Key selected 1-6
 static int pass_keypress = 1;  //The number key presses in current password attempt
@@ -186,7 +188,7 @@ extern unsigned int touchread4ref;
 extern unsigned int touchread5ref;
 extern unsigned int touchread6ref;
 /*************************************/
-//PIN HASH
+//Keys, Hashes, Integrity Counters
 /*************************************/
 extern uint8_t profilekey[32];
 extern uint8_t p1hash[32];
@@ -197,15 +199,12 @@ extern int initcheck;
 extern int integrityctr1;
 extern int integrityctr2;
 /*************************************/
-//SoftTimer
+//SoftTimer Tasks
 /*************************************/
 #define TIME_POLL 50 // poll "key" every 50 ms
 Task taskKey(TIME_POLL, checkKey);
 Task taskKB(50, sendKey); // Default send kb codes every 50 ms
 Task taskInitialized(1000, sendInitialized);
-char keybuffer[EElen_url+EElen_addchar+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64+EElen_addchar]; //Buffer to hold all keystrokes
-char *pos;
-extern uint8_t isfade;
 /*************************************/
 //CRYPTO
 /*************************************/
@@ -218,6 +217,13 @@ extern uint8_t packet_buffer_details[5];
 extern uint8_t outputmode;
 extern uint8_t sshchallengemode;
 extern uint8_t pgpchallengemode;
+/*************************************/
+//Other
+/*************************************/
+extern uint8_t recv_buffer[64];
+char keybuffer[EElen_url+EElen_addchar+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64+EElen_addchar]; //Buffer to hold all keystrokes
+char *pos;
+extern uint8_t isfade;
 
 extern "C" {
   int _getpid(){ return -1;}
@@ -229,7 +235,9 @@ extern "C" {
 //Arduino Setup
 /*************************************/
 void setup() {
-  //delay(3000);
+  // Delay may be needed for serial debug
+  // delay(3000);
+  analogReadResolution(16);
   #ifdef DEBUG
   Serial.begin(9600);
   #endif
@@ -242,20 +250,19 @@ void setup() {
   //PIN Assigments
   /*************************************/
   BLINKPIN=6;
-  TOUCHPIN1=1;
-  TOUCHPIN2=22;
-  TOUCHPIN3=23;
-  TOUCHPIN4=17;
-  TOUCHPIN5=15;
-  TOUCHPIN6=16;
-  ANALOGPIN1=A0;
-  ANALOGPIN2=A7;
+  TOUCHPIN1=1; // #define CORE_PIN1_CONFIG  PORTB_PCR17
+  TOUCHPIN2=22; //#define CORE_PIN22_CONFIG  PORTC_PCR1
+  TOUCHPIN3=23; //#define CORE_PIN23_CONFIG  PORTC_PCR2 OnlyKey Go Button #1
+  TOUCHPIN4=17; //#define CORE_PIN17_CONFIG  PORTB_PCR1
+  TOUCHPIN5=15; //#define CORE_PIN15_CONFIG  PORTC_PCR0 OnlyKey Go Button #2
+  TOUCHPIN6=16; //#define CORE_PIN16_CONFIG  PORTB_PCR0
+  ANALOGPIN1=A0; //#define CORE_PIN14_CONFIG PORTD_PCR1
+  ANALOGPIN2=A7; //#define CORE_PIN21_CONFIG PORTD_PCR6
   /*************************************/
-  uint8_t *ptr;
-  ptr = nonce;
-  initcheck = onlykey_flashget_noncehash (ptr, 32); //Check if first time use
+  initcheck = okcore_flashget_noncehash ((uint8_t*)nonce, 32); //Check if first time use
   integrityctr1++;
-  /* //dump flash storage
+  /* 
+  //dump flash storage, useful for verifying contents
   Serial.println(initcheck);
   char temp[32];
   wipeEEPROM();
@@ -270,7 +277,9 @@ void setup() {
   }
   */
   //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
-   if (FTFL_FSEC!=0x44) {
+  if (FTFL_FSEC!=0x44) {
+    //First time starting up flash security must be enabled
+    //Todo write hash to eeprom
     int nn = 0;
     nn=flashSecurityLockBits();
     #ifdef DEBUG
@@ -281,40 +290,31 @@ void setup() {
   }
   if(!initcheck) {
       wipeEEPROM();
-      ptr = TIMEOUT;
-      onlykey_eeset_timeout(ptr); //Default lockout 30 min
+      okeeprom_eeset_timeout((uint8_t*)TIMEOUT); //Default lockout 30 min
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
       #ifdef DEBUG
       Serial.println("UNLOCKED, NO PIN SET");
       #endif
   } else if(FTFL_FSEC==0x44 && initcheck) {
-        ptr = p1hash;
-        onlykey_flashget_pinhashpublic (ptr, 32); //store PIN hash
-        ptr = sdhash;
-        onlykey_flashget_selfdestructhash (ptr); //store self destruct PIN hash
-        ptr = p2hash;
-        onlykey_flashget_2ndpinhashpublic (ptr); //store plausible deniability PIN hash
-        ptr = TYPESPEED;
-        onlykey_eeget_typespeed(ptr);
+        okcore_flashget_pinhashpublic ((uint8_t*)p1hash, 32); //store PIN hash
+        okcore_flashget_selfdestructhash ((uint8_t*)sdhash); //store self destruct PIN hash
+        okcore_flashget_2ndpinhashpublic ((uint8_t*)p2hash); //store plausible deniability PIN hash
+        okeeprom_eeget_typespeed((uint8_t*)TYPESPEED);
         #ifdef DEBUG
         Serial.println("typespeed = ");
-        Serial.println(*ptr);
+        Serial.println(TYPESPEED[0]);
         #endif
-        if (*ptr  == 0) {
+        if (TYPESPEED[0]  == 0) {
           TYPESPEED[0] = 4;
-         } else if (*ptr  <= 10) {
-          TYPESPEED[0]=*ptr;
+         } else if (TYPESPEED[0] <= 10) {
          }
-        ptr = NEO_Brightness;
-        onlykey_eeget_ledbrightness(ptr);
-        ptr = TIMEOUT;
-        onlykey_eeget_timeout(ptr);
-        ptr = KeyboardLayout;
-        onlykey_eeget_keyboardlayout(ptr);
+        okeeprom_eeget_ledbrightness((uint8_t*)NEO_Brightness);
+        okeeprom_eeget_timeout((uint8_t*)TIMEOUT);
+        okeeprom_eeget_keyboardlayout((uint8_t*)KeyboardLayout);
         #ifdef DEBUG
         Serial.println("KeyboardLayout = ");
-        Serial.println(*ptr);
+        Serial.println(KeyboardLayout[0]);
         #endif
         update_keyboard_layout();
         unlocked = false;
@@ -333,15 +333,18 @@ void setup() {
   RNG.begin(OKversion, 2045); //Start RNG with the device version
   CHIP_ID();
   unsigned int analog1 = analogRead(ANALOGPIN1);
-  RNG.stir((uint8_t *)analog1, sizeof(analog1), sizeof(analog1)*2);
+  RNG.stir((uint8_t *)&analog1, 2, 4);
   unsigned int analog2 = analogRead(ANALOGPIN2);
-  RNG.stir((uint8_t *)analog2, sizeof(analog2), sizeof(analog2)*2);
+  RNG.stir((uint8_t *)&analog2, 2, 4);
   #ifdef DEBUG
   Serial.print("EEPROM Used ");
   Serial.println(EEpos_ctap_authstate+208);
   Serial.println(FTFL_FSEC, HEX);
   #endif
   rngloop(); //Start RNG
+  if (HW_ID==OK_GO) {
+    Serial.print("g model found");
+  }
   #ifdef OK_Color
   initColor();
   rainbowCycle();
@@ -352,12 +355,17 @@ void setup() {
   fadein();
   fadeout();
   #endif
+
+  
 //For testing and development to disable PIN
 //unlocked=true;
 //configmode=true;
 //initialized=true;
-
   SoftTimer.add(&taskKey);
+  
+  if (HW_ID==OK_GO) {
+    payload(10); 
+  }
 }
 
 extern elapsedMillis idletimer;
@@ -367,7 +375,7 @@ extern elapsedMillis idletimer;
 //Called every 50ms
 /*************************************/
 void checkKey(Task* me) {
-
+  
   //Check for bootloader trigger
   if (!digitalRead(33)) { //Trigger bootloader to load firmware by PTA4 low for 3 sec
     elapsedMillis waiting;
@@ -421,8 +429,8 @@ void checkKey(Task* me) {
   #ifdef DEBUG
   // Auto set default PINs and passphrase for testing
   //if (!initialized) {
-  // onlykey_eeset_timeout(0); //Disable lockout
-  //  keyboard_mode_config(AUTO_PIN_SET);  
+  // okeeprom_eeset_timeout(0); //Disable lockout
+  //  okcore_quick_setup(AUTO_PIN_SET);  
   //}
   #endif
   
@@ -447,23 +455,25 @@ void sendKey(Task* me) {
     SoftTimer.add(&taskKey);
     return;
     }
-    else if ((uint8_t)*pos == 1) {
+    else if ((uint8_t)*pos == 1 || ((uint8_t)*pos == 0x5c && (uint8_t)*(pos+1) == 't')) {
         if (!isfade) {
           Keyboard.press(KEY_TAB);
           delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
           Keyboard.releaseAll();
           delay(((TYPESPEED[0]*TYPESPEED[0])*2));
         }
-        pos++;
+        if ((uint8_t)*pos == 1) pos++;
+        else pos+=2;
     }
-    else if ((uint8_t)*pos == 2) {
+    else if ((uint8_t)*pos == 2 || ((uint8_t)*pos == 0x5c && (uint8_t)*(pos+1) == 'r')) {
         if (!isfade) {
           Keyboard.press(KEY_RETURN);
           delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
           Keyboard.releaseAll();
           delay(((TYPESPEED[0]*TYPESPEED[0])*2));
         }
-        pos++;
+        if ((uint8_t)*pos == 2) pos++;
+        else pos+=2;
     }
     else if ((uint8_t)*pos == 9) {
         if(profilemode==NONENCRYPTEDPROFILE) return;
@@ -483,9 +493,16 @@ void sendKey(Task* me) {
         #endif
         return;
     }
-    else if ((uint8_t)*pos >= 10 && (uint8_t)*pos <= 31) {
-        if (!isfade) delay((*pos - 10)*1000);
-        pos++;
+    else if (((uint8_t)*pos >= 10 && (uint8_t)*pos <= 31) || ((uint8_t)*pos == 0x5c && (uint8_t)*(pos+1) == 'd')) {
+        if (!isfade) {
+          if ((uint8_t)*pos == 0x5c) {
+            delay((*(pos+2))*1000);
+            pos+=3;
+          } else {
+            delay((*pos - 10)*1000);
+            pos++;
+          }    
+        }       
     }
     else if (*pos){
         if (!isfade) {
@@ -536,10 +553,10 @@ void payload(int duration) {
    integrityctr1++;
    if (firsttime) //Get failed login counter from eeprom and increment for new login attempt
    {
-   onlykey_eeget_failedlogins (ptr);
+   okeeprom_eeget_failedlogins (ptr);
    if (pass_attempts[0]) {
     ptr = sincelastregularlogin;
-    onlykey_eeget_sincelastregularlogin (ptr);
+    okeeprom_eeget_sincelastregularlogin (ptr);
     #ifdef DEBUG
     Serial.println("Failed PIN attempts since last successful regular PIN entry");
     Serial.println(sincelastregularlogin[0]);
@@ -549,11 +566,11 @@ void payload(int duration) {
       p1hash[i] = 0xFF;
     }
     ptr = p1hash;
-    onlykey_flashset_pinhashpublic (ptr); //permanently wipe pinhash
-    onlykey_eeset_sincelastregularlogin (0);
+    okcore_flashset_pinhashpublic (ptr); //permanently wipe pinhash
+    okeeprom_eeset_sincelastregularlogin (0);
    } else {
     sincelastregularlogin[0]++;
-    onlykey_eeset_sincelastregularlogin (ptr);
+    okeeprom_eeset_sincelastregularlogin (ptr);
    }
    }
    ptr = pass_attempts;
@@ -569,21 +586,21 @@ void payload(int duration) {
    pass_attempts[0] = 0;
    return;
    }
-   onlykey_eeset_failedlogins (ptr);
+   okeeprom_eeset_failedlogins (ptr);
    firsttime = false;
    }
    integrityctr2++;
-   password.append(button_selected);
+   if (HW_ID!=OK_GO) password.append(button_selected);
    integrityctr1++;
    delay((sumofall % 4)+(sumofall % 3)); //delay 0 - 5 ms
    if (unlocked || password.profile1hashevaluate() || password.profile2hashevaluate()) {
     integrityctr2++;
         if (unlocked != true) //A correct PIN was just entered do the following for first login
         {
-          onlykey_eeset_failedlogins(0); //Set failed login counter to 0
+          okeeprom_eeset_failedlogins(0); //Set failed login counter to 0
           password.reset(); //reset the guessed password to NULL
           session_attempts=0;
-          if (!configmode) hidprint(UNLOCKED);
+          if (!configmode) hidprint(HW_MODEL(UNLOCKED));
           SoftTimer.remove(&taskInitialized);
           #ifdef DEBUG
           Serial.println("UNLOCKED");
@@ -594,7 +611,7 @@ void payload(int duration) {
 #ifdef STD_VERSION
         yubikeyinit();
           U2Finit();
-          onlykey_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
+          okeeprom_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
 #endif
           }
           idletimer=0;
@@ -611,14 +628,15 @@ void payload(int duration) {
           }
           wipe_usb_buffer(); // Wipe old responses
           return;
-        } else if (!initialized && duration >= 90 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE) {
-              keyboard_mode_config(MANUAL_PIN_SET);
+        } else if (!initialized && duration >= 90 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE && HW_ID!=OK_GO) {
+              okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET);
               return;
         } else if (!initialized && duration >= 90 && button_selected=='2' && profilemode!=NONENCRYPTEDPROFILE) {
-              keyboard_mode_config(AUTO_PIN_SET);
+              if (HW_ID==OK_GO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO);
+              else okcore_quick_setup(KEYBOARD_AUTO_PIN_SET);
               return;
-        } else if (!initialized && duration >= 90 && button_selected=='3' && profilemode!=NONENCRYPTEDPROFILE) {
-              keyboard_mode_config(0); //Setup with keyboard prompt
+        } else if (!initialized && duration >= 90 && button_selected=='3' && profilemode!=NONENCRYPTEDPROFILE && HW_ID!=OK_GO) {
+              okcore_quick_setup(0); //Setup with keyboard prompt
               return;
         } else if (pin_set==0 && !initcheck) {
           return;
@@ -666,8 +684,8 @@ void payload(int duration) {
             return;
         } else if (pin_set==10) {
             cancelfadeoffafter20();
-            if (button_selected=='1') keyboard_mode_config(MANUAL_PIN_SET); //Manual
-            else keyboard_mode_config(AUTO_PIN_SET); //Manual
+            if (button_selected=='1' && HW_ID!=OK_GO) okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET); //Manual
+            else okcore_quick_setup(KEYBOARD_AUTO_PIN_SET); //Manual
             return;
         }
       Keyboard.begin();
@@ -710,13 +728,13 @@ void payload(int duration) {
             if(packet_buffer_details[0] == OKSIGN) {
               recv_buffer[4] = packet_buffer_details[0];
               recv_buffer[5] = packet_buffer_details[1];
-              SIGN(recv_buffer);
+              okcrypto_sign(recv_buffer);
             } else if (packet_buffer_details[0] == OKDECRYPT) {
               recv_buffer[4] = packet_buffer_details[0];
               recv_buffer[5] = packet_buffer_details[1];
-              DECRYPT(recv_buffer);
+              okcrypto_decrypt(recv_buffer);
             } else if (packet_buffer_details[0] == OKHMAC) {
-              HMACSHA1();
+              okcrypto_hmacsha1();
             } else if (packet_buffer_details[0] == OKWEBAUTHN) {
               u2f_button = 1;
               unsigned long u2fwait = millis() + 4000;
@@ -751,9 +769,28 @@ void payload(int duration) {
             return;
         } else if (duration >= 90 && button_selected=='2' && !isfade) {
             get_slot_labels(1);
-            get_key_labels(1);
+            if (duration >= 140) get_key_labels(1); //~8sec
             return;
-        } else if (duration >= 90 && button_selected=='6' && !isfade) {
+        } else if (duration >= 90 && button_selected=='2' && configmode==true && HW_ID==OK_GO) {
+            factorydefault(); //OnlyKey Go config mode
+            return;
+        } else if (duration >= 90 && button_selected=='3' && !isfade) {
+            if (HW_ID==OK_GO && duration >= 180) { //OnlyKey Go config mode
+                configmode=true;
+                return;
+            }
+            //Lock and/or switch profiles        
+            unlocked = false;
+            firsttime = true;
+            password.reset(); //reset the guessed password to NULL
+            pass_keypress=1;
+            if (HW_ID==OK_GO) {
+              if (Profile_Offset==0) Profile_Offset=1; //If profile 1, switch to profile 2
+              payload(10);
+            } 
+            return;
+        } 
+        else if (duration >= 90 && button_selected=='6' && !isfade) {
             integrityctr1++;
             configmode=true;
             unlocked = false;
@@ -809,7 +846,7 @@ void payload(int duration) {
         #ifdef DEBUG
         Serial.print("Login Failed, there are ");
         #endif
-        onlykey_eeget_failedlogins (ptr);
+        okeeprom_eeget_failedlogins (ptr);
         #ifdef DEBUG
         Serial.print(10 - pass_attempts[0]);
         Serial.println(" remaining attempts before a factory reset will occur");
@@ -870,12 +907,12 @@ void process_slot(int s) {
       int slot=s;
       index = 0;
       
-      onlykey_eeget_autolockslot(&autolockslot);
+      okeeprom_eeget_autolockslot(&autolockslot);
       if ((profilemode==STDPROFILE1 && (slot==(autolockslot & 0xF))) || (profilemode==STDPROFILE2 && slot==((autolockslot >> 4) & 0xF)+12)) {
         lock_ok_and_screen ();
         return;
       }
-      onlykey_eeget_addchar(&addchar5, slot);
+      okeeprom_eeget_addchar(&addchar5, slot);
       #ifdef DEBUG
       Serial.println("Additional Character");
       Serial.println(addchar5);
@@ -893,7 +930,7 @@ void process_slot(int s) {
       memset(temp, 0, 64); //Wipe all data from buffer
       memset(keybuffer, 0, sizeof(keybuffer)); //Wipe all data from keybuffer
       ptr = temp;
-      urllength = onlykey_flashget_url(ptr, slot);
+      urllength = okcore_flashget_url(ptr, slot);
       if(urllength > 0)
       {
         #ifdef DEBUG
@@ -901,7 +938,6 @@ void process_slot(int s) {
         Serial.print("URL Length = ");
         Serial.println(urllength);
         #endif
-        if (profilemode!=NONENCRYPTEDPROFILE) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < urllength; z++) {
@@ -909,10 +945,7 @@ void process_slot(int s) {
             }
             Serial.println();
         #endif
-        #ifdef STD_VERSION
-        aes_gcm_decrypt(temp, slot, 15, profilekey, urllength);
-        #endif
-        }
+        okcore_aes_gcm_decrypt(temp, slot, 15, profilekey, urllength);
         ByteToChar2(temp, keybuffer, urllength, index);
         #ifdef DEBUG
             Serial.println("Unencrypted");
@@ -929,7 +962,7 @@ void process_slot(int s) {
         index++;
       }
       memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_delay1(ptr, slot);
+      okeeprom_eeget_delay1(ptr, slot);
       if(temp[0] > 0)
       {
         #ifdef DEBUG
@@ -956,7 +989,7 @@ void process_slot(int s) {
         #endif
         index++;
       }
-      usernamelength = onlykey_flashget_username(ptr, slot);
+      usernamelength = okcore_flashget_username(ptr, slot);
       if(usernamelength > 0)
       {
         #ifdef DEBUG
@@ -964,7 +997,6 @@ void process_slot(int s) {
         Serial.print("Username Length = ");
         Serial.println(usernamelength);
         #endif
-        if (profilemode!=NONENCRYPTEDPROFILE) {
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < usernamelength; z++) {
@@ -972,10 +1004,7 @@ void process_slot(int s) {
             }
             Serial.println();
         #endif
-        #ifdef STD_VERSION
-        aes_gcm_decrypt(temp, slot, 2, profilekey, usernamelength);
-        #endif
-        }
+        okcore_aes_gcm_decrypt(temp, slot, 2, profilekey, usernamelength);
         ByteToChar2(temp, keybuffer, usernamelength, index);
         #ifdef DEBUG
             Serial.println("Unencrypted");
@@ -1011,7 +1040,7 @@ void process_slot(int s) {
         }
       }
       memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_delay2(ptr, slot);
+      okeeprom_eeget_delay2(ptr, slot);
       if(temp[0] > 0)
       {
         #ifdef DEBUG
@@ -1027,7 +1056,7 @@ void process_slot(int s) {
         index++;
         }
       }
-      passwordlength = onlykey_eeget_password(ptr, slot);
+      passwordlength = okeeprom_eeget_password(ptr, slot);
       if(passwordlength > 0)
       {
         #ifdef DEBUG
@@ -1035,18 +1064,14 @@ void process_slot(int s) {
         Serial.print("Password Length = ");
         Serial.println(passwordlength);
         #endif
-        if (profilemode!=NONENCRYPTEDPROFILE) {
         #ifdef DEBUG
         Serial.println("Encrypted");
-            for (int z = 0; z < passwordlength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-            Serial.println();
-          #endif
-        #ifdef STD_VERSION
-        aes_gcm_decrypt(temp, slot, 5, profilekey, passwordlength);
-        #endif
+        for (int z = 0; z < passwordlength; z++) {
+        Serial.print(temp[z], HEX);
         }
+        Serial.println();
+        #endif
+        okcore_aes_gcm_decrypt(temp, slot, 5, profilekey, passwordlength);
         ByteToChar2(temp, keybuffer, passwordlength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
@@ -1079,7 +1104,7 @@ void process_slot(int s) {
         }
       }
       memset(temp, 0, 64); //Wipe all data from buffer
-      onlykey_eeget_delay3(ptr, slot);
+      okeeprom_eeget_delay3(ptr, slot);
       if(temp[0] > 0)
       {
         #ifdef DEBUG
@@ -1107,14 +1132,14 @@ void process_slot(int s) {
         #endif
         index++;
       }
-      otplength = onlykey_eeget_2FAtype(ptr, slot);
+      otplength = okeeprom_eeget_2FAtype(ptr, slot);
       if(temp[0] > 0)
       {
         if(temp[0] == 103) { //Google Auth
           #ifdef DEBUG
           Serial.println("Reading TOTP Key from Flash...");
           #endif
-          otplength = onlykey_flashget_totpkey(ptr, slot);
+          otplength = okcore_flashget_totpkey(ptr, slot);
         #ifdef DEBUG
         Serial.println("Encrypted");
             for (int z = 0; z < otplength; z++) {
@@ -1124,10 +1149,8 @@ void process_slot(int s) {
 
         Serial.print("TOTP Key Length = ");
         Serial.println(otplength);
-        #endif
-          #ifdef STD_VERSION
-          if (profilemode!=NONENCRYPTEDPROFILE) aes_gcm_decrypt(temp, slot, 9, profilekey, otplength);
-          #endif
+        #endif  
+        okcore_aes_gcm_decrypt(temp, slot, 9, profilekey, otplength); 
         ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
@@ -1254,4 +1277,7 @@ void lock_ok_and_screen () {
     resetkeys();
 
 }
+
+
+
 

@@ -765,7 +765,7 @@ void payload(int duration) {
             #endif
             CRYPTO_AUTH++;
             return;
-        } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (derived_key_challenge_mode==1 && isfade && packet_buffer_details[0] == OKSIGN) || (stored_key_challenge_mode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == OKHMAC && isfade) || (packet_buffer_details[0] == OKWEBAUTHN && isfade)) {
+        } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (derived_key_challenge_mode==1 && isfade && packet_buffer_details[0]) || (stored_key_challenge_mode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == OKHMAC && isfade) || (packet_buffer_details[0] == OKWEBAUTHN && isfade)) {
             #ifdef DEBUG
             Serial.print("Challenge3 entered");
             Serial.println(button_selected-'0');

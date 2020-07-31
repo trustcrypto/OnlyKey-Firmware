@@ -174,6 +174,7 @@ extern Password password;
 extern uint8_t TIMEOUT[1];
 extern uint8_t TYPESPEED[1];
 extern uint8_t KeyboardLayout[1];
+uint8_t mod_keys_enabled;
 /*************************************/
 //Capacitive Touch Variables
 /*************************************/
@@ -351,6 +352,7 @@ void setup() {
         okcore_flashget_selfdestructhash ((uint8_t*)sdhash); //store self destruct PIN hash
         okcore_flashget_2ndpinhashpublic ((uint8_t*)p2hash); //store plausible deniability PIN hash
         okeeprom_eeget_typespeed((uint8_t*)TYPESPEED);
+        okeeprom_eeget_modkey(&mod_keys_enabled);
         #ifdef DEBUG
         Serial.println("typespeed = ");
         Serial.println(TYPESPEED[0]);
@@ -497,34 +499,34 @@ void sendKey(Task* me) {
     while ( isfade && NEO_Color == 170 && (uint8_t)*pos != 00 && (uint8_t)*pos != 9 ) {
        pos++;
     }
-    if ((uint8_t)*pos == 00){
-    #ifdef DEBUG
-    Serial.print(pos);
-    #endif
-    Keyboard.end();
-    SoftTimer.remove(&taskKB);
-    SoftTimer.add(&taskKey);
-    return;
+    int delay1 = (TYPESPEED[0]*TYPESPEED[0]/3)*8;
+    int delay2 = ((TYPESPEED[0]*TYPESPEED[0])*2);
+    if ((uint8_t)*pos == 00) {
+      #ifdef DEBUG
+      Serial.print(pos);
+      #endif
+      Keyboard.end();
+      SoftTimer.remove(&taskKB);
+      SoftTimer.add(&taskKey);
+      return;
     }
-    else if ((uint8_t)*pos == 1 || ((uint8_t)*pos == 0x5c && (uint8_t)*(pos+1) == 't')) {
+    else if ((uint8_t)*pos == 1) {
         if (!isfade) {
           Keyboard.press(KEY_TAB);
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+          delay(delay1);
           Keyboard.releaseAll();
-          delay(((TYPESPEED[0]*TYPESPEED[0])*2));
+          delay(delay2);
         }
-        if ((uint8_t)*pos == 1) pos++;
-        else pos+=2;
+        pos++;
     }
-    else if ((uint8_t)*pos == 2 || ((uint8_t)*pos == 0x5c && (uint8_t)*(pos+1) == 'r')) {
+    else if ((uint8_t)*pos == 2) {
         if (!isfade) {
           Keyboard.press(KEY_RETURN);
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+          delay(delay1);
           Keyboard.releaseAll();
-          delay(((TYPESPEED[0]*TYPESPEED[0])*2));
+          delay(delay2);
         }
-        if ((uint8_t)*pos == 2) pos++;
-        else pos+=2;
+        pos++;
     }
     else if ((uint8_t)*pos == 9) {
         if(profilemode==NONENCRYPTEDPROFILE) return;
@@ -555,12 +557,36 @@ void sendKey(Task* me) {
           }    
         }       
     }
+    else if (mod_keys_enabled && (uint8_t)*pos == ' ' && ((uint8_t)*(pos+1) == ' ')) {
+        pos+=2; 
+        if (!isfade) {
+          while(*pos) {
+            if ((uint8_t)*pos == 0x5c){ //modifier/special key comes next
+              pos++;
+              keymap_press();
+              delay(delay1);
+            } else { //regular key
+              Keyboard.press(*pos);
+              delay(delay1);
+            }
+            pos++;
+            if ((uint8_t)*pos == ' ' || (uint8_t)*pos == 0) {
+              Keyboard.releaseAll();
+              Keyboard.set_modifier(0);
+              Keyboard.set_media(0);
+              Keyboard.send_now();
+              delay(delay2);
+              return;
+            } 
+          }
+        }   
+    }
     else if (*pos){
         if (!isfade) {
           Keyboard.press(*pos);
-          delay((TYPESPEED[0]*TYPESPEED[0]/3)*8);
+          delay(delay1);
           Keyboard.releaseAll();
-          delay(((TYPESPEED[0]*TYPESPEED[0])*2));
+          delay(delay2);
         }
         pos++;
     }
@@ -569,28 +595,26 @@ void sendKey(Task* me) {
 //Password Checking Loop
 /*************************************/
 void payload(int duration) {
-   if (!unlocked) {
+    if (!unlocked) {
       #ifdef OK_Color
       setcolor(45); // NEO Pixel ON Yellow
       #else
       analogWrite(BLINKPIN, 255); //LED ON
       #endif
-   }
-   else {
+    }
+    else {
       #ifdef OK_Color
       setcolor(0); // NEO Pixel OFF
       #else
       analogWrite(BLINKPIN, 0); //LED OFF
       #endif
-   }
-   uint8_t pass_attempts[1];
-   uint8_t sincelastregularlogin[1];
-   uint8_t *ptr;
-   ptr = pass_attempts;
+    }
+    uint8_t pass_attempts[1];
+    uint8_t sincelastregularlogin[1];
     if (session_attempts >= 3) { //Limit 3 password attempts per session to make sure that someone does not accidentally wipe device
-    #ifdef DEBUG
-    Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
-    #endif
+      #ifdef DEBUG
+      Serial.print("password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
+      #endif
       while(1==1)
         {
         hidprint("Error password attempts for this session exceeded, remove OnlyKey and reinsert to attempt login");
@@ -601,44 +625,41 @@ void payload(int duration) {
         }
     return;
     }
-   integrityctr1++;
-   if (firsttime) //Get failed login counter from eeprom and increment for new login attempt
-   {
-   okeeprom_eeget_failedlogins (ptr);
-   if (pass_attempts[0]) {
-    ptr = sincelastregularlogin;
-    okeeprom_eeget_sincelastregularlogin (ptr);
-    #ifdef DEBUG
-    Serial.println("Failed PIN attempts since last successful regular PIN entry");
-    Serial.println(sincelastregularlogin[0]);
-    #endif
-    if (sincelastregularlogin[0] >= 20) {
-    for (int i =0; i<32; i++) {
-      p1hash[i] = 0xFF;
-    }
-    ptr = p1hash;
-    okcore_flashset_pinhashpublic (ptr); //permanently wipe pinhash
-    okeeprom_eeset_sincelastregularlogin (0);
-   } else {
-    sincelastregularlogin[0]++;
-    okeeprom_eeset_sincelastregularlogin (ptr);
-   }
-   }
-   ptr = pass_attempts;
-   integrityctr2++;
-   pass_attempts[0]++;
-   integrityctr1++;
-   if (pass_attempts[0] > 10) {
-      #ifdef DEBUG
-      Serial.println("Password attempts exhausted");
-      Serial.println(pass_attempts[0]);
-      #endif
-      factorydefault();
-      pass_attempts[0] = 0;
-      return;
-   }
-   okeeprom_eeset_failedlogins (ptr);
-   firsttime = false;
+    integrityctr1++;
+    if (firsttime) //Get failed login counter from eeprom and increment for new login attempt
+    {
+      okeeprom_eeget_failedlogins ((uint8_t*)pass_attempts);
+        if (pass_attempts[0]) {
+          okeeprom_eeget_sincelastregularlogin ((uint8_t*)sincelastregularlogin);
+          #ifdef DEBUG
+          Serial.println("Failed PIN attempts since last successful regular PIN entry");
+          Serial.println(sincelastregularlogin[0]);
+          #endif
+          if (sincelastregularlogin[0] >= 20) {
+            for (int i =0; i<32; i++) {
+              p1hash[i] = 0xFF;
+            }
+            okcore_flashset_pinhashpublic ((uint8_t*)p1hash); //permanently wipe pinhash
+            okeeprom_eeset_sincelastregularlogin (0);
+         } else {
+          sincelastregularlogin[0]++;
+          okeeprom_eeset_sincelastregularlogin ((uint8_t*)sincelastregularlogin);
+         }
+       }
+     integrityctr2++;
+     pass_attempts[0]++;
+     integrityctr1++;
+     if (pass_attempts[0] > 10) {
+        #ifdef DEBUG
+        Serial.println("Password attempts exhausted");
+        Serial.println(pass_attempts[0]);
+        #endif
+        factorydefault();
+        pass_attempts[0] = 0;
+        return;
+     }
+     okeeprom_eeset_failedlogins ((uint8_t*)pass_attempts);
+     firsttime = false;
    }
    integrityctr2++;
    if (HW_ID!=OK_GO) password.append(button_selected);
@@ -646,155 +667,154 @@ void payload(int duration) {
    delay((sumofall % 4)+(sumofall % 3)); //delay 0 - 5 ms
    if (unlocked || password.profile1hashevaluate() || password.profile2hashevaluate()) {
     integrityctr2++;
-        if (unlocked != true) //A correct PIN was just entered do the following for first login
-        {
-          okeeprom_eeset_failedlogins(0); //Set failed login counter to 0
-          password.reset(); //reset the guessed password to NULL
-          session_attempts=0;
-          if (!configmode) hidprint(HW_MODEL(UNLOCKED));
-          SoftTimer.remove(&taskInitialized);
-          #ifdef DEBUG
-          Serial.println("UNLOCKED"); 
-          #endif
-          if (HW_ID!=OK_GO) {
-            fadeon(NEO_Color);
-            fadeoff(85);
-          }
-          if (profilemode!=NONENCRYPTEDPROFILE) {
-          #ifdef STD_VERSION
-          yubikeyinit();
-          U2Finit();
-          okeeprom_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
-          #endif
-          }
-          idletimer=0;
-          unlocked = true;
-          if (configmode) {
-            #ifdef OK_Color
-            NEO_Color = 1; //Red
-            #endif
-            fadeon(1);
-          }
-          unsigned long wait = millis() + 200;
-          while(millis() < wait) { //Process waiting messages
-              recvmsg(0);
-          }
-          wipe_usb_buffer(); // Wipe old responses
-          return;
-        } else if (!initialized && duration >= 90 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE) {
-              if (HW_ID==OK_GO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO_NO_BACKUP);
-              else okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET);
-              return;
-        } else if (!initialized && duration >= 90 && button_selected=='2' && profilemode!=NONENCRYPTEDPROFILE) {
-              if (HW_ID==OK_GO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO);
-              else okcore_quick_setup(KEYBOARD_AUTO_PIN_SET);
-              return;
-        } else if (!initialized && duration >= 90 && button_selected=='3' && profilemode!=NONENCRYPTEDPROFILE && HW_ID!=OK_GO) {
-              okcore_quick_setup(0); //Setup with keyboard prompt
-              return;
-        } else if (pin_set==0 && !initcheck) {
-          return;
-        }
-        else if (pin_set==0) {
-        }
-        else if (pin_set<=3) { 
-            #ifdef DEBUG
-            Serial.print("password appended with ");
-            Serial.println(button_selected-'0');
-            #endif
-            if (configmode) {
-              NEO_Color = 45;
-              blink(1);
-              NEO_Color = 1;
-            }
-            return;
-        }
-        else if (pin_set<=6) {
-            #ifdef DEBUG
-            Serial.print("SD password appended with ");
-            Serial.println(button_selected-'0');
-            #endif
-            if (configmode) {
-              NEO_Color = 45;
-              blink(1);
-              NEO_Color = 1;
-            }
-            return;
-        }
-        else if (pin_set<=9) {
-            if(profilemode!=NONENCRYPTEDPROFILE){
-            #ifdef STD_VERSION
-            #ifdef DEBUG
-            Serial.print("2nd profile password appended with ");
-            Serial.println(button_selected-'0');
-            #endif
-            #endif
-            }
-            if (configmode) {
-              NEO_Color = 45;
-              blink(1);
-              NEO_Color = 1;
-            }
-            return;
-        } else if (pin_set==10) {
-            cancelfadeoffafter20();
-            if (button_selected=='1' && HW_ID!=OK_GO) okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET); //Manual
-            else okcore_quick_setup(KEYBOARD_AUTO_PIN_SET); //Manual
-            return;
-        }
-      Keyboard.begin();
-      *keybuffer = '\0';
+    if (unlocked != true) { //A correct PIN was just entered do the following for first login
+      okeeprom_eeset_failedlogins(0); //Set failed login counter to 0
+      password.reset(); //reset the guessed password to NULL
+      session_attempts=0;
+      if (!configmode) hidprint(HW_MODEL(UNLOCKED));
+      SoftTimer.remove(&taskInitialized);
       #ifdef DEBUG
-      Serial.print("Button selected");
-      Serial.println(button_selected-'0');
+      Serial.println("UNLOCKED"); 
       #endif
-      idletimer=0;
+      if (HW_ID!=OK_GO) {
+        fadeon(NEO_Color);
+        fadeoff(85);
+      }
       if (profilemode!=NONENCRYPTEDPROFILE) {
       #ifdef STD_VERSION
-        if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
-            #ifdef DEBUG
-            Serial.print("Challenge1 entered");
-            Serial.println(button_selected-'0');
-            #endif
-            CRYPTO_AUTH++;
-            return;
-        } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2 && isfade) {
-            #ifdef DEBUG
-            Serial.print("Challenge2 entered");
-            Serial.println(button_selected-'0');
-            #endif
-            CRYPTO_AUTH++;
-            return;
-        } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (derived_key_challenge_mode==1 && isfade && packet_buffer_details[0]) || (stored_key_challenge_mode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == OKHMAC && isfade) || (packet_buffer_details[0] == OKWEBAUTHN && isfade)) {
-            #ifdef DEBUG
-            Serial.print("Challenge3 entered");
-            Serial.println(button_selected-'0');
-            #endif
-            CRYPTO_AUTH = 4;
-            derived_key_challenge_mode = 0;
-            stored_key_challenge_mode = 0;
-            if(packet_buffer_details[0] == OKSIGN) {
-              recv_buffer[4] = packet_buffer_details[0];
-              recv_buffer[5] = packet_buffer_details[1];
-              okcrypto_sign(recv_buffer);
-            } else if (packet_buffer_details[0] == OKDECRYPT) {
-              recv_buffer[4] = packet_buffer_details[0];
-              recv_buffer[5] = packet_buffer_details[1];
-              okcrypto_decrypt(recv_buffer);
-            } else if (packet_buffer_details[0] == OKHMAC) {
-              okcrypto_hmacsha1();
-            } else if (packet_buffer_details[0] == OKWEBAUTHN) {
-              u2f_button = 1;
-              unsigned long u2fwait = millis() + 4000;
-              while(u2f_button && millis() < u2fwait) {
-              recvmsg(0);
-              }
-              u2f_button = 0;
-            }
-            CRYPTO_AUTH = 0;
-            packet_buffer_details[0]=0;
-            fadeoff(0);
-            return;
+      yubikeyinit();
+      U2Finit();
+      okeeprom_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
+      #endif
+      }
+      idletimer=0;
+      unlocked = true;
+      if (configmode) {
+        #ifdef OK_Color
+        NEO_Color = 1; //Red
+        #endif
+        fadeon(1);
+      }
+      unsigned long wait = millis() + 200;
+      while(millis() < wait) { //Process waiting messages
+          recvmsg(0);
+      }
+      wipe_usb_buffer(); // Wipe old responses
+      return;
+    } else if (!initialized && duration >= 90 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE) {
+      if (HW_ID==OK_GO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO_NO_BACKUP);
+      else okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET);
+      return;
+    } else if (!initialized && duration >= 90 && button_selected=='2' && profilemode!=NONENCRYPTEDPROFILE) {
+      if (HW_ID==OK_GO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO);
+      else okcore_quick_setup(KEYBOARD_AUTO_PIN_SET);
+      return;
+    } else if (!initialized && duration >= 90 && button_selected=='3' && profilemode!=NONENCRYPTEDPROFILE && HW_ID!=OK_GO) {
+      okcore_quick_setup(0); //Setup with keyboard prompt
+      return;
+    } else if (pin_set==0 && !initcheck) {
+      return;
+    }
+    else if (pin_set==0) {
+    }
+    else if (pin_set<=3) { 
+      #ifdef DEBUG
+      Serial.print("password appended with ");
+      Serial.println(button_selected-'0');
+      #endif
+      if (configmode) {
+        NEO_Color = 45;
+        blink(1);
+        NEO_Color = 1;
+      }
+      return;
+    }
+    else if (pin_set<=6) {
+        #ifdef DEBUG
+        Serial.print("SD password appended with ");
+        Serial.println(button_selected-'0');
+        #endif
+        if (configmode) {
+          NEO_Color = 45;
+          blink(1);
+          NEO_Color = 1;
+        }
+        return;
+    }
+    else if (pin_set<=9) {
+        if(profilemode!=NONENCRYPTEDPROFILE){
+        #ifdef STD_VERSION
+        #ifdef DEBUG
+        Serial.print("2nd profile password appended with ");
+        Serial.println(button_selected-'0');
+        #endif
+        #endif
+        }
+        if (configmode) {
+          NEO_Color = 45;
+          blink(1);
+          NEO_Color = 1;
+        }
+        return;
+    } else if (pin_set==10) {
+        cancelfadeoffafter20();
+        if (button_selected=='1' && HW_ID!=OK_GO) okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET); //Manual
+        else okcore_quick_setup(KEYBOARD_AUTO_PIN_SET); //Manual
+        return;
+    }
+    Keyboard.begin();
+    *keybuffer = '\0';
+    #ifdef DEBUG
+    Serial.print("Button selected");
+    Serial.println(button_selected-'0');
+    #endif
+    idletimer=0;
+    if (profilemode!=NONENCRYPTEDPROFILE) {
+      #ifdef STD_VERSION
+      if (CRYPTO_AUTH == 1 && button_selected==Challenge_button1 && isfade) {
+          #ifdef DEBUG
+          Serial.print("Challenge1 entered");
+          Serial.println(button_selected-'0');
+          #endif
+          CRYPTO_AUTH++;
+          return;
+      } else if (CRYPTO_AUTH == 2 && button_selected==Challenge_button2 && isfade) {
+        #ifdef DEBUG
+        Serial.print("Challenge2 entered");
+        Serial.println(button_selected-'0');
+        #endif
+        CRYPTO_AUTH++;
+        return;
+      } else if ((CRYPTO_AUTH == 3 && button_selected==Challenge_button3 && isfade && packet_buffer_details[0]) || (derived_key_challenge_mode==1 && isfade && packet_buffer_details[0]) || (stored_key_challenge_mode==1 && isfade && packet_buffer_details[0]) || (CRYPTO_AUTH == 3 && packet_buffer_details[0] == OKHMAC && isfade) || (packet_buffer_details[0] == OKWEBAUTHN && isfade)) {
+        #ifdef DEBUG
+        Serial.print("Challenge3 entered");
+        Serial.println(button_selected-'0');
+        #endif
+        CRYPTO_AUTH = 4;
+        derived_key_challenge_mode = 0;
+        stored_key_challenge_mode = 0;
+        if(packet_buffer_details[0] == OKSIGN) {
+          recv_buffer[4] = packet_buffer_details[0];
+          recv_buffer[5] = packet_buffer_details[1];
+          okcrypto_sign(recv_buffer);
+        } else if (packet_buffer_details[0] == OKDECRYPT) {
+          recv_buffer[4] = packet_buffer_details[0];
+          recv_buffer[5] = packet_buffer_details[1];
+          okcrypto_decrypt(recv_buffer);
+        } else if (packet_buffer_details[0] == OKHMAC) {
+          okcrypto_hmacsha1();
+        } else if (packet_buffer_details[0] == OKWEBAUTHN) {
+          u2f_button = 1;
+          unsigned long u2fwait = millis() + 4000;
+          while(u2f_button && millis() < u2fwait) {
+          recvmsg(0);
+          }
+          u2f_button = 0;
+        }
+          CRYPTO_AUTH = 0;
+          packet_buffer_details[0]=0;
+          fadeoff(0);
+          return;
         } else if (CRYPTO_AUTH) { //Wrong challenge was entered
             CRYPTO_AUTH = 0;
             Challenge_button1 = 0;
@@ -804,7 +824,7 @@ void payload(int duration) {
             hidprint("Error incorrect challenge was entered");
             analogWrite(BLINKPIN, 255); //LED ON
             return;
-        }else if (duration >= 90 && button_selected=='1' && !isfade) {
+        } else if (duration >= 90 && button_selected=='1' && !isfade) {
             SoftTimer.remove(&taskKey);
             backup();
             SoftTimer.add(&taskKey);
@@ -833,72 +853,71 @@ void payload(int duration) {
             return;
         } 
         else if (duration >= 90 && button_selected=='6' && !isfade) {
-            integrityctr1++;
-            configmode=true;
-            unlocked = false;
-            firsttime = true;
-            password.reset(); //reset the guessed password to NULL
-            integrityctr2++;
-            pass_keypress=1;
-            return;
+          integrityctr1++;
+          configmode=true;
+          unlocked = false;
+          firsttime = true;
+          password.reset(); //reset the guessed password to NULL
+          integrityctr2++;
+          pass_keypress=1;
+          return;
         }
       #endif
-      }
-      
-      #ifdef OK_Color
-      setcolor(0); // NEO Pixel OFF
-      #else
-      analogWrite(BLINKPIN, 0); //LED OFF
-      #endif
-      if (duration <= 20 && !configmode) gen_press();
-      else if (duration >= 21 && duration < 90 && !configmode) gen_hold();
-      else if (duration >= 90 && !configmode) {
-        NEO_Color = 1;
-        blink(2);
-      }
-      pos = keybuffer;
-      SoftTimer.remove(&taskKey);
-      SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
-      return;
+     }
+    #ifdef OK_Color
+    setcolor(0); // NEO Pixel OFF
+    #else
+    analogWrite(BLINKPIN, 0); //LED OFF
+    #endif
+    if (duration <= 20 && !configmode) gen_press();
+    else if (duration >= 21 && duration < 90 && !configmode) gen_hold();
+    else if (duration >= 90 && !configmode) {
+      NEO_Color = 1;
+      blink(2);
+    }
+    pos = keybuffer;
+    SoftTimer.remove(&taskKey);
+    SoftTimer.add(&taskKB, (unsigned long)TYPESPEED[0]);
+    return;
   }
-   else if (password.sdhashevaluate()) {
+  else if (password.sdhashevaluate()) {
     #ifdef DEBUG
     Serial.println("Self Destruct PIN entered");
     #endif
     factorydefault();
-   }
-   else {
-    integrityctr2++;
-    if (pass_keypress < 10) {
-        #ifdef DEBUG
-        Serial.print("password appended with ");
-        Serial.println(button_selected-'0');
-        Serial.print("Number of keys entered for this passcode = ");
-        Serial.println(pass_keypress);
-        #endif
-        pass_keypress++;
-        return;
-      } else {
-        firsttime = true;
-        session_attempts++;
-        #ifdef OK_Color
-        NEO_Color = 1;
-        #endif
-        blink(3);
-        #ifdef DEBUG
-        Serial.print("Login Failed, there are ");
-        #endif
-        okeeprom_eeget_failedlogins (ptr);
-        #ifdef DEBUG
-        Serial.print(10 - pass_attempts[0]);
-        Serial.println(" remaining attempts before a factory reset will occur");
-        Serial.println("WARNING: This will render all device information unrecoverable");
-        #endif
-        password.reset(); //reset the guessed password to NULL
-        pass_keypress=1;
-        return;
-      }
-   }
+  }
+  else {
+  integrityctr2++;
+  if (pass_keypress < 10) {
+    #ifdef DEBUG
+    Serial.print("password appended with ");
+    Serial.println(button_selected-'0');
+    Serial.print("Number of keys entered for this passcode = ");
+    Serial.println(pass_keypress);
+    #endif
+    pass_keypress++;
+    return;
+  } else {
+    firsttime = true;
+    session_attempts++;
+    #ifdef OK_Color
+    NEO_Color = 1;
+    #endif
+    blink(3);
+    #ifdef DEBUG
+    Serial.print("Login Failed, there are ");
+    #endif
+    okeeprom_eeget_failedlogins ((uint8_t*)pass_attempts);
+    #ifdef DEBUG
+    Serial.print(10 - pass_attempts[0]);
+    Serial.println(" remaining attempts before a factory reset will occur");
+    Serial.println("WARNING: This will render all device information unrecoverable");
+    #endif
+    password.reset(); //reset the guessed password to NULL
+    pass_keypress=1;
+    return;
+  }
+ }
 }
 /*************************************/
 //Trigger on short button press
@@ -1268,7 +1287,14 @@ void process_slot(int s) {
 }
 
 void sendInitialized(Task* me) {
-    hidprint("INITIALIZED");
+    if (HW_ID==OK_GO){
+      int n = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
+      if (recv_buffer[4] == OKPIN && recv_buffer[5]>='0' && initialized == true && unlocked == false && HW_ID==OK_GO) {
+        okcore_pin_login(); // Received PIN Login Attempt for OnlyKey Go
+        payload(10); // Try the PIN
+      }
+      memset(recv_buffer, 0, sizeof(recv_buffer));
+    } else hidprint("INITIALIZED");
     #ifdef DEBUG
     Serial.println("INITIALIZED");
     #endif
@@ -1344,6 +1370,26 @@ void fw_hash(unsigned char* hashptr) {
   return;
 }
 
-
+void keymap_press () {
+  if ((uint8_t)*pos=='c') Keyboard.set_modifier(MODIFIERKEY_CTRL);
+  else if ((uint8_t)*pos=='s') Keyboard.set_modifier(MODIFIERKEY_SHIFT);
+  else if ((uint8_t)*pos=='a') Keyboard.set_modifier(MODIFIERKEY_ALT);
+  
+  Keyboard.send_now();  
+  if ((uint8_t)*pos=='t') Keyboard.press(KEY_TAB);
+  else if ((uint8_t)*pos=='r') Keyboard.press(KEY_RETURN);
+  else if ((uint8_t)*pos=='p') Keyboard.press(KEY_PRINTSCREEN);
+  else if ((uint8_t)*pos=='h') Keyboard.press(KEY_HOME);
+  else if ((uint8_t)*pos=='u') Keyboard.press(KEY_PAGE_UP);
+  else if ((uint8_t)*pos=='o') Keyboard.press(KEY_PAGE_DOWN);
+  else if ((uint8_t)*pos=='e') Keyboard.press(KEY_END);
+  else if ((uint8_t)*pos=='d') Keyboard.press(KEY_DELETE);
+  else if ((uint8_t)*pos=='b') Keyboard.press(KEY_BACKSPACE);
+  else if ((uint8_t)*pos=='L') Keyboard.press(KEY_LEFT);
+  else if ((uint8_t)*pos=='R') Keyboard.press(KEY_RIGHT);
+  else if ((uint8_t)*pos=='U') Keyboard.press(KEY_UP);
+  else if ((uint8_t)*pos=='D') Keyboard.press(KEY_DOWN);
+  else if ((uint8_t)*pos=='E') Keyboard.press(KEY_ESC);
+}
 
 

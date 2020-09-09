@@ -229,6 +229,7 @@ char *pos;
 extern uint8_t isfade;
 extern uint8_t ctap_buffer[CTAPHID_BUFFER_SIZE];
 extern uint8_t pending_operation;
+uint8_t modkey;
 
 extern "C" {
   int _getpid(){ return -1;}
@@ -548,24 +549,23 @@ void sendKey(Task* me) {
           pos++;       
         }       
     }
-    else if ((uint8_t)*pos == ' ' && ((uint8_t)*(pos+1) == ' ')) {
-        pos+=2; 
+    else if ((uint8_t)*pos == ' ' && (uint8_t)*(pos+1) == 0x5c) {
+        pos++; 
         if (!isfade) {
           while(*pos) {
             if ((uint8_t)*pos == 0x5c) { //modifier/special key comes next
               pos++;
-              keymap_press();
+              keymap_press(0);
               delay(delay1);
             } else { //regular key
-              Keyboard.press(*pos);
+              keymap_press(1);
               delay(delay1);
             }
             pos++;
             if ((uint8_t)*pos == ' ' || (uint8_t)*pos == 0) {
-              Keyboard.releaseAll();
-              Keyboard.set_modifier(0);
-              Keyboard.set_media(0);
-              Keyboard.send_now();
+              if ((uint8_t)*pos == ' ') pos++;
+              delay(delay1);  
+              resetkeys();
               delay(delay2);
               return;
             } 
@@ -1314,7 +1314,7 @@ void sendInitialized(Task* me) {
         payload(10); // Try the PIN
         memset(recv_buffer, 0, sizeof(recv_buffer));
       } else {
-        hidprint("INITIALIZED");
+        hidprint("INITIALIZED-G");
       }
     } else hidprint("INITIALIZED");
     #ifdef DEBUG
@@ -1392,35 +1392,46 @@ void fw_hash(unsigned char* hashptr) {
   return;
 }
 
-void keymap_press () {
-  if (mod_keys_enabled) {
-    if ((uint8_t)*pos=='c') Keyboard.set_modifier(MODIFIERKEY_CTRL);
-    else if ((uint8_t)*pos=='s') Keyboard.set_modifier(MODIFIERKEY_SHIFT);
-    else if ((uint8_t)*pos=='a') Keyboard.set_modifier(MODIFIERKEY_ALT);
-    else if ((uint8_t)*pos=='g') Keyboard.set_modifier(MODIFIERKEY_GUI);
-    
-    Keyboard.send_now();  
+void keymap_press (char key) {
+  extern uint8_t keyboard_modifier_keys;
+  extern uint8_t keyboard_keys[6];
+  if ((uint8_t)*pos>'0' && (uint8_t)*pos<='9') {
+    delay((*(pos)-'0')*1000);
+  } else if ((uint8_t)*pos=='t' || (uint8_t)*pos=='r') {
+    if ((uint8_t)*pos=='t') key = KEY_TAB;
+    else if ((uint8_t)*pos=='r') key = KEY_RETURN;
+  } else if (mod_keys_enabled) {
+    if (key) {
+      Keyboard.press(*pos);
+      key=0;
+    } else {  
+      if ((uint8_t)*pos=='p') key = KEY_PRINTSCREEN;
+      else if ((uint8_t)*pos=='h') key = KEY_HOME;
+      else if ((uint8_t)*pos=='u') key = KEY_PAGE_UP;
+      else if ((uint8_t)*pos=='o') key = KEY_PAGE_DOWN;
+      else if ((uint8_t)*pos=='e') key = KEY_END;
+      else if ((uint8_t)*pos=='d') key = KEY_DELETE;
+      else if ((uint8_t)*pos=='b') key = KEY_BACKSPACE;
+      else if ((uint8_t)*pos=='L') key = KEY_LEFT;
+      else if ((uint8_t)*pos=='R') key = KEY_RIGHT;
+      else if ((uint8_t)*pos=='U') key = KEY_UP;
+      else if ((uint8_t)*pos=='D') key = KEY_DOWN;
+      else if ((uint8_t)*pos=='E') key = KEY_ESC;
+
+      if ((uint8_t)*pos=='c') keyboard_modifier_keys |= MODIFIERKEY_CTRL;
+      else if ((uint8_t)*pos=='s') keyboard_modifier_keys |= MODIFIERKEY_SHIFT;
+      else if ((uint8_t)*pos=='a') keyboard_modifier_keys |= MODIFIERKEY_ALT;
+      else if ((uint8_t)*pos=='g') keyboard_modifier_keys |= MODIFIERKEY_GUI; 
+    }
+  } 
   
-    if ((uint8_t)*pos=='t') Keyboard.press(KEY_TAB);
-    else if ((uint8_t)*pos=='r') Keyboard.press(KEY_RETURN);
-    else if ((uint8_t)*pos=='p') Keyboard.press(KEY_PRINTSCREEN);
-    else if ((uint8_t)*pos=='h') Keyboard.press(KEY_HOME);
-    else if ((uint8_t)*pos=='u') Keyboard.press(KEY_PAGE_UP);
-    else if ((uint8_t)*pos=='o') Keyboard.press(KEY_PAGE_DOWN);
-    else if ((uint8_t)*pos=='e') Keyboard.press(KEY_END);
-    else if ((uint8_t)*pos=='d') Keyboard.press(KEY_DELETE);
-    else if ((uint8_t)*pos=='b') Keyboard.press(KEY_BACKSPACE);
-    else if ((uint8_t)*pos=='L') Keyboard.press(KEY_LEFT);
-    else if ((uint8_t)*pos=='R') Keyboard.press(KEY_RIGHT);
-    else if ((uint8_t)*pos=='U') Keyboard.press(KEY_UP);
-    else if ((uint8_t)*pos=='D') Keyboard.press(KEY_DOWN);
-    else if ((uint8_t)*pos=='E') Keyboard.press(KEY_ESC);
-   } else if ((uint8_t)*pos>'0' && (uint8_t)*pos<='9') {
-    delay((*(pos))*1000);
-   } else {
-    if ((uint8_t)*pos=='t') Keyboard.press(KEY_TAB);
-    else if ((uint8_t)*pos=='r') Keyboard.press(KEY_RETURN);
-   }
+  if (keyboard_keys[0] == 0) keyboard_keys[0] = key;
+  else if (keyboard_keys[1] == 0) keyboard_keys[1] = key;
+  else if (keyboard_keys[2] == 0) keyboard_keys[2] = key;
+  else if (keyboard_keys[3] == 0) keyboard_keys[3] = key;
+  else if (keyboard_keys[4] == 0) keyboard_keys[4] = key;
+  else if (keyboard_keys[5] == 0) keyboard_keys[5] = key;
+  Keyboard.send_now();
 }
 
 void exceeded_login_attempts() {

@@ -1,5 +1,5 @@
 /* Modifications
- * Copyright (c) 2015-2019, CryptoTrust LLC.
+ * Copyright (c) 2015-2020, CryptoTrust LLC.
  * All rights reserved.
  * 
  * Author : Tim Steiner <t@crp.to>
@@ -306,8 +306,8 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   
   
  #elif defined(USB_RAWHID)
-		#define VENDOR_ID             0x16C0
-		#define PRODUCT_ID            0x0486
+		#define VENDOR_ID             0x1d50
+		#define PRODUCT_ID            0x60fc
 		#define RAWHID_USAGE_PAGE	0xf1d0  // Changed for FIDO support
 		#define RAWHID_USAGE		0x01  // Changed for FIDO support
 		#define RAWHID_USAGE_PAGE2	0xffab  

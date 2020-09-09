@@ -1,5 +1,5 @@
 /* Modifications
- * Copyright (c) 2015-2019, CryptoTrust LLC.
+ * Copyright (c) 2015-2020, CryptoTrust LLC.
  * All rights reserved.
  * 
  * Author : Tim Steiner <t@crp.to>
@@ -148,6 +148,7 @@ static inline uint32_t usb_rx_byte_count(uint32_t endpoint)
         return usb_rx_byte_count_data[endpoint];
 }
 
+
 #ifdef CDC_DATA_INTERFACE
 extern uint32_t usb_cdc_line_coding[2];
 extern volatile uint32_t usb_cdc_line_rtsdtr_millis;
@@ -179,10 +180,6 @@ extern void usb_midi_flush_output(void);
 extern void usb_flightsim_flush_callback(void);
 #endif
 
-
-
-
-
 #ifdef __cplusplus
 }
 #endif
@@ -198,7 +195,6 @@ void usb_init(void);
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif // F_CPU
 

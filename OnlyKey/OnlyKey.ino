@@ -392,9 +392,6 @@ void setup() {
   Serial.println(FTFL_FSEC, HEX);
   #endif
   rngloop(); //Start RNG
-  if (HW_ID==OK_GO) {
-    Serial.print("g model found");
-  }
   #ifdef OK_Color
   initColor();
   rainbowCycle();
@@ -679,10 +676,12 @@ void payload(int duration) {
         #endif
         fadeon(1);
       }
+
       unsigned long wait = millis() + 200;
       while(millis() < wait) { //Process waiting messages
           recvmsg(0);
       }
+      
       wipe_usb_buffer(); // Wipe old responses
       return;
     } else if (!initialized && duration >= 85 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE) {
@@ -1018,10 +1017,7 @@ void process_slot(int s) {
         #endif
         #ifdef DEBUG
         Serial.println("Encrypted");
-            for (int z = 0; z < urllength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-            Serial.println();
+        byteprint(temp, urllength);
         #endif
         okcore_aes_gcm_decrypt(temp, slot, 15, profilekey, urllength);
         if (temp[0]==0x08) { // Scripted Mode
@@ -1035,10 +1031,7 @@ void process_slot(int s) {
           index++;
           #ifdef DEBUG
           Serial.println("Unencrypted");
-          for (int z = 0; z < urllength; z++) {
-            Serial.print(temp[z], HEX);
-          }
-          Serial.println();
+          byteprint(temp, urllength);
           Serial.println("Setting RETURN after URL");
           #endif
         }
@@ -1078,23 +1071,13 @@ void process_slot(int s) {
         Serial.println("Reading Username from Flash...");
         Serial.print("Username Length = ");
         Serial.println(usernamelength);
-        #endif
-        #ifdef DEBUG
-        Serial.println("Encrypted");
-            for (int z = 0; z < usernamelength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-            Serial.println();
+        byteprint(temp, usernamelength);
         #endif
         okcore_aes_gcm_decrypt(temp, slot, 2, profilekey, usernamelength);
         
         ByteToChar2(temp, keybuffer, usernamelength, index);
         #ifdef DEBUG
-            Serial.println("Unencrypted");
-            for (int z = 0; z < usernamelength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-            Serial.println();
+        byteprint(temp, usernamelength);
         #endif
         index=usernamelength+index;
       }
@@ -1146,22 +1129,14 @@ void process_slot(int s) {
         Serial.println("Reading Password from EEPROM...");
         Serial.print("Password Length = ");
         Serial.println(passwordlength);
-        #endif
-        #ifdef DEBUG
         Serial.println("Encrypted");
-        for (int z = 0; z < passwordlength; z++) {
-        Serial.print(temp[z], HEX);
-        }
-        Serial.println();
+        byteprint(temp, passwordlength);
         #endif
         okcore_aes_gcm_decrypt(temp, slot, 5, profilekey, passwordlength);
         ByteToChar2(temp, keybuffer, passwordlength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
-            for (int z = 0; z < passwordlength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-         Serial.println();
+        byteprint(temp, passwordlength);
         #endif
         index=passwordlength+index;
       }
@@ -1225,11 +1200,7 @@ void process_slot(int s) {
           otplength = okcore_flashget_totpkey(ptr, slot);
         #ifdef DEBUG
         Serial.println("Encrypted");
-            for (int z = 0; z < otplength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-           Serial.println();
-
+        byteprint(temp, otplength);
         Serial.print("TOTP Key Length = ");
         Serial.println(otplength);
         #endif  
@@ -1237,10 +1208,7 @@ void process_slot(int s) {
         ByteToChar2(temp, keybuffer, otplength, index);
         #ifdef DEBUG
         Serial.println("Unencrypted");
-            for (int z = 0; z < otplength; z++) {
-            Serial.print(temp[z], HEX);
-            }
-            Serial.println();
+        byteprint(temp, otplength);
         #endif
           TOTP totp1 = TOTP(temp, otplength);
           GMT = now();

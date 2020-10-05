@@ -82,7 +82,7 @@
 #define DEBUG //Enable Serial Monitor, debug firmware
 #define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
-#define NOBOOTLOADER
+//#define FACTORYKEYS // Attestation key and other keys encrypted using CHIP ID for unique per device
 /*************************************/
 //Standard Libraries 
 /*************************************/
@@ -284,13 +284,17 @@ void setup() {
     }
     Serial.println();
   }
-  */
+  */  
   //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if (FTFL_FSEC!=0x44) {
     // First time starting up, three steps to complete:
     // 1) Read factory device keys and set custom device keys
     // Get factory default flash contents
-    #ifndef NOBOOTLOADER
+    #ifdef FACTORYKEYS
+    // FACTORYKEYS isn't used yet
+    // TODO handle if power is removed during writing encrypted keys
+    // - save encrypted keys to different flash location
+    // - wipe original flash location when FTFL_FSEC==0x44
     okcore_flashget_common(ctap_buffer, (unsigned long *)factorysectoradr, 2048);
     #ifdef DEBUG
     Serial.println("Factory Keys");
@@ -662,11 +666,12 @@ void payload(int duration) {
       fadeon(NEO_Color);
       fadeoff(85);  
       if (profilemode!=NONENCRYPTEDPROFILE) {
-      #ifdef STD_VERSION
-      yubikeyinit();
-      U2Finit();
-      okeeprom_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
-      #endif
+        #ifdef STD_VERSION
+        yubikeyinit();
+        U2Finit();
+        okeeprom_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
+        fw_version_changes();
+        #endif
       }
       idletimer=0;
       unlocked = true;
@@ -748,7 +753,7 @@ void payload(int duration) {
     Keyboard.begin();
     *keybuffer = '\0';
     #ifdef DEBUG
-    Serial.print("Button selected");
+    Serial.print("Button selected ");
     Serial.println(button_selected-'0');
     #endif
     idletimer=0;
@@ -822,7 +827,7 @@ void payload(int duration) {
         } else if (duration >= 90 && button_selected=='2' && configmode==true && HW_ID==OK_GO) {
             factorydefault(); //OnlyKey Go while in config mode wipe 
             return;
-        } else if (duration >= 72 && duration < 126 && button_selected=='3' && !isfade) {
+        } else if (duration >= 72 && (duration < 126 || HW_ID!=OK_GO) && button_selected=='3' && !isfade) {
             // Lock and/or switch profiles <4 sec
             unlocked = false;
             firsttime = true;

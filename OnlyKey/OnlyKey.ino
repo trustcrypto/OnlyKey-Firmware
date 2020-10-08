@@ -413,6 +413,19 @@ void setup() {
       payload(10); 
     } 
   }
+
+
+  // TODO REMOVE TESTING RESIDENT KEYS
+  char temp[32];
+  unsigned long readadr = flashstorestart;
+   while (readadr <= flashstorestart+2048) {
+    for(int i =0; i<=2048; i=i+4){
+      sprintf (temp, "%.8X", *((unsigned int*)readadr));
+      Serial.print(temp);
+      readadr = readadr + 4;
+    }
+    Serial.println();
+  }
 }
 
 extern elapsedMillis idletimer;

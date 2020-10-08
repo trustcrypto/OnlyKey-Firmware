@@ -142,7 +142,7 @@ extern "C"{
 #define LAYOUT_CZECH	0x18
 #define LAYOUT_SERBIAN_LATIN_ONLY	0x19
 #define LAYOUT_HUNGARIAN    0x1A
-
+#define LAYOUT_DANISH_MAC 0x1B
 
 // http://en.wikipedia.org/wiki/Keyboard_layout
 

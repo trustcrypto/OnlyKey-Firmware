@@ -82,7 +82,7 @@
 #define DEBUG //Enable Serial Monitor, debug firmware
 #define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
-//#define FACTORYKEYS // Attestation key and other keys encrypted using CHIP ID for unique per device
+//#define FACTORYKEYS // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 /*************************************/
 //Standard Libraries 
 /*************************************/
@@ -293,8 +293,8 @@ void setup() {
     #ifdef FACTORYKEYS
     // FACTORYKEYS isn't used yet
     // TODO handle if power is removed during writing encrypted keys
-    // - save encrypted keys to different flash location
-    // - wipe original flash location when FTFL_FSEC==0x44
+    // - save encrypted keys to 1st free storage sector
+    // - wipe original flash location in 1st free flash sector when FTFL_FSEC==0x44
     okcore_flashget_common(ctap_buffer, (unsigned long *)factorysectoradr, 2048);
     #ifdef DEBUG
     Serial.println("Factory Keys");
@@ -414,18 +414,6 @@ void setup() {
     } 
   }
 
-
-  // TODO REMOVE TESTING RESIDENT KEYS
-  char temp[32];
-  unsigned long readadr = flashstorestart;
-   while (readadr <= flashstorestart+2048) {
-    for(int i =0; i<=2048; i=i+4){
-      sprintf (temp, "%.8X", *((unsigned int*)readadr));
-      Serial.print(temp);
-      readadr = readadr + 4;
-    }
-    Serial.println();
-  }
 }
 
 extern elapsedMillis idletimer;

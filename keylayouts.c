@@ -2422,7 +2422,7 @@ KEYCODE_EXTRA00=KEY_E + ALTGR_MASK;// 20AC €    Euro Sign
 
 }
 
-else if (KeyboardLayout[0] == LAYOUT_DANISH || KeyboardLayout[0] = LAYOUT_DANISH_MAC) {
+else if (KeyboardLayout[0] == LAYOUT_DANISH || KeyboardLayout[0] == LAYOUT_DANISH_MAC) {
 
 SHIFT_MASK=0x0040;
 ALTGR_MASK=0x0080;

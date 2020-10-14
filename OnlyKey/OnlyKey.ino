@@ -566,7 +566,9 @@ void sendKey(Task* me) {
             pos++;
             if ((uint8_t)*pos == ' ' || (uint8_t)*pos == 0) {
               if ((uint8_t)*pos == ' ') pos++;
+              Keyboard.releaseAll();
               delay(delay1);  
+              Keyboard.releaseAll();
               resetkeys();
               delay(delay2);
               return;
@@ -813,7 +815,7 @@ void payload(int duration) {
             hidprint("Error incorrect challenge was entered");
             analogWrite(BLINKPIN, 255); //LED ON
             return;
-        } else if (duration >= 72 && duration < 126 && button_selected=='1' && !isfade) {
+        } else if (duration >= 72 && (duration < 126 || HW_ID!=OK_GO)  && button_selected=='1' && !isfade) {
             // Backup <4 sec 
             SoftTimer.remove(&taskKey);
             backup();
@@ -1372,8 +1374,12 @@ void keymap_press (char key) {
   if ((uint8_t)*pos>'0' && (uint8_t)*pos<='9') {
     delay((*(pos)-'0')*1000);
   } else if ((uint8_t)*pos=='t' || (uint8_t)*pos=='r') {
-    if ((uint8_t)*pos=='t') key = KEY_TAB;
-    else if ((uint8_t)*pos=='r') key = KEY_RETURN;
+    if ((uint8_t)*pos=='t') {
+      key = KEY_TAB;
+    }
+    else if ((uint8_t)*pos=='r') {
+      key = KEY_RETURN;
+    }
   } else if (mod_keys_enabled) {
     if (key) {
       Keyboard.press(*pos);

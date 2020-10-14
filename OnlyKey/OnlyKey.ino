@@ -80,7 +80,7 @@
 //Firmware Build Options
 /*************************************/
 #define DEBUG //Enable Serial Monitor, debug firmware
-#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
+//#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
 //#define FACTORYKEYS // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 /*************************************/
@@ -227,7 +227,9 @@ extern uint8_t recv_buffer[64];
 char keybuffer[EElen_url+EElen_addchar+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64+EElen_addchar]; //Buffer to hold all keystrokes
 char *pos;
 extern uint8_t isfade;
+#ifdef STD_VERSION
 extern uint8_t ctap_buffer[CTAPHID_BUFFER_SIZE];
+#endif
 extern uint8_t pending_operation;
 uint8_t modkey;
 
@@ -330,11 +332,13 @@ void setup() {
     #endif
     // 2) Store factory firmware hash for integrity verification
     //create hash of firmware in hash buffer
+    #ifdef STD_VERSION
     fw_hash(ctap_buffer); 
     for (int i = 0; i < crypto_hash_BYTES; i++) { //write 64byte hash to eeprom
       eeprom_write_byte((unsigned char*)(2+i), ctap_buffer[i]); // 2-65 used for fw integrity hash
     }
     memset(ctap_buffer, 0, 2048);
+    #endif
     // 3) Enable flash security
     int nn = 0;
     nn=flashSecurityLockBits();
@@ -484,7 +488,7 @@ void checkKey(Task* me) {
   
 
   int press_duration = touch_sense_loop();
-  if (pending_operation==CTAP2_ERR_DATA_READY) {
+  if (pending_operation==0xF6) { //CTAP2_ERR_DATA_READY
     setcolor(45); //yellow
   } else {
     if (press_duration) payload(press_duration);
@@ -1351,6 +1355,7 @@ void lock_ok_and_screen () {
 }
 
 void fw_hash(unsigned char* hashptr) {
+  #ifdef STD_VERSION
    unsigned char smesg[17000];
    unsigned long adr = fwstartadr;
    //Hash current fw in hashptr   
@@ -1366,6 +1371,7 @@ void fw_hash(unsigned char* hashptr) {
      adr = adr + 16384;
   }
   return;
+  #endif
 }
 
 void keymap_press (char key) {

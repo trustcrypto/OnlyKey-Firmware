@@ -80,7 +80,7 @@
 //Firmware Build Options
 /*************************************/
 #define DEBUG //Enable Serial Monitor, debug firmware
-//#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
+#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
 //#define FACTORYKEYS // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 /*************************************/
@@ -465,6 +465,7 @@ void checkKey(Task* me) {
       pass_keypress=1;
       memset(profilekey, 0, 32);  
       SoftTimer.add(&taskInitialized);
+      CPU_RESTART();
     }
     }
   } else{
@@ -850,7 +851,9 @@ void payload(int duration) {
                 } else if (Profile_Offset && password.profile1hashevaluate()){
                   payload(10);
                 }
-            } 
+            } else {
+              CPU_RESTART(); 
+            }
             return;
         } 
         else if (((HW_ID==OK_GO && duration >= 270 && button_selected=='3') || (HW_ID!=OK_GO && duration >= 72 && button_selected=='6')) && !isfade) {
@@ -1351,7 +1354,7 @@ void lock_ok_and_screen () {
     Keyboard.set_media(0);
     Keyboard.send_now(); 
     resetkeys();
-
+    CPU_RESTART();
 }
 
 void fw_hash(unsigned char* hashptr) {

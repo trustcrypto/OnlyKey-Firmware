@@ -418,6 +418,13 @@ void setup() {
     } 
   }
 
+  #ifndef DEBUG
+  // Disable OK_GO hardware for production
+  if (HW_ID==OK_GO) {
+    CPU_RESTART();
+  }
+  #endif
+
 }
 
 extern elapsedMillis idletimer;

@@ -4,13 +4,13 @@ Source code reviewed by Codacy [![Codacy Badge](https://api.codacy.com/project/b
 
 This is the official firmware for **OnlyKey**
 
-OnlyKey can be purchased here: [OnlyKey order](http://www.crp.to/p/)
+OnlyKey can be purchased here: [OnlyKey order](https://onlykey.io)
 
 ## Getting Started
 
 Just getting started with OnlyKey?
 
-[Start here](http://www.crp.to/okstart)
+[Start here](https://onlykey.io/start)
 
 ## About
 
@@ -22,7 +22,7 @@ OnlyKey firmware is open source and new features are added with each firmware re
 
 ## Support
 
-Check out the [OnlyKey Support Forum](https://groups.google.com/forum/#!forum/onlykey)
+Check out the [OnlyKey Support Forum](https://forum.onlykey.io)
 
 Check out the [OnlyKey Documentation](https://docs.crp.to)
 

@@ -496,7 +496,7 @@ void checkKey(Task* me) {
   
 
   int press_duration = touch_sense_loop();
-  if (pending_operation==0xF6) { //CTAP2_ERR_DATA_READY
+  if (pending_operation==0xF6 || pending_operation==0xF7) { //CTAP2_ERR_DATA_READY or CTAP2_ERR_DATA_WIPE
     setcolor(45); //yellow
   } else {
     if (press_duration) payload(press_duration);

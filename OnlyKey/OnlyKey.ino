@@ -1390,7 +1390,11 @@ void keymap_press (char key) {
   if ((uint8_t)*pos>'0' && (uint8_t)*pos<='9') {
     delay((*(pos)-'0')*1000);
   } else if ((uint8_t)*pos=='t' || (uint8_t)*pos=='r') {
-    if ((uint8_t)*pos=='t') {
+    if (key) {
+      Keyboard.press(*pos);
+      key=0;
+    }
+    else if ((uint8_t)*pos=='t') {
       key = KEY_TAB;
     }
     else if ((uint8_t)*pos=='r') {

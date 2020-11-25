@@ -558,7 +558,7 @@ static void usb_setup(void)
 			getBuffer[1] = 0x02;
 			getBuffer[2] = 0x02;
 			getBuffer[3] = 0x03;
-			getBuffer[4] = 0x03; //slot 1 and 2 configured
+			getBuffer[4] = sess_counter; //slot 1 and 2 configured
 			getBuffer[5] = 0x03;
 			getBuffer[6] = 0x05;
 			getBuffer[7] = 0x00;
@@ -589,7 +589,7 @@ static void usb_setup(void)
 				getBuffer[1] = 0x02;
 				getBuffer[2] = 0x02;
 				getBuffer[3] = 0x03;
-				getBuffer[4] = 0x03;
+				getBuffer[4] = sess_counter;
 				getBuffer[5] = 0x03;
 				getBuffer[6] = 0x05;
 				getBuffer[7] = 0x00;

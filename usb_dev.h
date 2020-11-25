@@ -126,6 +126,7 @@ extern "C" {
 extern uint8_t setBuffer[9];
 extern uint8_t getBuffer[9];
 extern uint8_t keyboard_buffer[80];
+extern uint8_t sess_counter;
 
 extern void wipe_usb_buffer();
 void usb_init(void);

@@ -224,7 +224,7 @@ extern uint8_t stored_key_challenge_mode;
 //Other
 /*************************************/
 extern uint8_t recv_buffer[64];
-char keybuffer[EElen_url+EElen_addchar+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64+EElen_addchar]; //Buffer to hold all keystrokes
+char keybuffer[EElen_url+EElen_addchar+EElen_delay+EElen_addchar+EElen_username+EElen_delay+EElen_addchar+EElen_password+EElen_addchar+EElen_2FAtype+64+EElen_addchar+EElen_addchar+10]; //Buffer to hold all keystrokes
 char *pos;
 extern uint8_t isfade;
 #ifdef STD_VERSION
@@ -366,7 +366,7 @@ void setup() {
         Serial.println("typespeed = ");
         Serial.println(TYPESPEED[0]);
         #endif
-        if (TYPESPEED[0]  == 0) {
+        if (TYPESPEED[0] == 0) {
           TYPESPEED[0] = 4;
          } else if (TYPESPEED[0] <= 10) {
          }
@@ -682,7 +682,6 @@ void payload(int duration) {
       fadeoff(85);  
       if (profilemode!=NONENCRYPTEDPROFILE) {
         #ifdef STD_VERSION
-        yubikeyinit();
         U2Finit();
         okeeprom_eeset_sincelastregularlogin(0); //Set failed logins since last regular login to 0
         fw_version_changes();
@@ -997,6 +996,7 @@ void process_slot(int s) {
       uint8_t addchar3;
       uint8_t addchar4;
       uint8_t addchar5;
+      uint8_t addchar6;
       uint8_t autolockslot;
       int delay1 = 0;
       int delay2 = 0;
@@ -1019,8 +1019,10 @@ void process_slot(int s) {
       addchar1 = addchar5 & 0x3; //After Username
       addchar2 = (addchar5 >> 4) & 0x3; //After Password
       addchar3 = (addchar5 >> 6) & 0x1; //After OTP
+      addchar6 = (addchar5 >> 7) & 0x1; //After OTP 2
       addchar4 = (addchar5 >> 2) & 0x1; //Before Username
       addchar5 = (addchar5 >> 3) & 0x1; //Before OTP
+      
       if (isfade) return; 
       #ifdef DEBUG
       Serial.print("Slot Number ");
@@ -1213,13 +1215,15 @@ void process_slot(int s) {
         index++;
       }
       otplength = okeeprom_eeget_2FAtype(ptr, slot);
+      Serial.println("2fa type");
+      Serial.println(temp[0]);
       if(temp[0] > 0)
       {
         if(temp[0] == 103) { //Google Auth
           #ifdef DEBUG
           Serial.println("Reading TOTP Key from Flash...");
           #endif
-          otplength = okcore_flashget_totpkey(ptr, slot);
+          otplength = okcore_flashget_2fa_key(ptr, slot);
         #ifdef DEBUG
         Serial.println("Encrypted");
         byteprint(temp, otplength);
@@ -1257,19 +1261,36 @@ void process_slot(int s) {
           index=index+6;
           memset(temp, 0, 64); //Wipe all data from buffer
         }
-        if(temp[0] == 121 && profilemode!=NONENCRYPTEDPROFILE) {
-        #ifdef DEBUG
-        Serial.println("Generating Yubico OTP...");
-        #endif
-        #ifdef STD_VERSION
-        yubikeysim(keybuffer + index);
-        index=index+44;
-        #endif
+        if((temp[0] == 121 || temp[0] == 89)  && profilemode!=NONENCRYPTEDPROFILE) {
+          #ifdef DEBUG
+          Serial.println("Generating Yubico OTP...");
+          #endif
+          #ifdef STD_VERSION
+          int publen;
+          publen = yubikeysim(keybuffer + index, slot);
+          Serial.println("publen");
+          Serial.println(publen);
+          index=index+32+(publen*2);
+          #endif
         }
         if(temp[0] == 117 && profilemode!=NONENCRYPTEDPROFILE) { //U2F
-        keybuffer[index] = 9;
-        index++;
+          keybuffer[index] = 9;
+          index++;
         }
+      }
+      Serial.println("After OTP");
+      Serial.println(addchar3);
+      Serial.println(addchar6);
+      if(addchar6)
+      {
+        #ifdef DEBUG
+        Serial.println("Reading after OTP addchar...");
+        #endif
+        keybuffer[index] = 1;
+        #ifdef DEBUG
+        Serial.println("TAB");
+        #endif
+        index++;
       }
       if(addchar3)
       {

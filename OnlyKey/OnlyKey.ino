@@ -144,6 +144,7 @@ extern uint8_t profilemode;
 /*************************************/
 extern uint8_t NEO_Color;
 extern uint8_t NEO_Brightness[1];
+extern uint8_t touchoffset;
 extern uint8_t Profile_Offset;
 /*************************************/
 //RNG Assignments
@@ -371,6 +372,7 @@ void setup() {
          } else if (TYPESPEED[0] <= 10) {
          }
         okeeprom_eeget_ledbrightness((uint8_t*)NEO_Brightness);
+        okeeprom_eeget_touchoffset(&touchoffset);
         okeeprom_eeget_timeout((uint8_t*)TIMEOUT);
         okeeprom_eeget_keyboardlayout((uint8_t*)KeyboardLayout);
         #ifdef DEBUG
@@ -1261,7 +1263,16 @@ void process_slot(int s) {
           index=index+6;
           memset(temp, 0, 64); //Wipe all data from buffer
         }
-        if((temp[0] == 121 || temp[0] == 89)  && profilemode!=NONENCRYPTEDPROFILE) {
+        if(temp[0] == 121 && profilemode!=NONENCRYPTEDPROFILE) {
+          #ifdef DEBUG
+          Serial.println("Generating Yubico OTP Legacy...");
+          #endif
+          #ifdef STD_VERSION
+          yubikeysim(keybuffer + index, 0);
+          index=index+44;
+          #endif
+        }
+        if(temp[0] == 89  && profilemode!=NONENCRYPTEDPROFILE) {
           #ifdef DEBUG
           Serial.println("Generating Yubico OTP...");
           #endif
@@ -1374,9 +1385,9 @@ void lock_ok_and_screen () {
     //Lock Mac
     Keyboard.set_modifier(MODIFIERKEY_CTRL);  
     Keyboard.send_now();
-    Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_SHIFT); 
+    Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_GUI); 
     Keyboard.send_now();
-    Keyboard.set_media(KEY_MEDIA_EJECT);
+    Keyboard.set_key1(KEY_Q); 
     Keyboard.send_now();  
     delay(500);  // Mac OS-X will not recognize a very short eject press
     Keyboard.set_media(0);

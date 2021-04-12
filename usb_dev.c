@@ -560,7 +560,7 @@ static void usb_setup(void)
 			getBuffer[3] = 0x03;
 			getBuffer[4] = sess_counter; //slot 1 and 2 configured
 			getBuffer[5] = 0x03;
-			getBuffer[6] = 0x05;
+			getBuffer[6] = may_block;
 			getBuffer[7] = 0x00;
 			getBuffer[8] = 0x00;
 			if (setBuffer[7] == 0x8f) {
@@ -591,7 +591,7 @@ static void usb_setup(void)
 				getBuffer[3] = 0x03;
 				getBuffer[4] = sess_counter;
 				getBuffer[5] = 0x03;
-				getBuffer[6] = 0x05;
+				getBuffer[6] = may_block;
 				getBuffer[7] = 0x00;
 				getBuffer[8] = 0x00;
 				setBuffer[7] = 0x8f;
@@ -609,7 +609,7 @@ static void usb_setup(void)
 				data = keyboard_buffer; // Send 1st message (C0)
 			} 
 		}
-		else if (setBuffer[7] == 0x89 && getBuffer[6] == 0x05) { //Received all packets
+		else if (setBuffer[7] == 0x89 && (getBuffer[6] == 0x05 || getBuffer[6] == 0x07)) { //Received all packets
 			getBuffer[7] = 0x89;
 			setBuffer[8] = 1; // Process packets
 		}

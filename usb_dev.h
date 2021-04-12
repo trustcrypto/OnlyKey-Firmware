@@ -127,6 +127,8 @@ extern uint8_t setBuffer[9];
 extern uint8_t getBuffer[9];
 extern uint8_t keyboard_buffer[80];
 extern uint8_t sess_counter;
+extern uint8_t may_block;
+
 
 extern void wipe_usb_buffer();
 void usb_init(void);
@@ -148,7 +150,6 @@ static inline uint32_t usb_rx_byte_count(uint32_t endpoint)
         if (endpoint >= NUM_ENDPOINTS) return 0;
         return usb_rx_byte_count_data[endpoint];
 }
-
 
 #ifdef CDC_DATA_INTERFACE
 extern uint32_t usb_cdc_line_coding[2];
@@ -196,6 +197,7 @@ void usb_init(void);
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif // F_CPU
 

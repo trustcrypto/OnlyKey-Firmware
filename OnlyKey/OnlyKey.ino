@@ -79,8 +79,8 @@
 /*************************************/
 //Firmware Build Options
 /*************************************/
-#define DEBUG //Enable Serial Monitor, debug firmware
-#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
+//#define DEBUG //Enable Serial Monitor, debug firmware
+//#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
 //#define FACTORYKEYS // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 /*************************************/
@@ -1217,8 +1217,6 @@ void process_slot(int s) {
         index++;
       }
       otplength = okeeprom_eeget_2FAtype(ptr, slot);
-      Serial.println("2fa type");
-      Serial.println(temp[0]);
       if(temp[0] > 0)
       {
         if(temp[0] == 103) { //Google Auth
@@ -1279,8 +1277,6 @@ void process_slot(int s) {
           #ifdef STD_VERSION
           int publen;
           publen = yubikeysim(keybuffer + index, slot);
-          Serial.println("publen");
-          Serial.println(publen);
           index=index+32+(publen*2);
           #endif
         }
@@ -1289,9 +1285,6 @@ void process_slot(int s) {
           index++;
         }
       }
-      Serial.println("After OTP");
-      Serial.println(addchar3);
-      Serial.println(addchar6);
       if(addchar6)
       {
         #ifdef DEBUG

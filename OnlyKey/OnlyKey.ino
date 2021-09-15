@@ -79,9 +79,7 @@
 /*************************************/
 //Firmware Build Options
 /*************************************/
-//#define DEBUG //Enable Serial Monitor, debug firmware
-//#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
-#define OK_Color //Define for hardware with color LED
+#include "okconfig.h"
 //#define FACTORYKEYS // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 /*************************************/
 //Standard Libraries 

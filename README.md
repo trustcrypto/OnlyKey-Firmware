@@ -1,5 +1,3 @@
-Source code reviewed by Codacy [![Codacy Badge](https://api.codacy.com/project/badge/Grade/77e197a2efbc42758ff94cd6105709a1)](https://www.codacy.com/app/onlykey/OnlyKey-Firmware?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=trustcrypto/OnlyKey-Firmware&amp;utm_campaign=Badge_Grade)
-
 # OnlyKey Firmware
 
 This is the official firmware for **OnlyKey**

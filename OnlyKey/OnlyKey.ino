@@ -292,46 +292,47 @@ void setup() {
   //FSEC currently set to 0x44, everything disabled except mass erase https://forum.pjrc.com/threads/28783-Upload-Hex-file-from-Teensy-3-1
   if (FTFL_FSEC!=0x44) {
     // First time starting up, three steps to complete:
-    // 1) Read factory device keys and set custom device keys
+    // 1) Read factory loaded device keys and generate custom device keys
     // Get factory default flash contents
     #ifdef FACTORYKEYS
-    // FACTORYKEYS isn't used yet
-    // TODO handle if power is removed during writing encrypted keys
-    // - save encrypted keys to 1st free storage sector
-    // - wipe original flash location in 1st free flash sector when FTFL_FSEC==0x44
-    okcore_flashget_common(ctap_buffer, (unsigned long *)factorysectoradr, 2048);
+    delay(5000);
+    okcore_flashget_common(ctap_buffer, (unsigned long *)factorysectoradr, 1025);
     #ifdef DEBUG
-    Serial.println("Factory Keys");
-    byteprint(ctap_buffer+1536, 512);
+    Serial.println("Factory Key Values");
+    byteprint(ctap_buffer, 1025);
     #endif
     // Hash factory bytes with unique chip ID
     SHA256_CTX hash;
     for (int i=0; i<=14; i++) {
       sha256_init(&hash);
-      sha256_update(&hash, ctap_buffer+1536+(32*i), 32);
-      sha256_update(&hash, ctap_buffer+1536+(32*(i+1)), 32);
+      sha256_update(&hash, ctap_buffer+(32*i), 32);
+      sha256_update(&hash, ctap_buffer+(32*(i+1)), 32);
       sha256_update(&hash, (uint8_t*)ID, 36);
       sha256_update(&hash, (uint8_t*)&analog1, 4);
       sha256_update(&hash, (uint8_t*)&analog2, 4);
-      sha256_final(&hash, ctap_buffer+1536+(32*i));
+      sha256_final(&hash, ctap_buffer+(32*i));
     }
     #ifdef DEBUG
-    Serial.println("Custom Keys");
-    byteprint(ctap_buffer+1536, 512);
+    Serial.println("KDF Hashed Factory Values");
+    byteprint(ctap_buffer, 512);
     #endif
     // Write everything to flash
-    okcore_flashsector(ctap_buffer, (unsigned long *)factorysectoradr, 2048);
-    // Encrypt attestation key 
-    okcrypto_aes_gcm_encrypt2(ctap_buffer+(1536+480), attestation_kek_iv, attestation_kek, 32);
-    // Set flag
-    ctap_buffer[1536+435]=0x01;
-    // Write encrypted attestation key to flash
-    okcore_flashsector(ctap_buffer, (unsigned long *)factorysectoradr, 2048); 
+    if ((enckeysectoradr+512) != 1) {
+      // Encrypt attestation key with generated KEK
+      okcrypto_aes_gcm_encrypt2(ctap_buffer+480, ctap_buffer+436, ctap_buffer+448, 32);
+      // Set write flag 
+      ctap_buffer[513]=1;
+      // Write encrypted contents to flash
+      okcore_flashset_common(ctap_buffer, (unsigned long *)enckeysectoradr, 513); 
+    }
+    // Erase factory keys
+    memset(ctap_buffer, 0, 2048);
+    okcore_flashset_common(ctap_buffer, (unsigned long *)factorysectoradr, 512); 
     #ifdef DEBUG
-    Serial.println("Encrypted Attestation Key");
-    byteprint(ctap_buffer+1536, 512);
+    Serial.println("Encrypted Keys");
+    byteprint((uint8_t *)enckeysectoradr, 513);
     #endif
-    #endif
+    #endif // end FACTORYKEYS
     // 2) Store factory firmware hash for integrity verification
     //create hash of firmware in hash buffer
     #ifdef STD_VERSION
@@ -340,14 +341,18 @@ void setup() {
       eeprom_write_byte((unsigned char*)(2+i), ctap_buffer[i]); // 2-65 used for fw integrity hash
     }
     memset(ctap_buffer, 0, 2048);
+    //write fwvermaj, prevents downgrade to previous majver
+    eeprom_write_byte((unsigned char *)1984, OKversionmaj[0]);
     #endif
-    // 3) Enable flash security
+    // 3) Enable flash security after writing
     int nn = 0;
     nn=flashSecurityLockBits();
     #ifdef DEBUG
     Serial.print("Flash security bits ");
     if(nn) Serial.print("not ");
     Serial.println("written successfully");
+    Serial.println("FW VER MAJ ");
+    Serial.print(eeprom_read_byte((unsigned char *)1984));
     #endif
   }
   if(!initcheck) {
@@ -1217,9 +1222,11 @@ void process_slot(int s) {
         index++;
       }
       otplength = okeeprom_eeget_2FAtype(ptr, slot);
+      Serial.println("OTP TYPE from Flash");
+      Serial.println(temp[0]);
       if(temp[0] > 0)
       {
-        if(temp[0] == 103) { //Google Auth
+        if(temp[0] == MFAGOOGLEAUTH) { //Google Auth
           #ifdef DEBUG
           Serial.println("Reading TOTP Key from Flash...");
           #endif
@@ -1261,7 +1268,7 @@ void process_slot(int s) {
           index=index+6;
           memset(temp, 0, 64); //Wipe all data from buffer
         }
-        if(temp[0] == 121 && profilemode!=NONENCRYPTEDPROFILE) {
+        if(temp[0] == MFAOLDYUBIOTP && profilemode!=NONENCRYPTEDPROFILE) {
           #ifdef DEBUG
           Serial.println("Generating Yubico OTP Legacy...");
           #endif
@@ -1270,7 +1277,7 @@ void process_slot(int s) {
           index=index+44;
           #endif
         }
-        if(temp[0] == 89  && profilemode!=NONENCRYPTEDPROFILE) {
+        if((temp[0] == MFAYUBIOTPandHMACSHA1 || temp[0] == MFAYUBIOTP) && profilemode!=NONENCRYPTEDPROFILE) {
           #ifdef DEBUG
           Serial.println("Generating Yubico OTP...");
           #endif
@@ -1280,7 +1287,7 @@ void process_slot(int s) {
           index=index+32+(publen*2);
           #endif
         }
-        if(temp[0] == 117 && profilemode!=NONENCRYPTEDPROFILE) { //U2F
+        if(temp[0] == MFAOLDU2F && profilemode!=NONENCRYPTEDPROFILE) { //U2F
           keybuffer[index] = 9;
           index++;
         }

@@ -420,15 +420,15 @@ void setup() {
   #endif
   SoftTimer.add(&taskKey);
   
-  if (onlykeyhw==OK_DUO && initialized == true) {
+  if (onlykeyhw==OK_HW_DUO && initialized == true) {
     if (password.profile1hashevaluate() || password.profile2hashevaluate()) {
       payload(10); 
     } 
   }
 
   #ifndef DEBUG
-  // Disable OK_DUO hardware for production
-  if (onlykeyhw==OK_DUO) {
+  // Disable OK_HW_DUO hardware for production
+  if (onlykeyhw==OK_HW_DUO) {
     CPU_RESTART();
   }
   #endif
@@ -611,8 +611,8 @@ void sendKey(Task* me) {
 void payload(int duration) {   
     if (!unlocked) {
       // OnlyKey Go has only 3 buttons, longer press to enter PIN of 4 - 6
-      if (onlykeyhw==OK_DUO && duration >= 21) { 
-        // <1 sec OK_DUO buttons 1,2,3 = 4,5,6
+      if (onlykeyhw==OK_HW_DUO && duration >= 21) { 
+        // <1 sec OK_HW_DUO buttons 1,2,3 = 4,5,6
         button_selected = button_selected + 3;
       }
       #ifdef OK_Color
@@ -711,14 +711,14 @@ void payload(int duration) {
       wipe_usb_buffer(); // Wipe old responses
       return;
     } else if (!initialized && duration >= 85 && button_selected=='1' && profilemode!=NONENCRYPTEDPROFILE) {
-      if (onlykeyhw==OK_DUO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO_NO_BACKUP);
+      if (onlykeyhw==OK_HW_DUO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO_NO_BACKUP);
       else okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET);
       return;
     } else if (!initialized && duration >= 85 && button_selected=='2' && profilemode!=NONENCRYPTEDPROFILE) {
-      if (onlykeyhw==OK_DUO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO);
+      if (onlykeyhw==OK_HW_DUO) okcore_quick_setup(KEYBOARD_ONLYKEY_GO);
       else okcore_quick_setup(KEYBOARD_AUTO_PIN_SET);
       return;
-    } else if (!initialized && duration >= 85 && button_selected=='3' && profilemode!=NONENCRYPTEDPROFILE && onlykeyhw!=OK_DUO) {
+    } else if (!initialized && duration >= 85 && button_selected=='3' && profilemode!=NONENCRYPTEDPROFILE && onlykeyhw!=OK_HW_DUO) {
       okcore_quick_setup(0); //Setup with keyboard prompt
       return;
     } else if (pin_set==0 && !initcheck) {
@@ -767,7 +767,7 @@ void payload(int duration) {
         return;
     } else if (pin_set==10) {
         cancelfadeoffafter20();
-        if (button_selected=='1' && onlykeyhw!=OK_DUO) okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET); //Manual
+        if (button_selected=='1' && onlykeyhw!=OK_HW_DUO) okcore_quick_setup(KEYBOARD_MANUAL_PIN_SET); //Manual
         else okcore_quick_setup(KEYBOARD_AUTO_PIN_SET); //Manual
         return;
     }
@@ -833,22 +833,22 @@ void payload(int duration) {
             hidprint("Error incorrect challenge was entered");
             analogWrite(BLINKPIN, 255); //LED ON
             return;
-        } else if (duration >= 72 && (duration < 126 || onlykeyhw!=OK_DUO)  && button_selected=='1' && !isfade) {
+        } else if (duration >= 72 && (duration < 126 || onlykeyhw!=OK_HW_DUO)  && button_selected=='1' && !isfade) {
             // Backup <4 sec 
             SoftTimer.remove(&taskKey);
             backup();
             SoftTimer.add(&taskKey);
             return;
-        } else if (((duration >= 72 && duration < 126) || (onlykeyhw==OK_DUO && duration >= 270) || (onlykeyhw!=OK_DUO && duration >= 140)) && button_selected=='2' && !isfade) {
+        } else if (((duration >= 72 && duration < 126) || (onlykeyhw==OK_HW_DUO && duration >= 270) || (onlykeyhw!=OK_HW_DUO && duration >= 140)) && button_selected=='2' && !isfade) {
             // Slot Labels <4 sec 
             get_slot_labels(1);
-            // Print key labels <15 sec OK_DUO, <8 sec OK
+            // Print key labels <15 sec OK_HW_DUO, <8 sec OK
             if (duration >= 140) get_key_labels(1);
             return;
-        } else if (duration >= 90 && button_selected=='2' && configmode==true && onlykeyhw==OK_DUO) {
+        } else if (duration >= 90 && button_selected=='2' && configmode==true && onlykeyhw==OK_HW_DUO) {
             factorydefault(); //OnlyKey Go while in config mode wipe 
             return;
-        } else if (duration >= 72 && (duration < 126 || onlykeyhw!=OK_DUO) && button_selected=='3' && !isfade) {
+        } else if (duration >= 72 && (duration < 126 || onlykeyhw!=OK_HW_DUO) && button_selected=='3' && !isfade) {
             // Lock and/or switch profiles <4 sec
             unlocked = false;
             firsttime = true;
@@ -857,7 +857,7 @@ void payload(int duration) {
             memset(profilekey, 0, 32);        
             SoftTimer.add(&taskInitialized);
             button_selected=0;
-            if (onlykeyhw==OK_DUO) {
+            if (onlykeyhw==OK_HW_DUO) {
                 if (!Profile_Offset && password.profile2hashevaluate()){
                   Profile_Offset=1;
                   payload(10);
@@ -869,8 +869,8 @@ void payload(int duration) {
             }
             return;
         } 
-        else if (((onlykeyhw==OK_DUO && duration >= 270 && button_selected=='3') || (onlykeyhw!=OK_DUO && duration >= 72 && button_selected=='6')) && !isfade) {
-          // Config mode <15 sec OK_DUO, <4 sec OK
+        else if (((onlykeyhw==OK_HW_DUO && duration >= 270 && button_selected=='3') || (onlykeyhw!=OK_HW_DUO && duration >= 72 && button_selected=='6')) && !isfade) {
+          // Config mode <15 sec OK_HW_DUO, <4 sec OK
           integrityctr1++;
           configmode=true;
           unlocked = false;
@@ -878,7 +878,7 @@ void payload(int duration) {
           password.reset(); //reset the guessed password to NULL
           integrityctr2++;
           pass_keypress=1;
-          if (onlykeyhw==OK_DUO) {
+          if (onlykeyhw==OK_HW_DUO) {
             button_selected=0;
              if (password.profile1hashevaluate() || password.profile2hashevaluate()) {
               payload(10); 
@@ -895,12 +895,12 @@ void payload(int duration) {
     #endif
 
    // OnlyKey Go has only 3 buttons, longer press to activate additional C and D slots
-    if (onlykeyhw==OK_DUO && duration >= 180 && duration < 269) { 
-      // <10 sec OK_DUO slots 1d - 3d, maps to onlykey slots 4b - 6b
+    if (onlykeyhw==OK_HW_DUO && duration >= 180 && duration < 269) { 
+      // <10 sec OK_HW_DUO slots 1d - 3d, maps to onlykey slots 4b - 6b
       button_selected = button_selected + 3;
       duration = 21; // gen_hold(); 
-    } else if (onlykeyhw==OK_DUO && duration >= 126) { 
-      // <7 sec OK_DUO slots 1c - 3c, maps to onlykey slots 4a - 6a
+    } else if (onlykeyhw==OK_HW_DUO && duration >= 126) { 
+      // <7 sec OK_HW_DUO slots 1c - 3c, maps to onlykey slots 4a - 6a
       button_selected = button_selected + 3;
       duration = 10; // gen_press(); 
     }  
@@ -1325,9 +1325,9 @@ void process_slot(int s) {
 }
 
 void sendInitialized(Task* me) {
-    if (onlykeyhw==OK_DUO){
+    if (onlykeyhw==OK_HW_DUO){
       int n = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
-      if (n && recv_buffer[4] == OKPIN && recv_buffer[5]>='0' && initialized == true && unlocked == false && onlykeyhw==OK_DUO) {
+      if (n && recv_buffer[4] == OKPIN && recv_buffer[5]>='0' && initialized == true && unlocked == false && onlykeyhw==OK_HW_DUO) {
         unlocked = false;
         firsttime = true;
         password.reset(); //reset the guessed password to NULL

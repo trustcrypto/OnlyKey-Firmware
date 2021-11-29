@@ -79,8 +79,8 @@
 /*************************************/
 //Firmware Build Options
 /*************************************/
-#define DEBUG //Enable Serial Monitor, debug firmware
-#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
+//#define DEBUG //Enable Serial Monitor, debug firmware
+//#define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
 //#define FACTORYKEYS // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 /*************************************/
@@ -341,8 +341,6 @@ void setup() {
       eeprom_write_byte((unsigned char*)(2+i), ctap_buffer[i]); // 2-65 used for fw integrity hash
     }
     memset(ctap_buffer, 0, 2048);
-    //write fwvermaj, prevents downgrade to previous majver
-    eeprom_write_byte((unsigned char *)1984, OKversionmaj[0]);
     #endif
     // 3) Enable flash security after writing
     int nn = 0;
@@ -351,12 +349,11 @@ void setup() {
     Serial.print("Flash security bits ");
     if(nn) Serial.print("not ");
     Serial.println("written successfully");
-    Serial.println("FW VER MAJ ");
-    Serial.print(eeprom_read_byte((unsigned char *)1984));
     #endif
   }
   if(!initcheck) {
       wipeEEPROM();
+      eeprom_write_byte((unsigned char *)1984, (OKversionmaj[0] - '0')); //write fwvermaj, prevents downgrade to previous majver
       okeeprom_eeset_timeout((uint8_t*)TIMEOUT); //Default lockout 30 min
       unlocked = true; //Flash is not protected, First time use
       initialized = false;
@@ -1222,8 +1219,6 @@ void process_slot(int s) {
         index++;
       }
       otplength = okeeprom_eeget_2FAtype(ptr, slot);
-      Serial.println("OTP TYPE from Flash");
-      Serial.println(temp[0]);
       if(temp[0] > 0)
       {
         if(temp[0] == MFAGOOGLEAUTH) { //Google Auth
@@ -1479,5 +1474,6 @@ void exceeded_login_attempts() {
     blink(5);
     }
 }
+
 
 

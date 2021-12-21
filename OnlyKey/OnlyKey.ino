@@ -364,7 +364,7 @@ void setup() {
         okcore_flashget_pinhashpublic ((uint8_t*)p1hash, 32); //store PIN hash
         okcore_flashget_selfdestructhash ((uint8_t*)sdhash); //store self destruct PIN hash
         okcore_flashget_2ndpinhashpublic ((uint8_t*)p2hash); //store plausible deniability PIN hash
-        okeeprom_eeget_typespeed((uint8_t*)TYPESPEED);
+        okeeprom_eeget_typespeed((uint8_t*)TYPESPEED, 0);
         okeeprom_eeget_modkey(&mod_keys_enabled);
         #ifdef DEBUG
         Serial.println("typespeed = ");
@@ -423,12 +423,6 @@ void setup() {
     } 
   }
 
-  #ifndef DEBUG
-  // Disable OK_HW_DUO hardware for production
-  if (onlykeyhw==OK_HW_DUO) {
-    CPU_RESTART();
-  }
-  #endif
 }
 
 extern elapsedMillis idletimer;
@@ -453,6 +447,15 @@ void checkKey(Task* me) {
     CPU_RESTART(); //Reboot
     }
   }
+
+  #ifndef STD_VERSION
+  // Disable OK_HW_DUO hardware for IN_TRVL firmware
+  if (onlykeyhw==OK_HW_DUO) {
+    eeprom_write_byte(0x00, 1); //Go to bootloader
+    eeprom_write_byte((unsigned char *)0x01, 1); //Firmware ready to load
+    CPU_RESTART(); //Reboot
+  }
+  #endif
 
   if (setBuffer[8] == 1 && (!isfade || configmode)) //Done receiving packets
   {                 
@@ -1015,6 +1018,10 @@ void process_slot(int s) {
         lock_ok_and_screen ();
         return;
       }
+      okeeprom_eeget_typespeed((uint8_t*)TYPESPEED, slot);
+      if (TYPESPEED[0]==0) okeeprom_eeget_typespeed((uint8_t*)TYPESPEED, 0);
+      if (TYPESPEED[0]==0) TYPESPEED[0] = 4;
+      
       okeeprom_eeget_addchar(&addchar5, slot);
       #ifdef DEBUG
       Serial.println("Additional Character");
@@ -1317,6 +1324,9 @@ void process_slot(int s) {
             (keybuffer[i]);
           }
           #endif
+  // Set back to default type speed
+  okeeprom_eeget_typespeed((uint8_t*)TYPESPEED, 0);
+  if (TYPESPEED[0]==0) TYPESPEED[0] = 4;
 }
 
 void sendInitialized(Task* me) {

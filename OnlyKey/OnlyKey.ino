@@ -75,7 +75,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /*************************************/
 //Firmware Build Options
 /*************************************/
@@ -296,13 +295,12 @@ void setup() {
     // 1) Read factory loaded device keys and generate custom device keys
     // Get factory default flash contents
     #ifdef FACTORYKEYS2
-    delay(5000);
     okcore_flashget_common(ctap_buffer, (unsigned long *)factorysectoradr, 1025);
     #ifdef DEBUG
     Serial.println("Factory Key Values");
     byteprint(ctap_buffer, 1025);
     #endif
-    if (ctap_buffer+480 != 0xFF) { // Attestation key loaded
+    if (ctap_buffer[480] != 0xFF) { // Attestation key loaded
       // Hash factory bytes with unique chip ID
       SHA256_CTX hash;
       for (int i=0; i<=14; i++) {

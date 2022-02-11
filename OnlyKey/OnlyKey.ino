@@ -527,6 +527,9 @@ void sendKey(Task* me) {
       Keyboard.end();
       SoftTimer.remove(&taskKB);
       SoftTimer.add(&taskKey);
+      // Set back to default type speed
+      okeeprom_eeget_typespeed((uint8_t*)TYPESPEED, 0);
+      if (TYPESPEED[0]==0) TYPESPEED[0] = 4;
       return;
     }
     else if ((uint8_t)*pos == 1) {
@@ -1031,7 +1034,7 @@ void process_slot(int s) {
       okeeprom_eeget_addchar(&addchar5, slot);
       #ifdef DEBUG
       Serial.println("Additional Character");
-      Serial.println(addchar5);
+      Serial.println(addchar5); 
       #endif
       addchar1 = addchar5 & 0x3; //After Username
       addchar2 = (addchar5 >> 4) & 0x3; //After Password
@@ -1330,9 +1333,6 @@ void process_slot(int s) {
             (keybuffer[i]);
           }
           #endif
-  // Set back to default type speed
-  okeeprom_eeget_typespeed((uint8_t*)TYPESPEED, 0);
-  if (TYPESPEED[0]==0) TYPESPEED[0] = 4;
 }
 
 void sendInitialized(Task* me) {

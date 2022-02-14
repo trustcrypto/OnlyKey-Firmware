@@ -81,7 +81,7 @@
 #define DEBUG //Enable Serial Monitor, debug firmware
 #define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
-//#define FACTORYKEYS2 // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
+#define FACTORYKEYS2 // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 /*************************************/
 //Standard Libraries 
 /*************************************/
@@ -301,7 +301,7 @@ void setup() {
     byteprint(ctap_buffer, 1025);
     #endif
     if (ctap_buffer[480] != 0xFF) { // Attestation key loaded
-      // Hash factory bytes with unique chip ID
+      // Hash factory bytes with unique chip ID and random 
       SHA256_CTX hash;
       for (int i=0; i<=14; i++) {
         analog1 = analogRead(ANALOGPIN1);
@@ -317,16 +317,19 @@ void setup() {
       #ifdef DEBUG
       Serial.println("KDF Hashed Factory Values");
       byteprint(ctap_buffer, 512);
-      Serial.println("Attestation Value");
-      byteprint(ctap_buffer+480, 32);
       #endif
       // Write everything to flash
-      if ((enckeysectoradr+447) != 1) {
+      if (*certified_hw != 1) {
         // Encrypt attestation key with generated KEK
+        ctap_buffer[435]=3;
+        //Write keys
+        okcore_flashset_common(ctap_buffer, (unsigned long *)enckeysectoradr, 436); 
         okcrypto_aes_gcm_encrypt2(ctap_buffer+480, ctap_buffer+436, ctap_buffer+448, 32);
+        //Write encrypted contents to flash
+        okcore_flashset_common(ctap_buffer, (unsigned long *)enckeysectoradr, 513); 
         // Set write flag 
-        ctap_buffer[447]=1;
-        // Write encrypted contents to flash
+        ctap_buffer[435]=1;
+        // Write flag to flash
         okcore_flashset_common(ctap_buffer, (unsigned long *)enckeysectoradr, 513); 
       }
       // Erase factory keys
@@ -402,7 +405,7 @@ void setup() {
   RNG.stir((uint8_t *)&analog2, 2, 4);
   #ifdef DEBUG
   Serial.print("EEPROM Used ");
-  Serial.println(EEpos_ctap_authstate+208);
+  Serial.println(EEpos_slottypespeed+12);
   Serial.println(FTFL_FSEC, HEX);
   #endif
   rngloop(); //Start RNG

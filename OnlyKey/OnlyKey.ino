@@ -1351,6 +1351,9 @@ void sendInitialized(Task* me) {
         button_selected=0;
         payload(10); // Try the PIN
         memset(recv_buffer, 0, sizeof(recv_buffer));
+        if (unlocked == true) {
+          hidprint(HW_MODEL(UNLOCKED));
+        }
       } else {
         hidprint("INITIALIZED-D");
       }

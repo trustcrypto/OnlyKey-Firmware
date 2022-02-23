@@ -78,10 +78,10 @@
 /*************************************/
 //Firmware Build Options
 /*************************************/
-#define DEBUG //Enable Serial Monitor, debug firmware
+//#define DEBUG //Enable Serial Monitor, debug firmware
 #define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
-#define FACTORYKEYS2 // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
+//#define FACTORYKEYS2 // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 /*************************************/
 //Standard Libraries 
 /*************************************/
@@ -890,6 +890,7 @@ void payload(int duration) {
             firsttime = true;
             password.reset(); //reset the guessed password to NULL
             pass_keypress=1;
+            SoftTimer.add(&taskInitialized);
           }
           integrityctr2++;
           return;
@@ -1347,6 +1348,7 @@ void sendInitialized(Task* me) {
         password.reset(); //reset the guessed password to NULL
         okcore_pin_login(); // Received PIN Login Attempt for OnlyKey Duo
         pass_keypress=10;
+        button_selected=0;
         payload(10); // Try the PIN
         memset(recv_buffer, 0, sizeof(recv_buffer));
       } else {

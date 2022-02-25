@@ -324,7 +324,7 @@ void setup() {
         ctap_buffer[435]=3;
         //Write keys
         okcore_flashset_common(ctap_buffer, (unsigned long *)enckeysectoradr, 436); 
-        okcrypto_aes_gcm_encrypt2(ctap_buffer+480, ctap_buffer+436, ctap_buffer+448, 32);
+        okcrypto_aes_gcm_encrypt2(ctap_buffer+480, ctap_buffer+436, ctap_buffer+448, 32, true);
         //Write encrypted contents to flash
         okcore_flashset_common(ctap_buffer, (unsigned long *)enckeysectoradr, 513); 
         // Set write flag 

@@ -514,7 +514,7 @@ uint16_t KEYCODE_EXTRA50 = 0;
 uint16_t KEYCODE_EXTRA51 = 0;
 
 
-if (KeyboardLayout[0] == LAYOUT_USA_ENGLISH || KeyboardLayout[0] == LAYOUT_DVORAK || KeyboardLayout[0] == 0x00) {
+if (KeyboardLayout[0] == LAYOUT_USA_ENGLISH || KeyboardLayout[0] == LAYOUT_DVORAK || KeyboardLayout[0] == LAYOUT_COLEMAK || KeyboardLayout[0] == 0x00) {
 SHIFT_MASK=0x0040;
 //KEYCODE_TYPE=uint8_t
 KEYCODE_MASK=0x007F;
@@ -682,6 +682,46 @@ if (KeyboardLayout[0] == LAYOUT_DVORAK) {
     ASCII_3E=KEY_E + SHIFT_MASK; // >
     ASCII_2F=KEY_LEFT_BRACE; // /
     ASCII_3F=KEY_LEFT_BRACE + SHIFT_MASK; // ?
+}
+
+if (KeyboardLayout[0] == LAYOUT_COLEMAK) {
+    // https://colemak.com/
+    ASCII_44=KEY_G + SHIFT_MASK;// D
+    ASCII_45=KEY_K + SHIFT_MASK;// E
+    ASCII_46=KEY_E + SHIFT_MASK;// F
+    ASCII_47=KEY_T + SHIFT_MASK;// G
+    ASCII_49=KEY_L + SHIFT_MASK;// I
+    ASCII_4A=KEY_Y + SHIFT_MASK;// J
+    ASCII_4B=KEY_N + SHIFT_MASK;// K
+    ASCII_4C=KEY_U + SHIFT_MASK;// L
+    ASCII_4E=KEY_J + SHIFT_MASK;// N
+    ASCII_4F=KEY_SEMICOLON + SHIFT_MASK;// O
+    ASCII_50=KEY_R + SHIFT_MASK;// P
+    ASCII_52=KEY_S + SHIFT_MASK;// R
+    ASCII_53=KEY_D + SHIFT_MASK;// S
+    ASCII_54=KEY_F + SHIFT_MASK;// T
+    ASCII_55=KEY_I + SHIFT_MASK;// U
+    ASCII_59=KEY_O + SHIFT_MASK;// Y
+
+    ASCII_64=KEY_G;// d
+    ASCII_65=KEY_K;// e
+    ASCII_66=KEY_E;// f
+    ASCII_67=KEY_T;// g
+    ASCII_69=KEY_L;// i
+    ASCII_6A=KEY_Y;// j
+    ASCII_6B=KEY_N;// k
+    ASCII_6C=KEY_U;// l
+    ASCII_6E=KEY_J;// n
+    ASCII_6F=KEY_SEMICOLON;// o
+    ASCII_70=KEY_R;// p
+    ASCII_72=KEY_S;// r
+    ASCII_73=KEY_D;// s
+    ASCII_74=KEY_F;// t
+    ASCII_75=KEY_I;// u
+    ASCII_79=KEY_O;// y
+
+    ASCII_3A=KEY_P + SHIFT_MASK;// 58 :
+    ASCII_3B=KEY_P;// 59 ;
 }
 
 // LAYOUT_USA_ENGLISH

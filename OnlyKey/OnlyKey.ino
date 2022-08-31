@@ -421,10 +421,17 @@ void setup() {
   #endif
   SoftTimer.add(&taskKey);
   
-  if (onlykeyhw==OK_HW_DUO && initialized == true) {
-    if (password.profile1hashevaluate()) {
-      payload(10); 
-    } 
+  if (onlykeyhw==OK_HW_DUO) {
+      if (!initcheck) {
+        //Default no challenge code required for DUO
+        derived_key_challenge_mode = 1;
+        stored_key_challenge_mode = 1;
+        okeeprom_eeset_derived_key_challenge_mode(&derived_key_challenge_mode); 
+        okeeprom_eeset_stored_key_challenge_mode(&stored_key_challenge_mode);
+      } 
+      if (initialized == true && password.profile1hashevaluate()) {
+          payload(10); 
+      }
   }
 
 }

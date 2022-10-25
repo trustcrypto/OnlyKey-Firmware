@@ -81,7 +81,10 @@
 //#define DEBUG //Enable Serial Monitor, debug firmware
 #define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
-//#define FACTORYKEYS2 // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
+#define FACTORYKEYS2 // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
+#ifndef STD_VERSION
+#undef FACTORYKEYS2
+#endif
 /*************************************/
 //Standard Libraries 
 /*************************************/

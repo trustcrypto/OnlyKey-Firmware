@@ -505,6 +505,11 @@ static void usb_keyboard_release_key(uint8_t key, uint8_t modifier)
 			keyboard_modifier_keys &= ~modifier;
 			send_required = 1;
 			usb_keyboard_send();
+			// SEND MODKEY MULTIPLE TIMES
+			usb_keyboard_send();
+			usb_keyboard_send();
+			usb_keyboard_send();
+			usb_keyboard_send();
 		}
 	}
 	if (key) {

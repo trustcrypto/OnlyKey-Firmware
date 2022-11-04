@@ -78,10 +78,10 @@
 /*************************************/
 //Firmware Build Options
 /*************************************/
-//#define DEBUG //Enable Serial Monitor, debug firmware
+#define DEBUG //Enable Serial Monitor, debug firmware
 #define STD_VERSION //Define for STD edition firmare, undefine for IN TRVL edition firmware
 #define OK_Color //Define for hardware with color LED
-#define FACTORYKEYS2 // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
+//#define FACTORYKEYS2 // Attestation key and other keys encrypted using CHIP ID and RNG for unique per device
 #ifndef STD_VERSION
 #undef FACTORYKEYS2
 #endif
@@ -423,20 +423,21 @@ void setup() {
   fadeout();
   #endif
   SoftTimer.add(&taskKey);
+
+   if (!initcheck) {
+    //Default set to no challenge code required for OnlyKey Agent
+    //User can enable challenge code in OnlyKey app preferences
+    derived_key_challenge_mode = 1;
+    stored_key_challenge_mode = 1;
+    okeeprom_eeset_derived_key_challenge_mode(&derived_key_challenge_mode); 
+    okeeprom_eeset_stored_key_challenge_mode(&stored_key_challenge_mode);
+  } 
   
   if (onlykeyhw==OK_HW_DUO) {
-      if (!initcheck) {
-        //Default no challenge code required for DUO
-        derived_key_challenge_mode = 1;
-        stored_key_challenge_mode = 1;
-        okeeprom_eeset_derived_key_challenge_mode(&derived_key_challenge_mode); 
-        okeeprom_eeset_stored_key_challenge_mode(&stored_key_challenge_mode);
-      } 
       if (initialized == true && password.profile1hashevaluate()) {
           payload(10); 
       }
   }
-
 }
 
 extern elapsedMillis idletimer;

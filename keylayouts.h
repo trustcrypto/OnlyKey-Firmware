@@ -144,6 +144,7 @@ extern "C"{
 #define LAYOUT_HUNGARIAN    0x1A
 #define LAYOUT_DANISH_MAC    0x1B
 #define LAYOUT_DVORAK    0x1C
+#define LAYOUT_COLEMAK    0x1D
 
 
 // http://en.wikipedia.org/wiki/Keyboard_layout

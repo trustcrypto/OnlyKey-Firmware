@@ -793,6 +793,7 @@ void payload(int duration) {
             Challenge_button1 = 0;
             Challenge_button2 = 0;
             Challenge_button3 = 0;
+            cancelfadeoffafter20(); /* the request is refused: its 20 s wait for the user is over */
             fadeoff(1);
             if (window_closed) {
                 hidprint("Error confirmation window closed before the button was pressed");

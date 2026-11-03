@@ -223,7 +223,7 @@ static void fw_sha512(uint8_t *out, const uint8_t *msg, size_t len) {
 extern uint8_t NEO_Color;
 extern uint8_t NEO_Brightness[1];
 extern uint8_t touchoffset;
-extern uint8_t Profile_Offset;
+extern int Profile_Offset; // defined in okcore.cpp
 /*************************************/
 //RNG Assignments
 /*************************************/

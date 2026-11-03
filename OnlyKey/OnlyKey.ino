@@ -118,6 +118,9 @@ extern uint8_t profilemode;
 #include "SHA512.h"
 #define FW_HASH_BYTES 64
 #include "ok_fault.h" // fault handlers, stack check, optional watchdog
+#ifndef SEREMU_INTERFACE
+usb_seremu_class Serial; // release build: no serial-emulation interface, Serial compiles to nothing (usb_seremu.h)
+#endif
 
 // Replaces the core's weak yield(), which polls the unused hardware serial
 // ports and links their drivers.

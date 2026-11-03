@@ -603,9 +603,10 @@ void sendKey(Task *me) {
                 }
             }
         }
-    } else if (*pos) {
+    } else if ((uint8_t)*pos) {
         if (!isfade) {
-            Keyboard.press(*pos);
+            // Slot text is Latin-1, one byte per character (OnlyKey App).
+            Keyboard.press((uint8_t)*pos);
             delay(delay1);
             Keyboard.releaseAll();
             delay(delay2);

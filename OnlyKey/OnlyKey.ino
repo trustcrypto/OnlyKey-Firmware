@@ -534,6 +534,7 @@ void sendKey(Task *me) {
         Serial.print(pos);
 #endif
         Keyboard.end();
+        memset(keybuffer, 0, sizeof(keybuffer));
         SoftTimer.remove(&taskKB);
         SoftTimer.add(&taskKey);
         // Set back to default type speed
@@ -567,6 +568,7 @@ void sendKey(Task *me) {
         }
         u2f_button = 0;
         Keyboard.end();
+        memset(keybuffer, 0, sizeof(keybuffer));
         SoftTimer.remove(&taskKB);
         SoftTimer.add(&taskKey);
         return;
@@ -581,13 +583,15 @@ void sendKey(Task *me) {
             while (*pos) {
                 if ((uint8_t)*pos == 0x5c) { //modifier/special key comes next
                     pos++;
-                    keymap_press(0);
-                    delay(delay1);
+                    if ((uint8_t)*pos) { // nothing follows a trailing backslash
+                        keymap_press(0);
+                        delay(delay1);
+                    }
                 } else { //regular key
                     keymap_press(1);
                     delay(delay1);
                 }
-                pos++;
+                if ((uint8_t)*pos) pos++;
                 if ((uint8_t)*pos == ' ' || (uint8_t)*pos == 0) {
                     if ((uint8_t)*pos == ' ') pos++;
                     Keyboard.releaseAll();
@@ -1194,7 +1198,6 @@ void process_slot(int s) {
             Serial.println(otplength);
 #endif
             okcore_aes_gcm_decrypt(temp, slot, 9, profilekey, otplength);
-            ByteToChar2(temp, keybuffer, otplength, index);
 #ifdef DEBUG
             Serial.println("Unencrypted");
             byteprint(temp, otplength);

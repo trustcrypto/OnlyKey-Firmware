@@ -793,10 +793,7 @@ void payload(int duration) {
         } else if (CRYPTO_AUTH) { //Wrong challenge was entered
             uint8_t was_press_mode = (user_input_mode == USER_INPUT_PRESS);
             uint8_t window_closed = !isfade;
-            CRYPTO_AUTH = 0;
-            Challenge_button1 = 0;
-            Challenge_button2 = 0;
-            Challenge_button3 = 0;
+            wipetasks();
             cancelfadeoffafter20(); /* the request is refused: its 20 s wait for the user is over */
             fadeoff(1);
             if (window_closed) {

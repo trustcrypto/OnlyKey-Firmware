@@ -1,7 +1,15 @@
-/* Fault handlers, stack/heap check and the optional watchdog. See ok_fault.h. */
+/* Fault handlers, stack/heap check and the optional watchdog. See ok_fault.h.
+ *
+ * Everything here is Cortex-M specific. A host build of the firmware (the
+ * emulator, OK_EMULATOR) has no fault vectors, no watchdog and a different
+ * stack, so it gets do-nothing versions that keep the sketch linking.
+ */
 #include "ok_fault.h"
-#include "kinetis.h"
 #include "okcore.h" // MAX_RSA_KEY_SIZE, MAX_ECC_KEY_SIZE
+
+#if defined(__arm__) && !defined(OK_EMULATOR)
+
+#include "kinetis.h"
 
 extern uint8_t profilekey[32];
 extern uint8_t transit_key[32];
@@ -71,4 +79,15 @@ extern "C" void wdog_init(uint32_t timeout_ms) {
 #else
 extern "C" void wdog_kick(void) {}
 extern "C" void wdog_init(uint32_t timeout_ms) { (void)timeout_ms; }
+#endif
+
+#else // host build
+
+#include <stdlib.h>
+
+extern "C" void ok_fault_reset(void) { abort(); }
+extern "C" void check_stack_bounds(void) {}
+extern "C" void wdog_kick(void) {}
+extern "C" void wdog_init(uint32_t timeout_ms) { (void)timeout_ms; }
+
 #endif

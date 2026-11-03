@@ -1500,6 +1500,7 @@ void keymap_press(char key) {
         }
     }
 
+    if (key == 1) key = 0; // 1 only marks a regular key; as a HID usage it is ErrorRollOver
     if (keyboard_keys[0] == 0)
         keyboard_keys[0] = key;
     else if (keyboard_keys[1] == 0)

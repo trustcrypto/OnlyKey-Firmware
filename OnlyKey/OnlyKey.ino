@@ -117,9 +117,17 @@ extern uint8_t profilemode;
 #include "tweetnacl.h" // listed so Arduino 1.6.5 links the library (crypto_box)
 #include "SHA512.h"
 #define FW_HASH_BYTES 64
+#include "ok_fault.h" // fault handlers, stack check, optional watchdog
+#ifndef SEREMU_INTERFACE
+usb_seremu_class Serial; // release build: no serial-emulation interface, Serial compiles to nothing (usb_seremu.h)
+#endif
+
 // Replaces the core's weak yield(), which polls the unused hardware serial
 // ports and links their drivers.
-void yield(void) {}
+void yield(void) {
+    wdog_kick();
+    check_stack_bounds();
+}
 
 static void fw_sha512(uint8_t *out, const uint8_t *msg, size_t len) {
     SHA512 h;
@@ -151,7 +159,7 @@ static void fw_sha512(uint8_t *out, const uint8_t *msg, size_t len) {
 extern uint8_t NEO_Color;
 extern uint8_t NEO_Brightness[1];
 extern uint8_t touchoffset;
-extern uint8_t Profile_Offset;
+extern int Profile_Offset; // defined in okcore.cpp
 /*************************************/
 //RNG Assignments
 /*************************************/
@@ -441,6 +449,9 @@ void setup() {
             payload(10);
         }
     }
+#ifdef OK_WATCHDOG_MS
+    wdog_init(OK_WATCHDOG_MS);
+#endif
 }
 
 extern elapsedMillis idletimer;
@@ -450,6 +461,8 @@ extern elapsedMillis idletimer;
 //Called every 50ms
 /*************************************/
 void checkKey(Task *me) {
+    wdog_kick();
+    check_stack_bounds();
 
     //Check for bootloader trigger
     if (!digitalRead(33)) { //Trigger bootloader to load firmware by PTA4 low for 3 sec
@@ -534,6 +547,7 @@ void sendKey(Task *me) {
         Serial.print(pos);
 #endif
         Keyboard.end();
+        memset(keybuffer, 0, sizeof(keybuffer));
         SoftTimer.remove(&taskKB);
         SoftTimer.add(&taskKey);
         // Set back to default type speed
@@ -567,6 +581,7 @@ void sendKey(Task *me) {
         }
         u2f_button = 0;
         Keyboard.end();
+        memset(keybuffer, 0, sizeof(keybuffer));
         SoftTimer.remove(&taskKB);
         SoftTimer.add(&taskKey);
         return;
@@ -581,13 +596,15 @@ void sendKey(Task *me) {
             while (*pos) {
                 if ((uint8_t)*pos == 0x5c) { //modifier/special key comes next
                     pos++;
-                    keymap_press(0);
-                    delay(delay1);
+                    if ((uint8_t)*pos) { // nothing follows a trailing backslash
+                        keymap_press(0);
+                        delay(delay1);
+                    }
                 } else { //regular key
                     keymap_press(1);
                     delay(delay1);
                 }
-                pos++;
+                if ((uint8_t)*pos) pos++;
                 if ((uint8_t)*pos == ' ' || (uint8_t)*pos == 0) {
                     if ((uint8_t)*pos == ' ') pos++;
                     Keyboard.releaseAll();
@@ -599,9 +616,10 @@ void sendKey(Task *me) {
                 }
             }
         }
-    } else if (*pos) {
+    } else if ((uint8_t)*pos) {
         if (!isfade) {
-            Keyboard.press(*pos);
+            // Slot text is Latin-1, one byte per character (OnlyKey App).
+            Keyboard.press((uint8_t)*pos);
             delay(delay1);
             Keyboard.releaseAll();
             delay(delay2);
@@ -789,10 +807,7 @@ void payload(int duration) {
         } else if (CRYPTO_AUTH) { //Wrong challenge was entered
             uint8_t was_press_mode = (user_input_mode == USER_INPUT_PRESS);
             uint8_t window_closed = !isfade;
-            CRYPTO_AUTH = 0;
-            Challenge_button1 = 0;
-            Challenge_button2 = 0;
-            Challenge_button3 = 0;
+            wipetasks();
             cancelfadeoffafter20(); /* the request is refused: its 20 s wait for the user is over */
             fadeoff(1);
             if (window_closed) {
@@ -1194,7 +1209,6 @@ void process_slot(int s) {
             Serial.println(otplength);
 #endif
             okcore_aes_gcm_decrypt(temp, slot, 9, profilekey, otplength);
-            ByteToChar2(temp, keybuffer, otplength, index);
 #ifdef DEBUG
             Serial.println("Unencrypted");
             byteprint(temp, otplength);
@@ -1422,6 +1436,7 @@ void keymap_press(char key) {
         }
     }
 
+    if (key == 1) key = 0; // 1 only marks a regular key; as a HID usage it is ErrorRollOver
     if (keyboard_keys[0] == 0)
         keyboard_keys[0] = key;
     else if (keyboard_keys[1] == 0)

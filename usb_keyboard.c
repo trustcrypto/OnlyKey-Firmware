@@ -265,9 +265,9 @@ static KEYCODE_TYPE unicode_to_keycode(uint16_t cpoint)
 		return keycodes_iso_8859_1[cpoint - 0xA0];
 	}
 	}
-	//#ifdef UNICODE_20AC
-	//if (cpoint == 0x20AC) return UNICODE_20AC & 0x3FFF;
-	//#endif
+	if (UNICODE_20AC) {
+		if (cpoint == 0x20AC) return UNICODE_20AC & 0x3FFF;
+	}
 	if (KEYCODE_EXTRA00) if (cpoint == UNICODE_EXTRA00) return (KEYCODE_EXTRA00) & 0x3FFF;
 	if (KEYCODE_EXTRA01) if (cpoint == UNICODE_EXTRA01) return (KEYCODE_EXTRA01) & 0x3FFF;
 	if (KEYCODE_EXTRA02) if (cpoint == UNICODE_EXTRA02) return (KEYCODE_EXTRA02) & 0x3FFF;

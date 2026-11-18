@@ -807,9 +807,11 @@ void payload(int duration) {
         } else if (CRYPTO_AUTH) { //Wrong challenge was entered
             uint8_t was_press_mode = (user_input_mode == USER_INPUT_PRESS);
             uint8_t window_closed = !isfade;
+            uint8_t requester = packet_buffer_details[2]; /* wipetasks() clears it */
             wipetasks();
             cancelfadeoffafter20(); /* the request is refused: its 20 s wait for the user is over */
             fadeoff(1);
+            changeoutputmode(requester); /* the refusal goes to whoever asked (a FIDO2 page polls for it) */
             if (window_closed) {
                 hidprint("Error confirmation window closed before the button was pressed");
             } else if (was_press_mode) {
@@ -817,6 +819,7 @@ void payload(int duration) {
             } else {
                 hidprint("Error incorrect challenge was entered");
             }
+            okcore_hold_reply_for_poll(requester);
             analogWrite(BLINKPIN, 255); //LED ON
             return;
         } else if (duration < 180 && duration >= 72 && button_selected == '1' && !isfade) {

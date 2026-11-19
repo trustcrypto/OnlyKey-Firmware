@@ -527,7 +527,11 @@ void checkKey(Task *me) {
 
 
     int press_duration = touch_sense_loop();
-    if (pending_operation == 0xF6 || pending_operation == 0xF7) { //CTAP2_ERR_DATA_READY or CTAP2_ERR_DATA_WIPE
+    /* Yellow means a result is waiting for the FIDO2 page to collect it. A
+     * refusal or failure is held for that poll too (okcore_hold_reply_for_poll),
+     * and fadeoff(1) has already made NEO_Color red for it: keep showing red,
+     * and keep taking presses, as before replies were held. */
+    if ((pending_operation == 0xF6 || pending_operation == 0xF7) && NEO_Color != 1) { //CTAP2_ERR_DATA_READY or CTAP2_ERR_DATA_WIPE
         setcolor(45); //yellow
     } else {
         if (press_duration) payload(press_duration);
